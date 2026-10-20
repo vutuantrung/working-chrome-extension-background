@@ -1,4 +1,4 @@
-import { chromeApi } from "./chrome-api";
+import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 import { browser } from "wxt/browser";
 import { PROXY_HEALTH_CHECK_ALARM } from "./state";
 import { ProxyService } from "./services/proxyServices";

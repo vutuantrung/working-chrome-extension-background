@@ -102,3 +102,6 @@ export const PLATFORM_TAB_GLOBS: string[] = [
   "https://*.tiktok.com/*",
   "https://www.tiktok.com/*",
 ];
+
+export const FB_WEB_URL = "https://www.facebook.com/";
+export const FB_WEB_FAVICON = "https://www.facebook.com/favicon.ico";

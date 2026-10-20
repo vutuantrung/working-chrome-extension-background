@@ -1,9 +1,9 @@
-import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
+import { DEFAULT_SETTINGS_JSON, FB_WEB_FAVICON } from "../helpers/constants";
 import { readTrimmedString } from "../helpers/tools";
 import { Message, ProxyAuthCredentials, ProxyHealth, Settings } from "../types/types";
 import { StorageService } from "./storageServices";
 import { isActiveProxy } from "@/utils/resolveEffectiveProxy";
-import { chromeApi } from "../chrome-api";
+import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 
 interface Proxy {
     host: string;
@@ -110,28 +110,24 @@ export class ProxyService {
             chromeApi.storage.local.set({ proxyHealth: next });
 
             // Keep cache in sync even if storage event is delayed.
-            try {
-                if (StorageService.getInstance().storageCache) {
-                    (StorageService.getInstance().storageCache as any).proxyHealth = next;
-                }
-            } catch { }
+            const storageCache = StorageService.getInstance().storageCache;
+            if (storageCache) {
+                (storageCache as any).proxyHealth = next;
+            }
         } catch { }
     }
 
     public async handleProxyHealthCheck() {
         const startedAt = Date.now();
-        const getProxyValue = async (): Promise<any | null> => {
-            try {
-                const proxyApi: any = (chrome as any)?.proxy?.settings;
-                if (!proxyApi?.get) return null;
-                return await new Promise((resolve) => {
-                    proxyApi.get({ incognito: false }, (details: any) => {
-                        resolve(details?.value || null);
-                    });
+        const getProxyValue = async (): Promise<chrome.proxy.ProxyConfig | null> => {
+            const proxySettings = chromeApi.proxy.settings;
+            if (!proxySettings) return null;
+
+            return new Promise((resolve) => {
+                proxySettings.get({ incognito: false }, (details) => {
+                    resolve(details?.value ?? null);
                 });
-            } catch {
-                return null;
-            }
+            });
         };
 
         const proxyValue = await getProxyValue();
@@ -156,10 +152,9 @@ export class ProxyService {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 7000);
         // Must be allowed by extension_pages CSP (connect-src) and host_permissions.
-        const url = "https://www.facebook.com/favicon.ico";
-
+        
         try {
-            const resp = await fetch(url, {
+            const resp = await fetch(FB_WEB_FAVICON, {
                 method: "GET",
                 cache: "no-store",
                 signal: controller.signal,
@@ -175,7 +170,7 @@ export class ProxyService {
                     lastOkAt: Date.now(),
                     consecutiveFailures: 0,
                     reason: "alarm_check_ok",
-                    details: { url, status: resp.status, durationMs },
+                    details: { url: FB_WEB_FAVICON, status: resp.status, durationMs },
                     error: undefined,
                     lastErrorAt: undefined,
                 });
@@ -186,7 +181,7 @@ export class ProxyService {
                     lastErrorAt: Date.now(),
                     consecutiveFailures,
                     reason: "alarm_check_bad_status",
-                    details: { url, status: resp?.status, durationMs },
+                    details: { url: FB_WEB_FAVICON, status: resp?.status, durationMs },
                     error: `HTTP ${resp?.status}`,
                 } satisfies Partial<ProxyHealth>;
 
@@ -218,7 +213,7 @@ export class ProxyService {
                 lastErrorAt: Date.now(),
                 consecutiveFailures,
                 reason: "alarm_check_failed",
-                details: { url, durationMs },
+                details: { url: FB_WEB_FAVICON, durationMs },
                 error: err instanceof Error ? err.message : String(err),
             } satisfies Partial<ProxyHealth>;
 

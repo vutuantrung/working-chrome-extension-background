@@ -1,8 +1,8 @@
-import { chromeApi } from "../chrome-api";
+import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { Activity } from "../types/types";
 import { parseDelayAndPeriodInMinutes } from "../helpers/tools";
 import { StorageService } from "./storageServices";
-import { getExtensionConfigInfo } from "../api/source-member.api";
+import { getExtensionConfigInfo } from "../infrastructure/api/source-member.api";
 import { User } from "@/entrypoints/sidepanel/types/types";
 
 export async function handleUpdateScheduleActivities(scheduledActivities: Activity[]): Promise<void> {
@@ -31,11 +31,7 @@ export async function handleUpdateScheduleActivities(scheduledActivities: Activi
       const alarm = await chromeApi.alarms.get(alarmName);
       if (alarm) {
         // If the alarm already has the correct period, leave it alone.
-        if (
-          Math.abs(
-            (alarm.periodInMinutes ?? 0) - (scheduledTime.periodInMinutes ?? 0),
-          ) < 1
-        ) {
+        if (Math.abs((alarm.periodInMinutes ?? 0) - (scheduledTime.periodInMinutes ?? 0)) < 1) {
           continue;
         }
         // Period mismatch — clear the stale alarm so it gets recreated below.
@@ -83,6 +79,7 @@ export async function fetchScheduledActivities(settings: User): Promise<Activity
   try {
     const { extension_session } = settings;
     if (!extension_session?.extension_config_id) return;
+
     const fetchReq = await getExtensionConfigInfo(
       extension_session.extension_config_id,
       {

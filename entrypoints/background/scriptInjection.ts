@@ -1,7 +1,7 @@
 import { State } from "./types/types";
 import { isSupportedPlatformUrl } from "./helpers/tools";
 import { PLATFORM_TAB_GLOBS } from "./helpers/constants";
-import { chromeApi } from "./chrome-api";
+import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 
 export async function ensureFacebookProfileIdBootstrapInstalled(tabId: number, options?: { force?: boolean }): Promise<{ injected: boolean }> {
   try {

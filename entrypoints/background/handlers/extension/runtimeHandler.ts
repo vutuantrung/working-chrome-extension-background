@@ -67,7 +67,7 @@ import {
   handleScreenshotCropped,
 } from "../eviden-collection";
 import { sendYoutubeCachedData } from "../../dataPublishers/youtubePublisher";
-import { chromeApi } from "../../chrome-api";
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 function blockNotificationPopup() {
   const maxAttempts = 10;

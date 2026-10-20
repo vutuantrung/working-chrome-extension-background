@@ -19,12 +19,15 @@ import {
   getSocialAccountsByPersona,
   getProxyInfo,
   getExtensionConfigInfo
-} from "../api/user.api";
+} from "../infrastructure/api/user.api";
 
 export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promise<void> {
   try {
+    const storageService = StorageService.getInstance();
+    const proxyService = ProxyService.getInstance();
+
     const { settings, user, activities, fbLoginMode } =
-      await StorageService.getInstance().getStorageCachedByKeys([
+      await storageService.getStorageCachedByKeys([
         "settings",
         "user",
         "activities",
@@ -38,21 +41,14 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
       return;
     }
 
-    const { personaProxy, personaFacebookAccounts } =
-      await StorageService.getInstance().getStorageCachedByKeys([
-        "personaProxy",
-        "personaFacebookAccounts",
-      ]);
+    const { personaProxy, personaFacebookAccounts } = await storageService.getStorageCachedByKeys(["personaProxy", "personaFacebookAccounts"]);
 
     if (!useExtensionConfig) {
       let personaAccountProxy: Record<string, unknown> | null = null;
       if (fbLoginMode?.mode === "auto") {
         let freshAccounts: any[] | null = null;
-        const selectedPersonaId = (
-          await StorageService.getInstance().getStorageCachedByKeys([
-            "selectedPersonaId",
-          ])
-        )?.selectedPersonaId as string | undefined;
+        const getPersonaIdResult = await storageService.getStorageCachedByKeys(["selectedPersonaId"]);
+        const selectedPersonaId: string | undefined = getPersonaIdResult?.selectedPersonaId;
 
         if (selectedPersonaId) {
           try {
@@ -101,22 +97,16 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
           }
         }
 
-        const { allSocialAccounts } =
-          await StorageService.getInstance().getStorageCachedByKeys([
-            "allSocialAccounts",
-          ]);
-        const accountList =
-          freshAccounts ?? allSocialAccounts ?? personaFacebookAccounts ?? [];
+        const { allSocialAccounts } = await storageService.getStorageCachedByKeys(["allSocialAccounts"]);
+        const accountList = freshAccounts ?? allSocialAccounts ?? personaFacebookAccounts ?? [];
 
         personaAccountProxy = findPersonaSocialAccountProxy(
           accountList,
           fbLoginMode.account_id,
         );
-        console.log(
-          "[handleSyncExtensionInfo] personaAccountProxy:",
-          personaAccountProxy,
-        );
+        console.log("[handleSyncExtensionInfo] personaAccountProxy:", personaAccountProxy);
       }
+
       const { effective: proxyInfo } = resolveEffectiveProxy({
         hasExtensionConfig: false,
         personaProxy,
@@ -126,16 +116,17 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
       if (hasEffectiveProxy) {
         const { httpProxy, httpsProxy } = getProxyEndpoints(proxyInfo);
         if (httpProxy || httpsProxy) {
-          ProxyService.getInstance().setProxy(
+          proxyService.setProxy(
             httpProxy ?? undefined,
             httpsProxy ?? undefined,
           );
         }
       } else {
-        ProxyService.getInstance().clearProxy();
+        proxyService.clearProxy();
       }
+
       try {
-        await StorageService.getInstance().setStorageCached({
+        await storageService.setStorageCached({
           activeProxy: hasEffectiveProxy ? proxyInfo : {},
           personaProxy: personaProxy || {},
         });
@@ -151,9 +142,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
           {
             relation: "extension_sessions",
             scope: {
-              where: {
-                id: user?.extension_session?.id,
-              },
+              where: { id: user?.extension_session?.id },
             },
           },
           {
@@ -164,15 +153,12 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
     );
 
     // Persist joinedGroupScheduleTime from API so alarm scheduling can stay dynamic
-    const joinedGroupScheduleTime =
-      extensionConfigInfo?.joinedGroupScheduleTime;
+    const joinedGroupScheduleTime = extensionConfigInfo?.joinedGroupScheduleTime;
     if (
       typeof joinedGroupScheduleTime === "number" &&
       joinedGroupScheduleTime > 0
     ) {
-      await StorageService.getInstance().setStorageCached({
-        joinedGroupScheduleTime,
-      });
+      await storageService.setStorageCached({ joinedGroupScheduleTime });
     }
     await ensureJoinedGroupsAlarmSchedule(
       typeof joinedGroupScheduleTime === "number" && joinedGroupScheduleTime > 0
@@ -245,17 +231,17 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
     if (hasEffectiveProxy) {
       const { httpProxy, httpsProxy } = getProxyEndpoints(proxyInfo);
       if (httpProxy || httpsProxy) {
-        ProxyService.getInstance().setProxy(
+        proxyService.setProxy(
           httpProxy ?? undefined,
           httpsProxy ?? undefined,
         );
       }
     } else {
-      ProxyService.getInstance().clearProxy();
+      proxyService.clearProxy();
     }
 
     try {
-      await StorageService.getInstance().setStorageCached({
+      await storageService.setStorageCached({
         activeProxy: hasEffectiveProxy ? proxyInfo : {},
         extensionProxy: extensionConfigProxy || {},
         personaProxy: personaProxy || {},
@@ -298,7 +284,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
         schedule_end_time,
       },
     };
-    await StorageService.getInstance().setStorageCached({
+    await storageService.setStorageCached({
       user: updatedUser,
       settings: updatedSettings as any,
     });

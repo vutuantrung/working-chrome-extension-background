@@ -1,4 +1,4 @@
-import { chromeApi } from "../../chrome-api";
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 import { getCaseStorageKey } from "../../helpers/eviden-studio";
 import { Message, Screenshot } from "../../types/types";
 

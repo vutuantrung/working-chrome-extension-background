@@ -1,6 +1,6 @@
 import { FacebookProfileData, ParseType } from "@/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import { chromeApi } from "../../chrome-api";
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 export const handleFbProfileInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {

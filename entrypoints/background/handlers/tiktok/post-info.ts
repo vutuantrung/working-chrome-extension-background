@@ -1,6 +1,6 @@
 import { ParseType, TiktokPostData } from "@/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import { chromeApi } from "../../chrome-api";
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 export const handleTiktokPostInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
         cachedTiktokData,

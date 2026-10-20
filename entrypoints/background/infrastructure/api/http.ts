@@ -1,5 +1,5 @@
 import axios from "axios";
-import { chromeApi } from "../chrome-api";
+import { chromeApi } from "../chrome-api/chrome-api";
 
 export const http = axios.create({
   baseURL: import.meta.env.VITE_AXIOS_BASE_URL || "http://localhost:3002",

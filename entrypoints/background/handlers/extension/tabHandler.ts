@@ -3,7 +3,7 @@ import { State } from "../../types/types";
 import { isSupportedPlatformUrl } from "../../helpers/tools";
 import { DEFAULT_SETTINGS_JSON } from "../../helpers/constants";
 import {
-  safeTabsSendMessageWithResponse,
+  safeTabsSendMessage,
   findDeterministicFacebookTabId,
 } from "../../helpers/tabUtils";
 import {
@@ -12,7 +12,7 @@ import {
   ensureFacebookProfileIdBootstrapInstalled,
 } from "../../scriptInjection";
 import { StorageService } from "../../services/storageServices";
-import { chromeApi } from "../../chrome-api";
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 export async function tabsOnActivatedHandler(tabId: any) {
   await handleMaybeFacebookTab(tabId);
@@ -159,11 +159,7 @@ export async function tabsOnUpdatedHandler(
           tabId: tabId,
         };
 
-        const response = await safeTabsSendMessageWithResponse(
-          tabId,
-          msgData,
-          "tabsOnUpdatedHandler/autoProfileIdFetch",
-        );
+        const response = await safeTabsSendMessage(tabId, msgData);
         if (response) {
           console.log("[tabsOnUpdatedHandler] Auto-fetch response:", response);
         } else {

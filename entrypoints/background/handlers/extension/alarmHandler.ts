@@ -12,7 +12,7 @@ import { handleUpdateScheduleActivities, fetchScheduledActivities } from "../../
 import { StorageService } from "../../services/storageServices";
 import { ProxyService } from "../../services/proxyServices";
 import { syncFacebookJoinedGroups, syncFacebookPendingGroups } from "../../services/fbGroupSyncService";
-import { chromeApi } from "../../chrome-api";
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
   const storageService = StorageService.getInstance();
@@ -200,7 +200,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
           if (taskList.length > MAX_TASK_LIST_LENGTH) taskList.shift();
 
           bgState.injectedTabs.delete(tabId);
-          safeTabsSendMessage(tabId, task, "alarmsOnAlarmHandler");
+          await safeTabsSendMessage(tabId, task);
         }
 
         // Invalidate cache before writing so subsequent reads get fresh data.

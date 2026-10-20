@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { chromeApi } from "../../entrypoints/background/chrome-api";
+import { chromeApi } from "../../entrypoints/background/infrastructure/chrome-api/chrome-api";
 import { installChromeMock } from "./mocks/chrome";
 
 afterEach(() => vi.unstubAllGlobals());

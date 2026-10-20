@@ -2,28 +2,9 @@ import { bgState } from "../state";
 import { isSupportedPlatformUrl, PLATFORM_URL_PATTERNS } from "./tools";
 import { PLATFORM_TAB_GLOBS } from "./constants";
 import { StorageService } from "../services/storageServices";
-import { chromeApi } from "../chrome-api";
+import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 
-export function safeTabsSendMessage(tabId: number, message: any, context: string): void {
-  try {
-    chromeApi.tabs.sendMessage(tabId, message, () => {
-      const err = chromeApi.runtime.lastError;
-      if (!err) return;
-
-      // Common, non-fatal: tab has no content script (closed/reloaded/not matching).
-      if (err.message?.includes("Receiving end does not exist")) {
-        console.debug(`[${context}] No receiver on tab ${tabId}`);
-        return;
-      }
-
-      console.warn(`[${context}] sendMessage failed for tab ${tabId}:`, err);
-    });
-  } catch (error) {
-    console.warn(`[${context}] sendMessage threw for tab ${tabId}:`, error);
-  }
-}
-
-export function safeTabsSendMessageWithResponse(tabId: number, message: any, context: string): Promise<any | null> {
+export function safeTabsSendMessage(tabId: number, message: any): Promise<any | null> {
   return new Promise((resolve) => {
     try {
       chromeApi.tabs.sendMessage(tabId, message, (response) => {
@@ -35,16 +16,41 @@ export function safeTabsSendMessageWithResponse(tabId: number, message: any, con
 
         // Common, non-fatal: tab has no content script (closed/reloaded/not matching).
         if (err.message?.includes("Receiving end does not exist")) {
-          console.debug(`[${context}] No receiver on tab ${tabId}`);
           resolve(null);
           return;
         }
 
-        console.warn(`[${context}] sendMessage failed for tab ${tabId}:`, err);
+        console.warn(`SendMessage failed for tab ${tabId}:`, err);
         resolve(null);
       });
     } catch (error) {
-      console.warn(`[${context}] sendMessage threw for tab ${tabId}:`, error);
+      console.warn(`SendMessage threw for tab ${tabId}:`, error);
+      resolve(null);
+    }
+  });
+}
+
+function safeTabsSendMessageWithResponse(tabId: number, message: any): Promise<any | null> {
+  return new Promise((resolve) => {
+    try {
+      chromeApi.tabs.sendMessage(tabId, message, (response) => {
+        const err = chromeApi.runtime.lastError;
+        if (!err) {
+          resolve(response ?? null);
+          return;
+        }
+
+        // Common, non-fatal: tab has no content script (closed/reloaded/not matching).
+        if (err.message?.includes("Receiving end does not exist")) {
+          resolve(null);
+          return;
+        }
+
+        console.warn(`SendMessage failed for tab ${tabId}:`, err);
+        resolve(null);
+      });
+    } catch (error) {
+      console.warn(`SendMessage threw for tab ${tabId}:`, error);
       resolve(null);
     }
   });
@@ -103,15 +109,11 @@ export async function getCorrectFacebookTabId(): Promise<number> {
 
         return boundTabId;
       } catch (error) {
-        console.warn(
-          `[getCorrectFacebookTabId] Bound tab ${boundTabId} no longer exists`,
-        );
+        console.warn(`[getCorrectFacebookTabId] Bound tab ${boundTabId} no longer exists`);
       }
     }
 
-    console.warn(
-      "[getCorrectFacebookTabId] isTabSpecific=true but no valid bound tab",
-    );
+    console.warn("[getCorrectFacebookTabId] isTabSpecific=true but no valid bound tab");
     return -1;
   } else {
     // Mode 2: Use the first Facebook tab
@@ -120,14 +122,9 @@ export async function getCorrectFacebookTabId(): Promise<number> {
       try {
         // Only verify the tab still exists; don't reset based on URL.
         await chromeApi.tabs.get(targetTabId);
-        console.debug(
-          `[getCorrectFacebookTabId] Using first tab: ${targetTabId}`,
-        );
         return targetTabId;
       } catch (error) {
-        console.warn(
-          `[getCorrectFacebookTabId] First tab ${targetTabId} no longer exists`,
-        );
+        console.warn(`[getCorrectFacebookTabId] First tab ${targetTabId} no longer exists`);
         // Reset and find new first tab
         bgState.firstFacebookTabId = null;
         targetTabId = null;
@@ -139,9 +136,6 @@ export async function getCorrectFacebookTabId(): Promise<number> {
       const fbTabId = await findDeterministicFacebookTabId();
       if (fbTabId) {
         bgState.firstFacebookTabId = fbTabId;
-        console.debug(
-          `[getCorrectFacebookTabId] Set deterministic first tab: ${fbTabId}`,
-        );
 
         // Persist to settings (UI persistence + SW restart persistence)
         const updatedSettings = {
@@ -149,7 +143,7 @@ export async function getCorrectFacebookTabId(): Promise<number> {
           firstFacebookTabId: fbTabId,
         };
         await StorageService.getInstance().setStorageCached({
-          settings: updatedSettings as any,
+          settings: updatedSettings,
         });
 
         return fbTabId;

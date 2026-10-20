@@ -1,4 +1,4 @@
-import { chromeApi } from "../../chrome-api";
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 import { handleMaybeFacebookTab } from "./tabHandler";
 
 export async function windowOnFocusChangedHandler(windowId: number) {

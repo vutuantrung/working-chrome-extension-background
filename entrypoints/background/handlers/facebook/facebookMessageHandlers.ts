@@ -6,7 +6,7 @@ import {
   parseFacebookNameFromHtml,
   getStartDayTimestamp
 } from "../../helpers/tools";
-import { chromeApi } from "../../chrome-api";
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 export async function handleGetFacebookAccount(message: Message, sendResponse: (resp: any) => void): Promise<void> {
   try {

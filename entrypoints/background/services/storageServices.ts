@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
 import { isValidArrayAct } from "../helpers/tools";
 import { Archive, Settings, StorageData } from "../types/types";
 import { ProxyService } from "./proxyServices";
-import { chromeApi } from "../chrome-api";
+import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 
 export class StorageService {
     private static _instance: StorageService | null = null;
@@ -17,7 +17,6 @@ export class StorageService {
     public set storageCache(value: StorageData) {
         this._storageCache = value;
     }
-
 
     static getInstance(): StorageService {
         if (!this._instance) {
@@ -35,6 +34,7 @@ export class StorageService {
             if (!keys) {
                 return this._storageCache;
             }
+            
             const out: any = {};
             let allPresent = true;
             for (const k of keys) {

@@ -2,7 +2,7 @@ import { bgState } from "../state";
 import { KafkaPublishConfig, Settings } from "../types/types";
 import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
 import { StorageService } from "../services/storageServices";
-import { chromeApi } from "../chrome-api";
+import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 
 export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<void> {
 

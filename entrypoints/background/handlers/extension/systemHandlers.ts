@@ -26,7 +26,7 @@ import { clearSocialPlatformCookies } from "../../helpers/cookieUtils";
 import { StorageService } from "../../services/storageServices";
 import { ProxyService } from "../../services/proxyServices";
 import { ensureJoinedGroupsAlarmSchedule } from "../../services/fbGroupSyncService";
-import { chromeApi } from "../../chrome-api";
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 // ========================================
 // INTERNAL HELPERS

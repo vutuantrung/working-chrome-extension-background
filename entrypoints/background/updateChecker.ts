@@ -2,7 +2,7 @@ import { bgState, EXTENSION_UPDATE_CHECK_URL, EXTENSION_UPDATE_COOKIE_NAME } fro
 import { safeTabsSendMessage } from "./helpers/tabUtils";
 import { ExtensionVersionInfo } from "./types/types";
 import { StorageService } from "./services/storageServices";
-import { chromeApi } from "./chrome-api";
+import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 
 async function getUpdateCookieValue(): Promise<string | undefined> {
   try {
@@ -56,7 +56,7 @@ export async function showExtensionUpdateInActiveTab(currentVersion: string, lat
     });
     if (!tab?.id) return;
 
-    safeTabsSendMessage(
+    await safeTabsSendMessage(
       tab.id,
       {
         type: "SHOW_EXTENSION_UPDATE",
@@ -65,8 +65,7 @@ export async function showExtensionUpdateInActiveTab(currentVersion: string, lat
           latestVersion,
           downloadUrl,
         },
-      },
-      "showExtensionUpdateInActiveTab",
+      }
     );
   } catch (error) {
     console.warn("[updateCheck] Failed to notify active tab:", error);
