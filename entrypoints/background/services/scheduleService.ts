@@ -5,10 +5,26 @@ import { StorageService } from "./storageServices";
 import { getExtensionConfigInfo } from "../infrastructure/api/source-member.api";
 import { User } from "@/entrypoints/sidepanel/types/types";
 
-export async function handleUpdateScheduleActivities(scheduledActivities: Activity[]): Promise<void> {
+export interface ScheduleDependencies {
+  alarms: Pick<typeof chrome.alarms, "get" | "clear" | "create">;
+  storage: Pick<StorageService, "getStorageCachedByKeys" | "setStorageCached">;
+}
+
+/** Resolve production dependencies at invocation time, not module import time. */
+function defaultScheduleDependencies(): ScheduleDependencies {
+  return {
+    alarms: chromeApi.alarms,
+    storage: StorageService.getInstance(),
+  };
+}
+
+export async function handleUpdateScheduleActivities(
+  scheduledActivities: Activity[],
+  dependencies: ScheduleDependencies = defaultScheduleDependencies(),
+): Promise<void> {
   if (!Array.isArray(scheduledActivities)) return;
 
-  const { taskList } = await StorageService.getInstance().getStorageCachedByKeys(["taskList"]);
+  const { taskList } = await dependencies.storage.getStorageCachedByKeys(["taskList"]);
   const activities = [];
   for (const activity of scheduledActivities) {
     let alarmName = null;
@@ -28,14 +44,14 @@ export async function handleUpdateScheduleActivities(scheduledActivities: Activi
     ) {
       alarmName = "scheduleTask_" + activity.id;
       scheduledTime = parseDelayAndPeriodInMinutes(activity.scheduleTime);
-      const alarm = await chromeApi.alarms.get(alarmName);
+      const alarm = await dependencies.alarms.get(alarmName);
       if (alarm) {
         // If the alarm already has the correct period, leave it alone.
         if (Math.abs((alarm.periodInMinutes ?? 0) - (scheduledTime.periodInMinutes ?? 0)) < 1) {
           continue;
         }
         // Period mismatch — clear the stale alarm so it gets recreated below.
-        await chromeApi.alarms.clear(alarmName);
+        await dependencies.alarms.clear(alarmName);
         // When recreating after a mismatch, delay = 1 period so the first fire is on schedule.
         scheduledTime = {
           ...scheduledTime,
@@ -46,7 +62,7 @@ export async function handleUpdateScheduleActivities(scheduledActivities: Activi
 
     if (activity.scheduleType === "alarm" && activity.type === "auto-scripts") {
       alarmName = "scheduleTask_" + activity.id;
-      let alarm = await chromeApi.alarms.get(alarmName);
+      let alarm = await dependencies.alarms.get(alarmName);
       if (alarm) continue;
 
       let assignedTask = taskList?.find((task) => task.activityId === activity.id);
@@ -58,19 +74,19 @@ export async function handleUpdateScheduleActivities(scheduledActivities: Activi
     if (activity.scheduleType === "system-scripts") {
       alarmName = activity?.name?.toLowerCase();
       if (!alarmName) continue;
-      let alarm = await chromeApi.alarms.get(alarmName);
+      let alarm = await dependencies.alarms.get(alarmName);
       if (alarm) continue;
 
       scheduledTime = parseDelayAndPeriodInMinutes(activity.scheduleTime);
     }
 
     if (alarmName && scheduledTime) {
-      chromeApi.alarms.create(alarmName, scheduledTime);
+      dependencies.alarms.create(alarmName, scheduledTime);
       console.log("Alarm created:", alarmName);
     }
   }
 
-  await StorageService.getInstance().setStorageCached({
+  await dependencies.storage.setStorageCached({
     activities: activities,
   });
 }
