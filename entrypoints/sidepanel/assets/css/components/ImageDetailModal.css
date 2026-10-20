@@ -1,0 +1,192 @@
+.image-detail-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgb(243 244 246 / 40%);
+  background: rgba(28, 35, 50, 0.42);
+}
+
+.image-detail-modal__dialog {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 25%);
+  background: #ffffff;
+  border-color: #dce3ee;
+  border-radius: 7px;
+  box-shadow: 0 1px 2px rgba(31, 45, 72, 0.04);
+  border: 1px solid #dce3ee;
+}
+
+.image-detail-modal__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 9999px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 18%);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.image-detail-modal__preview {
+  display: flex;
+  max-height: 14rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.image-detail-modal__image {
+  width: 100%;
+  max-height: 16rem;
+  object-fit: contain;
+}
+
+.image-detail-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.image-detail-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.image-detail-modal__label {
+  color: #4b5563;
+  font-size: var(--font-size-md);
+  font-weight: 500;
+}
+
+.image-detail-modal__input,
+.image-detail-modal__textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--input-bg);
+  color: #000;
+  font-size: var(--font-size-md);
+  outline: none;
+}
+
+.image-detail-modal__textarea {
+  resize: none;
+  background: #ffffff;
+  border-color: #dce3ee;
+  border-radius: 4px;
+  color: var(--color-text-base);
+  box-shadow: none;
+}
+
+.image-detail-modal__input:focus,
+.image-detail-modal__textarea:focus {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.image-detail-modal__captured {
+  margin: 0;
+  color: #4b5563;
+  font-size: var(--font-size-md);
+}
+
+.image-detail-modal__footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 1rem 1rem;
+  background: var(--content-bg);
+  border-color: #dce3ee;
+  background: #fafbfc;
+}
+
+.image-detail-modal__download {
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  border-radius: 7px;
+  box-shadow: none;
+  font-weight: var(--font-weight-medium);
+  background: #ffffff;
+  border: 1px solid #dce3ee;
+  color: #66728f;
+}
+
+.image-detail-modal__download:hover {
+  text-decoration: underline;
+  background: #fffafb;
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
+  transform: none;
+  box-shadow: none;
+}
+
+.image-detail-modal__done {
+  border-radius: 0.5rem;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  transition: background-color 160ms ease, color 160ms ease;
+  border-radius: 7px;
+  box-shadow: none;
+  font-weight: var(--font-weight-medium);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.image-detail-modal__input {
+  background: #ffffff;
+  border-color: #dce3ee;
+  border-radius: 4px;
+  color: var(--color-text-base);
+  box-shadow: none;
+}
+
+.image-detail-modal__input:hover {
+  border-color: #c4ccda;
+}
+
+.image-detail-modal__textarea:hover {
+  border-color: #c4ccda;
+}
+
+.image-detail-modal__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-alpha-8);
+}
+
+.image-detail-modal__textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-alpha-8);
+}
+
+.image-detail-modal__done:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: none;
+  box-shadow: none;
+}

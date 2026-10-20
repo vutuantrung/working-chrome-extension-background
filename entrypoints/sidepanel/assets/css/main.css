@@ -1,0 +1,23 @@
+/* Sidepanel global stylesheet entrypoint.
+ * There is intentionally NO selector-level theme override imported after these files.
+ * Edit component/page/feature classes directly in their owning CSS file.
+ */
+@import "tailwindcss";
+
+@import "./foundation/tokens.css";
+@import "./foundation/base.css";
+@import "./foundation/typography.css";
+@import "./foundation/antd-overrides.css";
+
+@import "./layout/legacy-shell.css";
+@import "./features/platform.css";
+@import "./layout/content.css";
+@import "./features/login-settings.css";
+@import "./features/automation.css";
+@import "./layout/navigation-shell.css";
+@import "./layout/bottom-top-nav.css";
+@import "./features/groups.css";
+@import "./features/platform-filters.css";
+
+/* Global color-mode tokens and scoped dark component surfaces. */
+@import "./theme/color-mode.css";

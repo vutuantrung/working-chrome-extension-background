@@ -1,0 +1,176 @@
+.case-sidebar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  width: 0;
+  border-right: 1px solid #e5e7eb;
+  transition: width 300ms ease-in-out;
+  background: #ffffff;
+  border-color: #dce3ee;
+}
+
+.case-sidebar--open {
+  width: 33.333333%;
+}
+
+.case-sidebar--closed {
+  width: 0;
+  border-right-color: transparent;
+}
+
+.case-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px 12px;
+  border-color: #dce3ee;
+  border-color: #dce3ee;
+}
+
+.case-sidebar__title {
+  margin: 0;
+  color: var(--color-text-base);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-base);
+}
+
+.case-sidebar__icon-button,
+.case-sidebar__pagination-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: var(--color-text-base);
+  cursor: pointer;
+}
+
+.case-sidebar__icon-button:hover,
+.case-sidebar__pagination-button:hover {
+  background: #f3f4f6;
+}
+
+.case-sidebar__search-area {
+  padding: 0 16px 12px;
+  border-color: #dce3ee;
+}
+
+.case-sidebar__search-field {
+  position: relative;
+}
+
+.case-sidebar__search-icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  color: #9ca3af;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.case-sidebar__search-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  outline: none;
+  background: var(--input-bg, #fff);
+  color: #000;
+  font-size: var(--font-size-md);
+}
+
+.case-sidebar__search-input::placeholder {
+  color: #9ca3af;
+}
+
+.case-sidebar__search-input:focus {
+  border-color: var(--color-primary-light);
+  box-shadow: 0 0 0 1px var(--color-primary-light);
+}
+
+.case-sidebar__list {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0 8px 8px;
+  list-style: none;
+}
+
+.case-sidebar__list>*+* {
+  margin-top: 4px;
+}
+
+.case-sidebar__pagination {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-top: 1px solid #f3f4f6;
+  border-color: #dce3ee;
+}
+
+.case-sidebar__pagination-button {
+  color: #4b5563;
+  border-radius: 7px;
+  box-shadow: none;
+  font-weight: var(--font-weight-medium);
+  background: #ffffff;
+  border: 1px solid #dce3ee;
+  color: #66728f;
+}
+
+.case-sidebar__pagination-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+.case-sidebar__page-label {
+  color: #4b5563;
+  font-size: var(--font-size-sm);
+}
+
+@media (max-width: 720px) {
+  .case-sidebar--open {
+    width: 42%;
+  }
+}
+
+.case-sidebar__pagination-button:hover {
+  background: #fffafb;
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
+  transform: none;
+  box-shadow: none;
+}
+
+.case-sidebar__list::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.case-sidebar__list::-webkit-scrollbar-thumb {
+  background: #c8cfdb;
+  border-radius: 999px;
+}
+/* The primary case creation action sits alongside Search. */
+.case-sidebar__search-area { display: flex; align-items: center; gap: 8px; }
+.case-sidebar__search-field { min-width: 0; flex: 1; }
+.case-sidebar__create-button {
+  height: 39px; width: 39px; flex: 0 0 39px; display: inline-flex;
+  align-items: center; justify-content: center; border: 1px solid #b90b2f;
+  border-radius: 10px; background: #b90b2f; color: #fff; cursor: pointer;
+  transition: background .15s ease, box-shadow .15s ease;
+}
+.case-sidebar__create-button:hover { background: #930925; box-shadow: 0 3px 10px rgba(185,11,47,.15); }
+.case-sidebar__create-button:focus-visible { outline: 3px solid #f3b5c4; outline-offset: 2px; }
+.case-sidebar__create-button--active { box-shadow: 0 0 0 3px rgba(185,11,47,.12); }

@@ -1,0 +1,315 @@
+:root {
+  /* ================================
+   * Primary System (Source of Truth)
+   * ================================ */
+  --color-primary: #B90B2F;
+
+  --color-primary-light: #F7C1CB;
+  --color-primary-lighter: #FFF1F3;
+
+  --color-primary-dark: #8C0823;
+  --color-primary-darker: #5F0518;
+
+  --color-primary-bg: var(--color-primary-lighter);
+  --color-primary-bg-hover: #FAD4DC;
+
+  --color-primary-border: #F29BB0;
+
+  --color-primary-hover: #A10929;
+  --color-primary-active: var(--color-primary-darker);
+
+  /* Primary Transparency / Alpha Scale */
+  --color-primary-alpha-5: rgba(185, 11, 47, 0.05);
+  --color-primary-alpha-8: rgba(185, 11, 47, 0.08);
+  --color-primary-alpha-10: rgba(185, 11, 47, 0.10);
+  --color-primary-alpha-12: rgba(185, 11, 47, 0.12);
+  --color-primary-alpha-15: rgba(185, 11, 47, 0.15);
+  --color-primary-alpha-20: rgba(185, 11, 47, 0.20);
+  --color-primary-alpha-25: rgba(185, 11, 47, 0.25);
+  --color-primary-alpha-30: rgba(185, 11, 47, 0.30);
+  --color-primary-alpha-35: rgba(185, 11, 47, 0.35);
+  --color-primary-alpha-50: rgba(185, 11, 47, 0.50);
+
+  /* Dedicated Blue Primary for Social Badges & Gauges */
+  --color-primary-blue: var(--color-primary);
+  --color-primary-blue-light: #EBF3FE;
+  --color-primary-blue-alpha-10: rgba(24, 112, 245, 0.10);
+}
+
+
+
+html[data-theme="red"] {
+  /* Red Theme Primary Palette Overrides (Production & STG: #B90B2F) */
+  --color-primary: #B90B2F;
+
+  --color-primary-light: #F7C1CB;
+  --color-primary-lighter: #fff1f0;
+
+  --color-primary-dark: #8C0823;
+  --color-primary-darker: #5F0518;
+
+  --color-primary-bg: var(--color-primary-lighter);
+  --color-primary-bg-hover: #FAD4DC;
+
+  --color-primary-border: #F29BB0;
+
+  --color-primary-hover: #A10929;
+  --color-primary-active: #8C0823;
+
+  /* Red Primary Transparency / Alpha Scale */
+  --color-primary-alpha-5: rgba(185, 11, 47, 0.05);
+  --color-primary-alpha-8: rgba(185, 11, 47, 0.08);
+  --color-primary-alpha-10: rgba(185, 11, 47, 0.10);
+  --color-primary-alpha-12: rgba(185, 11, 47, 0.12);
+  --color-primary-alpha-15: rgba(185, 11, 47, 0.15);
+  --color-primary-alpha-20: rgba(185, 11, 47, 0.20);
+  --color-primary-alpha-25: rgba(185, 11, 47, 0.25);
+  --color-primary-alpha-30: rgba(185, 11, 47, 0.30);
+  --color-primary-alpha-35: rgba(185, 11, 47, 0.35);
+  --color-primary-alpha-50: rgba(185, 11, 47, 0.50);
+
+  --color-primary-stat-blue-alpha-10: rgba(24, 112, 245, 0.10);
+
+}
+
+:root {
+
+  /* ================================
+   * Functional / Semantic Status Colors
+   * ================================ */
+  --color-success: #52C41A;
+  --color-success-light: #F6FFED;
+  --color-success-border: #B7EB8F;
+  --color-success-dark: #389E0D;
+  --color-success-active: #00B563;
+  --color-success-bg: rgba(50, 186, 124, 0.1);
+
+  --color-warning: #FAAD14;
+  --color-warning-light: #FFF7E6;
+  --color-warning-border: #FFD591;
+  --color-warning-dark: #D48806;
+  --color-warning-orange: #FF8D07;
+  --color-warning-bg: rgba(255, 170, 32, 0.1);
+
+  --color-error: #FF4D4F;
+  --color-error-light: #FFF2F0;
+  --color-error-border: #FFCCC7;
+  --color-error-dark: #CF1322;
+  --color-error-bg: #FBEDEB;
+  --color-error-accent: #C82500;
+
+  --color-info: var(--color-primary);
+  --color-info-light: var(--color-primary-lighter);
+  --color-info-border: var(--color-primary-border);
+
+  /* ================================
+   * Accent & Specialty Colors
+   * ================================ */
+  --color-accent-purple: #722ED1;
+  --color-accent-purple-bg: rgba(114, 46, 209, 0.1);
+  --color-accent-pink: #FF51D3;
+  --color-accent-pink-bg: rgba(255, 176, 235, 0.1);
+  --color-accent-teal: #26B4B0;
+  --color-accent-teal-bg: rgba(20, 184, 166, 0.12);
+  --color-accent-indigo: #7B61FF;
+
+  /* Stats Panel Tokens (Figma TK-vaiao-18082026) */
+  --color-stat-orange: #EF7225;
+  --color-stat-cyan: #00ACDC;
+  --color-stat-blue: #006DDE;
+  --color-stat-green: #00AA55;
+  --color-stat-coral: #F7885F;
+  --color-stat-gray: #666666;
+
+  /* ================================
+   * Neutral / Base & Surfaces
+   * ================================ */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+
+  /* Typography / Text Neutral */
+  --color-text-base: #000000;
+  --color-text-dark: #000000;
+  --color-text-secondary: #595959;
+  --color-text-muted: #8C8C8C;
+  --color-text-subtle: #8181A5;
+  --color-text-disabled: #BFBFBF;
+  --color-text-title: #000000;
+  --color-sky-light: #8BD7FA;
+  --color-text-blue: var(--color-primary);
+  --color-icon-secondary: var(--color-primary);
+
+  /* Layout, Background & Card Surface */
+  --color-bg-layout: #F5F7FA;
+  --color-bg-card: #FAFAFA;
+  --color-bg-surface: #F8F8F7;
+  --color-bg-subtle: #F5F5F5;
+  --color-bg-alt: #F0F2F5;
+  --color-bg-gauge-track: rgb(232, 235, 240);
+  --color-badge-gray-bg: #EEF2F6;
+  --color-row-waiting-bg: #FFF0F1;
+  --color-row-waiting-hover-bg: #FFE5E7;
+
+  /* Borders & Dividers */
+  --color-border: #E8E8E8;
+  --color-border-light: #F0F0F0;
+  --color-border-subtle: #E4E9F2;
+  --color-border-dark: #D9D9D9;
+
+  /* Overlays & Shadows */
+  --color-overlay-light: rgba(255, 255, 255, 0.2);
+  --color-overlay-dark: rgba(0, 0, 0, 0.15);
+  --color-overlay-mask: rgba(0, 0, 0, 0.45);
+
+  /* Tag Variants */
+  --color-category-orange: rgb(239, 114, 37);
+  --color-category-orange-bg: rgba(255, 218, 195, 0.1);
+  --color-category-orange-border: rgb(239, 114, 37);
+
+  --tag-emp-color: var(--color-warning-dark);
+  --tag-emp-bg: var(--color-warning-light);
+  --tag-emp-border: var(--color-warning-border);
+
+  --tag-cat-color: var(--color-category-orange);
+  --tag-cat-bg: var(--color-category-orange-bg);
+  --tag-cat-border: var(--color-category-orange-border);
+
+  --tag-dept-color: var(--color-primary);
+  --tag-dept-bg: #EEF4FF;
+  --tag-dept-border: var(--color-primary);
+
+  --tag-emp-primary-color: var(--color-primary);
+  --tag-emp-primary-bg: #EEF4FF;
+  --tag-emp-primary-border: var(--color-primary);
+
+  --tag-emp-secondary-color: #FF8D07;
+  --tag-emp-secondary-bg: #fff5e6;
+  --tag-emp-secondary-border: #FF8D07;
+
+  /* Status Tag Variants */
+  --tag-status-active-color: #04975A;
+  --tag-status-active-bg: rgba(4, 151, 90, 0.10);
+
+  --tag-status-completed-color: #26B4B0;
+  --tag-status-completed-bg: rgba(38, 180, 176, 0.10);
+
+  --tag-status-locked-color: #EE1E25;
+  --tag-status-locked-bg: rgba(238, 30, 37, 0.10);
+
+  --tag-status-new-color: var(--color-primary);
+  --tag-status-new-bg: #EEF4FF;
+
+  --tag-status-closed-color: #FFFFFF;
+  --tag-status-closed-bg: #1A1A1A;
+
+  --tag-status-suspended-color: #666666;
+  --tag-status-suspended-bg: rgba(0, 0, 0, 0.08);
+
+  --tag-status-draft-color: #858585;
+  --tag-status-draft-bg: rgba(129, 129, 165, 0.10);
+
+  --color-qty-badge-color: #546D90;
+  --color-qty-badge-bg: #EDF1F7;
+
+  /* Tag Overflow / More Badge */
+  --tag-more-color: #858585;
+  --tag-more-bg: #EDF1F7;
+  --tag-more-border: #E4E9F2;
+  --tag-more-hover-color: #1C1D21;
+  --tag-more-hover-bg: #E4E9F2;
+  --tag-more-hover-border: #8181A5;
+  --tag-more-active-bg: #D9E2EC;
+
+  /* Table Varialbe */
+  --striped-row-bgcolor: #F6F8FB;
+
+  --color-primary-stat-blue-alpha-10: rgba(24, 112, 245, 0.10);
+
+  /* Toast */
+  --toast-info-bg-color: #EEF4FF;
+  --toast-info-border-color: var(--color-primary);
+  --toast-info-text-color: #003693;
+
+  /* Color */
+  --color-blue: var(--color-primary);
+  --color-brand-blue: #2E73EA;
+
+  /* Dark Floating Surface & Controls */
+  --color-dark-surface: #0B0F19;
+  --color-dark-surface-border: rgba(255, 255, 255, 0.15);
+  --color-dark-surface-border-hover: rgba(255, 255, 255, 0.30);
+  --color-dark-btn-bg: rgba(255, 255, 255, 0.08);
+  --color-dark-btn-bg-hover: rgba(255, 255, 255, 0.16);
+  --color-dark-btn-border: rgba(255, 255, 255, 0.16);
+  --color-dark-divider: rgba(255, 255, 255, 0.18);
+  --color-dark-icon: #9CA3AF;
+  --color-dark-icon-hover: #FFFFFF;
+
+  /* Semantic Action & Badges */
+  --color-badge-red-bg: #B91C1C;
+  --color-action-delete: #EF4444;
+  --color-action-delete-bg: rgba(239, 68, 68, 0.12);
+  --color-action-delete-border: rgba(239, 68, 68, 0.45);
+  --color-action-delete-bg-hover: rgba(239, 68, 68, 0.22);
+
+  /* Tooltip scrollbar */
+  --color-tooltip-scrollbar-track: rgba(255, 255, 255, 0.12);
+  --color-tooltip-scrollbar-thumb: rgba(255, 255, 255, 0.55);
+  --color-tooltip-scrollbar-thumb-hover: rgba(255, 255, 255, 0.85);
+
+  /* Post Detail Modal & NER Tokens */
+  --color-modal-3col-bg: #E8E8E8;
+  --color-modal-header-border: #E9EDF2;
+  --color-badge-verified-bg: #D1FAE5;
+  --color-badge-verified-text: #065F46;
+  --color-tag-success-bg: #F0FDF4;
+  --color-tag-success-text: #008C45;
+  --color-badge-spam-bg: #FEE2E2;
+  --color-badge-spam-text: #991B1B;
+  --color-chip-spam-bg: #F8FAFC;
+  --color-chip-spam-border: #D1D1D1;
+  --color-person-avatar-grad-start: #004A5C;
+  --color-person-avatar-grad-end: #009BC2;
+  --color-location-badge-bg: rgba(238, 244, 255, 0.20);
+  --color-location-badge-border: #EEF4FF;
+  --color-location-badge-text: #2E73EA;
+  --color-org-icon: #AFAFAF;
+  --color-reaction-like: #2896FF;
+  --color-reaction-comment: #EF7225;
+  --color-reaction-share: #00ACDC;
+  --color-reaction-view: #A814FC;
+  --color-text-action-link: #B90B2F;
+  --color-sentiment-pos: #00B563;
+  --color-sentiment-neg: #FF6151;
+  --color-sentiment-neu: #ada5a5;
+  --color-sentiment-tab-inactive-text: #AFAFAF;
+  --color-sentiment-tab-inactive-border: #D1D1D1;
+  --color-dropdown-selected-bg: #FFF0F1;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+button,
+input,
+select,
+textarea {
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--color-bg-layout);
+}
+

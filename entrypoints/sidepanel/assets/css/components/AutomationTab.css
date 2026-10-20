@@ -1,0 +1,362 @@
+/* AutomationTab — page-scoped styles to avoid leaking into other tabs. */
+.automation-redesign {
+    color: var(--color-text-base, #171a22);
+    padding: 0 10px 20px;
+    min-width: 0;
+}
+
+.automation-redesign .automation-workspace {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 22px 0 32px;
+    display: grid;
+    gap: 16px;
+}
+
+.automation-redesign .automation-page-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 1px 8px;
+}
+
+.automation-redesign .automation-eyebrow {
+    display: block;
+    color: #a31636;
+    font-size: 10px;
+    letter-spacing: .115em;
+    font-weight: 750;
+    margin-bottom: 8px;
+}
+
+.automation-redesign .automation-page-heading h2 {
+    margin: 0;
+    font-size: clamp(21px, 2.4vw, 26px);
+    line-height: 1.25;
+    letter-spacing: -.035em;
+    color: #1c2431;
+    font-weight: 750;
+}
+
+.automation-redesign .automation-page-heading p {
+    margin: 8px 0 0;
+    color: #667085;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.automation-redesign .automation-overview-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 7px 11px;
+    border-radius: 99px;
+    background: #f3f4f6;
+    color: #667085;
+    border: 1px solid #e5e7eb;
+}
+
+.automation-redesign .automation-overview-badge.is-running {
+    background: #edf9f1;
+    border-color: #caecd5;
+    color: #247448;
+}
+
+.automation-redesign .automation-overview-badge.is-paused {
+    background: #fff5e6;
+    border-color: #ffe3b8;
+    color: #a46212;
+}
+
+.automation-redesign .automation-indicator {
+    height: 7px;
+    width: 7px;
+    background: currentColor;
+    border-radius: 50%;
+}
+
+.automation-redesign .automation-panel {
+    background: #fff;
+    border: 1px solid #e5e8ee;
+    box-shadow: 0 2px 10px rgba(25, 37, 56, .035);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.automation-redesign .automation-panel-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.automation-redesign .automation-panel-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: #fff0f3;
+    color: #b90b2f;
+    display: grid;
+    place-items: center;
+    font-size: 17px;
+}
+
+.automation-redesign .automation-panel-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.automation-redesign .automation-panel h3 {
+    margin: 1px 0 6px;
+    font-size: 15px;
+    line-height: 1.35;
+    font-weight: 750;
+    color: #202938;
+}
+
+.automation-redesign .automation-panel p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #788294;
+}
+
+.automation-redesign .automation-state-chip {
+    border: 1px solid #e6e8ec;
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-size: 11px;
+    color: #667085;
+    background: #f6f7f9;
+    font-weight: 700;
+}
+
+.automation-redesign .automation-state-chip.is-on {
+    background: #eaf8ef;
+    color: #267744;
+    border-color: #d5eddd;
+}
+
+.automation-redesign .automation-setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    background: #fafbfc;
+    border: 1px solid #eef0f4;
+    border-radius: 9px;
+    padding: 14px 16px;
+    margin-top: 20px;
+}
+
+.automation-redesign .automation-setting-name {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #202938;
+    margin-bottom: 3px;
+    cursor: pointer;
+}
+
+.automation-redesign .automation-switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 44px;
+    height: 25px;
+    cursor: pointer;
+}
+
+.automation-redesign .automation-switch input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    margin: 0;
+    z-index: 1;
+}
+
+.automation-redesign .automation-switch-track {
+    display: block;
+    width: 44px;
+    height: 25px;
+    border-radius: 30px;
+    background: #cbd2db;
+    transition: background .2s;
+}
+
+.automation-redesign .automation-switch-track::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 19px;
+    height: 19px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px #0002;
+    transition: transform .2s;
+}
+
+.automation-redesign .automation-switch input:checked+.automation-switch-track {
+    background: #b90b2f;
+}
+
+.automation-redesign .automation-switch input:checked+.automation-switch-track::before {
+    transform: translateX(19px);
+}
+
+.automation-redesign .automation-switch input:focus-visible+.automation-switch-track {
+    outline: 3px solid #f8beca;
+    outline-offset: 3px;
+}
+
+.automation-redesign .automation-time-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    margin-top: 22px;
+}
+
+.automation-redesign .automation-time-field {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.automation-redesign .automation-time-field label {
+    color: #364152;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.automation-redesign .automation-time-field input {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    height: 43px;
+    border-radius: 8px;
+    border: 1px solid #dce1e9;
+    color: #202938;
+    font-size: 13px;
+    padding: 0 13px;
+    background: #fff;
+    font-family: inherit;
+    transition: border-color .18s, box-shadow .18s;
+}
+
+.automation-redesign .automation-time-field input::placeholder {
+    color: #a1a9b5;
+}
+
+.automation-redesign .automation-time-field input:focus {
+    outline: none;
+    border-color: #b90b2f;
+    box-shadow: 0 0 0 3px #b90b2f18;
+}
+
+.automation-redesign .automation-time-field input[aria-invalid="true"] {
+    border-color: #dc3545;
+}
+
+.automation-redesign .automation-field-error {
+    color: #cb2939;
+    font-size: 11px;
+}
+
+.automation-redesign .automation-hint {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 14px !important;
+    font-size: 11px !important;
+}
+
+.automation-redesign .automation-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    padding-top: 4px;
+}
+
+.automation-redesign .automation-save-button {
+    min-height: 41px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 10px 21px;
+    border: 1px solid #b90b2f;
+    border-radius: 8px;
+    background: #b90b2f;
+    color: white;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+.automation-redesign .automation-save-button:hover:not(:disabled) {
+    background: #950925;
+}
+
+.automation-redesign .automation-save-button:focus-visible {
+    outline: 3px solid #f8beca;
+    outline-offset: 2px;
+}
+
+.automation-redesign .automation-save-button:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+
+.automation-redesign .automation-submit-error {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #fecdd3;
+    background: #fff1f2;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #be123c;
+}
+
+.automation-redesign .automation-unavailable {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+@media (max-width: 520px) {
+    .automation-redesign .automation-page-heading {
+        flex-wrap: wrap;
+    }
+
+    .automation-redesign .automation-time-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .automation-redesign .automation-panel {
+        padding: 16px;
+    }
+
+    .automation-redesign .automation-workspace {
+        padding-top: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .automation-redesign *,
+    .automation-redesign *::before {
+        transition: none !important;
+    }
+}

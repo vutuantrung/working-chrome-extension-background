@@ -1,0 +1,17 @@
+.json-editor__textarea-wrap { padding-bottom: 10px; }
+.json-editor__textarea {
+  resize: vertical;
+  max-height: 300px;
+  min-height: 150px;
+  background: #ffffff;
+    border-color: #dce3ee;
+    border-radius: 4px;
+    color: var(--color-text-base);
+    box-shadow: none;
+}
+
+.json-editor__textarea:focus {
+  outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-alpha-8);
+}

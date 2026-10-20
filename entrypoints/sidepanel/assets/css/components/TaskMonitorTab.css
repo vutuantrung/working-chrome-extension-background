@@ -1,0 +1,91 @@
+.stat-value--running,
+.task-section-icon--running {
+  color: #00a763;
+}
+
+.stat-value--pending,
+.task-section-icon--pending {
+  color: #ff6b22;
+}
+
+.stat-value--completed {
+  color: #008cff;
+}
+
+.stat-value--history,
+.task-section-icon--history {
+  color: #7c83a5;
+}
+
+.task-status--running {
+  color: #059669;
+  background: #d1fae5;
+}
+
+.task-status--pending {
+  color: #d97706;
+  background: #fef3c7;
+}
+
+.task-status--finished {
+  color: var(--color-primary);
+  background: #e0f2fe;
+}
+
+.task-status--canceled {
+  color: #6b7280;
+  background: #f3f4f6;
+}
+
+.task-cancel-button {
+  color: #ef4444;
+  border-color: #fecaca;
+}
+
+.task-cancel-button:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.task-monitor-container {
+  color: var(--color-text-base);
+}
+
+.monitor-title {
+  color: var(--color-text-base);
+}
+
+.monitor-header {
+  border-bottom: 1px solid #dce3ee;
+}
+
+.stat-card + .stat-card::before {
+  background: #dce3ee;
+}
+
+.stat-label {
+  color: #77789b;
+}
+
+.task-section {
+  background: #ffffff;
+    border: 1px solid #dce3ee;
+    border-radius: 7px;
+    padding: 12px;
+}
+
+.task-monitor-container::-webkit-scrollbar {
+  width: 5px;
+    height: 5px;
+}
+
+.task-monitor-container::-webkit-scrollbar-thumb {
+  background: #c8cfdb;
+    border-radius: 999px;
+}
+
+@media ((max-width: 640px)) {
+  .task-section {
+    border-radius: 4px;
+  }
+}

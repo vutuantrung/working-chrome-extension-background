@@ -1,0 +1,432 @@
+/* Application-wide light/dark palette. Brand and semantic status colors remain intact. */
+:root {
+  color-scheme: light;
+}
+
+html[data-color-mode="dark"] {
+  color-scheme: dark;
+  --color-primary-lighter: #39232b;
+  --color-primary-bg: #39232b;
+  --color-primary-bg-hover: #4c2a36;
+  --color-primary-border: #875064;
+  --color-text-base: #edf0f7;
+  --color-text-dark: #f6f7fb;
+  --color-text-title: #f6f7fb;
+  --color-text-secondary: #bbc2d0;
+  --color-text-muted: #a4aec0;
+  --color-text-subtle: #abb3c5;
+  --color-bg-layout: #10151f;
+  --color-bg-card: #1b2331;
+  --color-bg-surface: #1b2331;
+  --color-bg-subtle: #202b3a;
+  --color-bg-alt: #273244;
+  --color-bg-gauge-track: #303d50;
+  --color-border: #344153;
+  --color-border-light: #303d50;
+  --color-border-subtle: #354255;
+  --color-border-dark: #485568;
+  --ref-surface: #1b2331;
+  --ref-border: #354255;
+  --ref-text: #f0f3f8;
+  --ref-text-secondary: #b9c2d2;
+}
+
+html[data-color-mode="dark"] body,
+html[data-color-mode="dark"] #root {
+  background-color: #10151f;
+  color: #edf0f7;
+}
+
+/* Existing pages contain literal light surfaces; override them at their component boundaries. */
+html[data-color-mode="dark"] :is(.settings-page, .group-page, .dashboard-page, .automation-page,
+  .eviden-studio-page, .switch-platform-page, .login-page,
+  .navigation-shell, .main-content, .content-container,
+  .gallery-contained-page) {
+  background-color: #10151f;
+  color: #edf0f7;
+}
+
+html[data-color-mode="dark"] :is(.settings-page__section, .settings-page__back, .settings-page__reset,
+  .settings-page__segmented button.selected,
+  .group-page__filter-icon, .group-page .multi-select-filter__trigger,
+  .group-page .multi-select-filter__dropdown, .group-pagination__btn,
+  .group-page__search, .group-task-card__account,
+  .case-detail, .case-sidebar, .case-sidebar-item,
+  .modern-navigation, .modern-bottom-nav,
+  .dashboard-card, .dashboard-page__card,
+  .automation-card, .task-monitor-card,
+  .platform-select__card) {
+  background-color: #1b2331;
+  color: #edf0f7;
+  border-color: #354255;
+}
+
+html[data-color-mode="dark"] :is(.settings-page__heading h1, .settings-page__section-title h2,
+  .settings-page__description strong, .group-page__header h1,
+  .group-task-card__title, .group-page__results-header h2) {
+  color: #f2f4f9;
+}
+
+html[data-color-mode="dark"] :is(.settings-page__heading p, .settings-page__section-title p,
+  .settings-page__description span, .group-page__search::placeholder,
+  .group-task-card__meta, .group-task-card__count) {
+  color: #aab5c8;
+}
+
+html[data-color-mode="dark"] :is(.settings-page__section-title, .group-page__status-tabs,
+  .group-task-card__footer) {
+  border-color: #354255;
+}
+
+html[data-color-mode="dark"] :is(.settings-page__segmented, .group-task-card__account) {
+  background-color: #263142;
+  border-color: #3b4a60;
+}
+
+html[data-color-mode="dark"] :is(input, textarea, select) {
+  background-color: #1c2533;
+  color: #e9edf6;
+  border-color: #3a485c;
+}
+
+html[data-color-mode="dark"] :is(input, textarea)::placeholder {
+  color: #929fb3;
+}
+
+html[data-color-mode="dark"] .settings-page__segmented button {
+  color: #b7c0d0;
+}
+
+html[data-color-mode="dark"] .settings-page__segmented button.selected {
+  color: #ff8097;
+}
+
+html[data-color-mode="dark"] .settings-page__heading-icon,
+html[data-color-mode="dark"] .settings-page__section-icon {
+  background: #39232b;
+  color: #ff839a;
+}
+
+html[data-color-mode="dark"] .group-page__status-tab {
+  color: #a5aec0;
+}
+
+html[data-color-mode="dark"] .group-page__status-tab.is-active {
+  color: #ff7e98;
+  border-color: #ff7e98;
+}
+
+html[data-color-mode="dark"] .group-page__tab-count {
+  background: #303b4c;
+}
+
+html[data-color-mode="dark"] .group-page__refresh {
+  color: #ff829b;
+}
+
+/* Automation workspace — dark-mode surfaces; light mode remains unchanged. */
+html[data-color-mode="dark"] .automation-page {
+  background: #10151f;
+  color: #edf0f7;
+}
+
+html[data-color-mode="dark"] .automation-redesign {
+  color: #edf0f7;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-page-heading h2,
+html[data-color-mode="dark"] .automation-redesign .automation-panel h3,
+html[data-color-mode="dark"] .automation-redesign .automation-setting-name,
+html[data-color-mode="dark"] .automation-redesign .automation-time-field label {
+  color: #f0f3f9;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-page-heading p,
+html[data-color-mode="dark"] .automation-redesign .automation-panel p,
+html[data-color-mode="dark"] .automation-redesign .automation-hint {
+  color: #abb7c9;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-eyebrow {
+  color: #ff829b;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-panel,
+html[data-color-mode="dark"] :is(.automation-section, .automation-card, .schedule-item, .task-section, .task-monitor-container .task-card, .task-monitor-container .stat-card) {
+  background: #1b2331;
+  border-color: #354255;
+  color: #edf0f7;
+  box-shadow: 0 2px 10px #00000018;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-setting-row,
+html[data-color-mode="dark"] .task-details,
+html[data-color-mode="dark"] .task-result {
+  background: #222d3d;
+  border-color: #3b4b60;
+  color: #e4e9f3;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-panel-icon {
+  background: #39232b;
+  color: #ff829b;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-overview-badge,
+html[data-color-mode="dark"] .automation-redesign .automation-state-chip {
+  background: #2a3444;
+  border-color: #455167;
+  color: #c1cada;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-overview-badge.is-running,
+html[data-color-mode="dark"] .automation-redesign .automation-state-chip.is-on {
+  background: #18392d;
+  border-color: #2e6850;
+  color: #74ddaa;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-overview-badge.is-paused {
+  background: #43301d;
+  border-color: #705035;
+  color: #f4c17d;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-time-field input,
+html[data-color-mode="dark"] :is(.time-input, .modern-select, .modern-textarea) {
+  background: #151e2b;
+  border-color: #42516a;
+  color: #edf0f7;
+  color-scheme: dark;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-time-field input::placeholder {
+  color: #94a2b7;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-submit-error {
+  background: #401f2c;
+  border-color: #854055;
+  color: #ff9aab;
+}
+
+html[data-color-mode="dark"] .automation-redesign .automation-switch-track {
+  background: #536074;
+}
+
+html[data-color-mode="dark"] :is(.monitor-header, .section-header, .schedule-row, .task-inputs-section) {
+  border-color: #354255;
+}
+
+html[data-color-mode="dark"] :is(.stat-label, .card-summary, .task-meta, .detail-label, .empty-state) {
+  color: #acb8ca;
+}
+
+html[data-color-mode="dark"] :is(.task-name, .detail-value, .control-title, .schedule-title, .monitor-title, .time-label) {
+  color: #f0f3f9;
+}
+
+html[data-color-mode="dark"] .stat-card+.stat-card::before {
+  background: #354255;
+}
+
+html[data-color-mode="dark"] .task-monitor-container::-webkit-scrollbar-thumb {
+  background: #46556a;
+}
+
+/* Preserve semantic statuses with readable dark-theme backgrounds. */
+html[data-color-mode="dark"] .task-status--running {
+  background: #193b2f;
+  color: #7ce2b0;
+}
+
+html[data-color-mode="dark"] .task-status--pending {
+  background: #46331d;
+  color: #f6c783;
+}
+
+html[data-color-mode="dark"] .task-status--finished {
+  background: #193653;
+  color: #91c7ff;
+}
+
+html[data-color-mode="dark"] .task-status--canceled {
+  background: #303846;
+  color: #c3cbd8;
+}
+
+html[data-color-mode="dark"] .task-cancel-button:hover:not(:disabled) {
+  background: #422532;
+}
+
+
+/* Evidence Studio: component-scoped dark surfaces (light-mode styles remain untouched). */
+html[data-color-mode="dark"] .eviden-studio-page,
+html[data-color-mode="dark"] .eviden-studio {
+  background: #10151f;
+  color: #edf0f7;
+}
+
+html[data-color-mode="dark"] .eviden-studio .case-detail {
+  --cd-border: #354255;
+  --cd-muted: #aab6c9;
+  --cd-ink: #f0f3f9;
+}
+
+html[data-color-mode="dark"] .eviden-studio :is(.case-sidebar, .case-detail__information, .case-detail__gallery,
+  .case-detail__item, .case-sidebar-item__button,
+  .case-detail__open-sidebar-button, .case-sidebar__icon-button,
+  .case-sidebar__pagination-button, .case-detail__gallery-add,
+  .case-detail__empty-gallery) {
+  background: #1b2331;
+  color: #edf0f7;
+  border-color: #354255;
+  box-shadow: none;
+}
+
+html[data-color-mode="dark"] .eviden-studio :is(.case-sidebar__header, .case-sidebar__search-area, .case-sidebar__section-heading,
+  .case-sidebar__pagination, .case-detail__gallery-heading, .case-detail__meta-footer,
+  .case-detail__toolbar, .case-detail__gallery, .case-detail__information) {
+  border-color: #354255;
+}
+
+html[data-color-mode="dark"] .eviden-studio :is(.case-sidebar-item__button:hover, .case-sidebar__icon-button:hover,
+  .case-sidebar__pagination-button:hover, .case-detail__item:hover,
+  .case-detail__open-sidebar-button:hover) {
+  background: #263348;
+  border-color: #55667e;
+}
+
+html[data-color-mode="dark"] .eviden-studio :is(.case-sidebar-item__button--selected, .case-sidebar-item__button--selected:hover,
+  .case-sidebar__create-button--active) {
+  background: #392632;
+  border-color: #825062;
+  color: #ffc2cf;
+}
+
+html[data-color-mode="dark"] .eviden-studio :is(.case-sidebar__count, .case-sidebar-item__selected-mark,
+  .case-detail__platform-icon, .case-sidebar-item__platform-icon) {
+  background: #303447;
+  border-color: #46546a;
+}
+
+html[data-color-mode="dark"] .eviden-studio :is(.case-sidebar__title, .case-sidebar__heading,
+  .case-sidebar-item__name, .case-detail__section-title,
+  .case-detail__gallery-title, .case-detail__inline-name-text,
+  .case-detail__gallery-heading, .case-detail__name-input,
+  .case-detail__field-label, .case-detail__gallery-add) {
+  color: #f0f3f9;
+}
+
+html[data-color-mode="dark"] .eviden-studio :is(.case-sidebar__page-label, .case-sidebar__section-count,
+  .case-sidebar-item__url, .case-detail__optional,
+  .case-detail__gallery-subtitle, .case-detail__meta-footer,
+  .case-detail__empty-gallery, .case-sidebar__empty,
+  .case-detail__gallery-count) {
+  color: #aab6c9;
+}
+
+html[data-color-mode="dark"] .eviden-studio :is(.case-detail__input-shell, .case-detail__url-row,
+  .case-detail__name-input, .case-detail__url-input,
+  .case-detail__description-input, .case-detail__inline-name-input,
+  .case-sidebar__search-input) {
+  background: #151e2b;
+  border-color: #42516a;
+  color: #edf0f7;
+}
+
+html[data-color-mode="dark"] .eviden-studio :is(input, textarea)::placeholder {
+  color: #95a2b5;
+}
+
+html[data-color-mode="dark"] .eviden-studio .case-detail__thumbnail-actions {
+  background: #1b2331e8;
+}
+
+html[data-color-mode="dark"] .eviden-studio .case-detail__thumbnail-action {
+  background: #263448;
+  border-color: #43546b;
+  color: #e0e7f3;
+}
+
+html[data-color-mode="dark"] .eviden-studio .case-detail__saved-badge {
+  background: #173b2e;
+  border-color: #32694f;
+  color: #7fe0ad;
+}
+
+html[data-color-mode="dark"] .eviden-studio .case-detail__error-banner {
+  background: #44232d;
+  border-color: #804353;
+  color: #ffb3bf;
+}
+
+html[data-color-mode="dark"] .image-detail-modal {
+  background: #080e18b8;
+}
+
+html[data-color-mode="dark"] .image-detail-modal :is(.image-detail-modal__dialog, .image-detail-modal__body,
+  .image-detail-modal__footer, .image-detail-modal__field) {
+  background: #1b2331;
+  border-color: #354255;
+  color: #edf0f7;
+}
+
+html[data-color-mode="dark"] .image-detail-modal :is(.image-detail-modal__preview, .image-detail-modal__close,
+  .image-detail-modal__download) {
+  background: #263348;
+  border-color: #46556b;
+  color: #e4eaf4;
+}
+
+html[data-color-mode="dark"] .image-detail-modal :is(.image-detail-modal__label, .image-detail-modal__captured) {
+  color: #c4cede;
+}
+
+html[data-color-mode="dark"] .image-detail-modal :is(.image-detail-modal__input, .image-detail-modal__textarea) {
+  background: #151e2b;
+  border-color: #42516a;
+  color: #edf0f7;
+}
+
+html[data-color-mode="dark"] .image-detail-modal :is(input, textarea)::placeholder {
+  color: #95a2b5;
+}
+
+/* SwitchPlatform: both steps and PlatformSelect grid, including forced light backgrounds. */
+html[data-color-mode="dark"] .switch-platform-redesign { background: #10151f; color: #edf0f7; }
+html[data-color-mode="dark"] .switch-platform-redesign__shell { background: #1b2331; border-color: #354255; box-shadow: 0 12px 38px #00000024; }
+html[data-color-mode="dark"] .switch-platform-redesign__eyebrow { color: #ff9aaf; }
+html[data-color-mode="dark"] .switch-platform-redesign__step,
+html[data-color-mode="dark"] .switch-platform-redesign__heading p,
+html[data-color-mode="dark"] .switch-platform-redesign__hint,
+html[data-color-mode="dark"] .switch-platform-redesign__selected small,
+html[data-color-mode="dark"] .switch-platform-redesign__mode-copy small,
+html[data-color-mode="dark"] .switch-platform-redesign__section-heading > span:last-child { color: #aab6c9; }
+html[data-color-mode="dark"] .switch-platform-redesign__heading h1,
+html[data-color-mode="dark"] .switch-platform-redesign__section-heading,
+html[data-color-mode="dark"] .switch-platform-redesign__selected strong,
+html[data-color-mode="dark"] .switch-platform-redesign__mode-copy strong { color: #f0f3f9; }
+html[data-color-mode="dark"] .switch-platform-redesign__heading-icon,
+html[data-color-mode="dark"] .switch-platform-redesign__mode-icon { background: #442733; color: #ff9eb3; }
+html[data-color-mode="dark"] .switch-platform-redesign__pulse { background: #ff7293; box-shadow: 0 0 0 4px #442733; }
+html[data-color-mode="dark"] .switch-platform-redesign__progress span { background: #354255; }
+html[data-color-mode="dark"] .switch-platform-redesign__progress .is-complete { background: #e34d6d; }
+html[data-color-mode="dark"] .switch-platform-redesign__hint { border-color: #354255; }
+html[data-color-mode="dark"] .switch-platform-redesign__back { color: #ff9eb3; }
+html[data-color-mode="dark"] .switch-platform-redesign__selected { background: #202b3a; border-color: #42516a; }
+html[data-color-mode="dark"] .switch-platform-redesign__selected-icon { background: #2c394c; }
+html[data-color-mode="dark"] .switch-platform-redesign__selected-check { background: #193b2f; color: #7ce2b0; }
+html[data-color-mode="dark"] .switch-platform-redesign__mode { background: #202b3a; border-color: #42516a; color: #edf0f7; }
+html[data-color-mode="dark"] .switch-platform-redesign__mode:hover:not(:disabled),
+html[data-color-mode="dark"] .switch-platform-redesign__mode:focus-visible { background: #342935; border-color: #a95770; }
+html[data-color-mode="dark"] .switch-platform-redesign__mode-arrow { color: #ff9eb3; }
+html[data-color-mode="dark"] .platform-select--switch .platform-select__card { background: #202b3a !important; border-color: #42516a; color: #edf0f7; }
+html[data-color-mode="dark"] .platform-select--switch .platform-select__card:hover:not(:disabled),
+html[data-color-mode="dark"] .platform-select--switch .platform-select__card:focus-visible { background: #342935 !important; border-color: #a95770; box-shadow: 0 0 0 3px #b90b2f26; }
+html[data-color-mode="dark"] .platform-select--switch .platform-select__card--current { background: #392732 !important; border-color: #875064; }
+html[data-color-mode="dark"] .platform-select--switch .platform-select__icon { background: #2b374a; }
+html[data-color-mode="dark"] .platform-select--switch .platform-select__label { color: #f0f3f9; }
+html[data-color-mode="dark"] .platform-select--switch .platform-select__action { color: #c4cede; }
+html[data-color-mode="dark"] .platform-select--switch .platform-select__card--current .platform-select__action { background: #532d3c; color: #ffafc0; }
+html[data-color-mode="dark"] .platform-select--switch .platform-select__coming-soon { background: #303d50; color: #c4cede; }

@@ -1,0 +1,51 @@
+.task-priority-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.task-priority-badge--low {
+  color: #6b7280;
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+.task-priority-badge--medium {
+  color: #a16207;
+  background: #fef3c7;
+  border-color: #f4dd92;
+}
+
+.task-priority-badge--high {
+  color: #dc2626;
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
+.task-priority-badge--urgent {
+  color: #b91c1c;
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.task-priority-badge--neutral {
+  color: #4b5563;
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.gallery-priority-badges {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}

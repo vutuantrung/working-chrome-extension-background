@@ -1,0 +1,570 @@
+/*
+ * App-wide visual language derived from the reference dashboard.
+ * Keep component markup and labels unchanged; this file only normalizes appearance.
+ * Imported after all feature/component styles.
+ */
+
+/* =========================
+ * Global surfaces + controls
+ * ========================= */
+.app-container,
+.app-content,
+.automation-tab-container,
+.persona-page,
+.platform-select,
+.fb-login-mode-container,
+.case-detail,
+.task-monitor-container {
+  color: var(--ref-text);
+}
+
+button,
+input,
+textarea,
+select {
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select,
+.modern-input-wrapper,
+.image-detail-modal__input,
+.image-detail-modal__textarea,
+.case-detail__description-input,
+.case-detail__url-input,
+.case-detail__inline-name-input,
+.json-editor__textarea {
+  background: var(--ref-surface);
+  border-color: var(--ref-border);
+  border-radius: var(--ref-radius-sm);
+  color: var(--ref-text);
+  box-shadow: none;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):hover,
+textarea:hover,
+select:hover,
+.modern-input-wrapper:hover,
+.image-detail-modal__input:hover,
+.image-detail-modal__textarea:hover,
+.case-detail__description-input:hover,
+.case-detail__url-input:hover,
+.case-detail__inline-name-input:hover {
+  border-color: #c4ccda;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+textarea:focus,
+select:focus,
+.modern-input-wrapper:focus-within,
+.image-detail-modal__input:focus,
+.image-detail-modal__textarea:focus,
+.case-detail__description-input:focus,
+.case-detail__url-input:focus,
+.case-detail__inline-name-input:focus,
+.json-editor__textarea:focus {
+  outline: none;
+  border-color: var(--ref-accent);
+  box-shadow: 0 0 0 2px var(--color-primary-alpha-8);
+}
+
+/* =========================
+ * Buttons: compact dashboard language
+ * ========================= */
+.button,
+.modern-action-btn,
+.modern-login-btn,
+.automation-submit-btn,
+.persona-primary-btn,
+.persona-back-btn,
+.platform-back-btn,
+.confirm-modal__btn,
+.image-detail-modal__done,
+.image-detail-modal__download,
+.case-detail__save-button,
+.case-detail__add-button,
+.case-detail__open-sidebar-button,
+.case-sidebar__pagination-button,
+.group-pagination__btn,
+.group-row__link-btn,
+.multi-select-filter__trigger,
+.multi-select-filter__clear-btn,
+.fb-login-mode-btn {
+  border-radius: var(--ref-radius-md);
+  box-shadow: none;
+  font-weight: var(--font-weight-medium);
+}
+
+.modern-login-btn,
+.automation-submit-btn,
+.persona-primary-btn,
+.confirm-modal__btn--confirm,
+.image-detail-modal__done,
+.case-detail__save-button,
+.case-detail__add-button {
+  background: var(--ref-accent);
+  border-color: var(--ref-accent);
+  color: #fff;
+}
+
+.modern-login-btn:hover,
+.automation-submit-btn:hover,
+.persona-primary-btn:hover,
+.confirm-modal__btn--confirm:hover,
+.image-detail-modal__done:hover,
+.case-detail__save-button:hover,
+.case-detail__add-button:hover {
+  background: var(--ref-accent-hover);
+  border-color: var(--ref-accent-hover);
+  transform: none;
+  box-shadow: none;
+}
+
+.persona-back-btn,
+.platform-back-btn,
+.confirm-modal__btn--cancel,
+.image-detail-modal__download,
+.case-detail__open-sidebar-button,
+.case-sidebar__pagination-button,
+.group-pagination__btn,
+.multi-select-filter__trigger,
+.multi-select-filter__clear-btn,
+.group-row__link-btn {
+  background: var(--ref-surface);
+  border: 1px solid var(--ref-border);
+  color: var(--ref-text-secondary);
+}
+
+.persona-back-btn:hover,
+.platform-back-btn:hover,
+.confirm-modal__btn--cancel:hover,
+.image-detail-modal__download:hover,
+.case-detail__open-sidebar-button:hover,
+.case-sidebar__pagination-button:hover,
+.group-pagination__btn:hover,
+.multi-select-filter__trigger:hover,
+.multi-select-filter__clear-btn:hover,
+.group-row__link-btn:hover {
+  background: #fffafb;
+  border-color: var(--ref-accent-border);
+  color: var(--ref-accent);
+  transform: none;
+  box-shadow: none;
+}
+
+/* Destructive action stays semantic but adopts compact visual language. */
+.case-detail__thumbnail-action--danger,
+.confirm-modal__btn--danger {
+  border-radius: var(--ref-radius-sm);
+  box-shadow: none;
+}
+
+/* =========================
+ * Header / shell
+ * ========================= */
+.modern-navigation {
+  margin-bottom: 0;
+  padding: 10px 16px;
+  background: var(--ref-surface);
+  border-bottom: 1px solid var(--ref-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.user-avatar {
+  width: 38px;
+  height: 38px;
+  background: var(--ref-accent-soft);
+  border: 1px solid var(--ref-accent-border);
+  border-radius: 50%;
+  color: var(--ref-accent);
+  box-shadow: none;
+}
+
+.user-greeting,
+.user-name-display {
+  color: var(--ref-text);
+}
+
+.user-greeting {
+  color: var(--ref-text-muted);
+}
+
+.modern-monitoring-btn,
+.modern-logout-btn {
+  height: 36px;
+  background: var(--ref-surface);
+  border: 1px solid var(--ref-border);
+  border-radius: var(--ref-radius-md);
+  color: var(--ref-text-secondary);
+  box-shadow: none;
+}
+
+.modern-monitoring-btn:hover,
+.modern-logout-btn:hover {
+  background: var(--ref-accent-soft);
+  border-color: var(--ref-accent-border) !important;
+  color: var(--ref-accent);
+  transform: none;
+  box-shadow: none;
+}
+
+/* =========================
+ * Bottom navigation mirrors TopTabs visual language
+ * ========================= */
+.bottom-nav {
+  background: var(--ref-surface);
+  border-top: 1px solid var(--ref-border);
+  box-shadow: none;
+}
+
+.bottom-nav__item {
+  position: relative;
+  border-radius: 0;
+  color: #77789b;
+  background: transparent;
+}
+
+.bottom-nav__item:hover {
+  background: #fffafb;
+  color: var(--ref-accent);
+}
+
+.bottom-nav__item--active {
+  background: transparent;
+  color: var(--ref-accent);
+}
+
+.bottom-nav__item--active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18%;
+  right: 18%;
+  height: 2px;
+  background: var(--ref-accent);
+  border-radius: 0 0 2px 2px;
+}
+
+/* =========================
+ * Cards / panels
+ * ========================= */
+.automation-card,
+.automation-section,
+.persona-panel,
+.persona-card,
+.status-screen,
+.case-detail,
+.image-detail-modal__dialog,
+.confirm-modal,
+.schedule-item,
+.platform-select__card,
+.fb-login-mode-btn {
+  background: var(--ref-surface);
+  border-color: var(--ref-border);
+  border-radius: var(--ref-radius-md);
+  box-shadow: var(--ref-shadow-soft);
+}
+
+.automation-card:hover,
+.persona-card:hover,
+.platform-select__card:hover,
+.fb-login-mode-btn:hover {
+  border-color: var(--ref-accent-border);
+  box-shadow: 0 2px 8px rgba(39, 53, 82, 0.06);
+  transform: none;
+}
+
+/* =========================
+ * Section headings: text + subtle bottom rule like TopTabs
+ * ========================= */
+.section-header,
+.control-header,
+.persona-panel__header,
+.case-detail__header,
+.case-sidebar__header,
+.confirm-modal__header {
+  border-color: var(--ref-border);
+}
+
+.section-header,
+.control-title,
+.persona-panel__title,
+.case-sidebar__title,
+.confirm-modal__title,
+.platform-select-title,
+.modern-login-title {
+  color: var(--ref-text);
+}
+
+.section-header,
+.monitor-title {
+  color: var(--ref-text);
+}
+
+.section-header::before {
+  content: "";
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--ref-accent);
+}
+
+/* =========================
+ * Status / badges
+ * ========================= */
+.priority-badge,
+.persona-status-badge,
+.case-detail__status-badge,
+.platform-badge,
+.login-mode-platform-badge {
+  border-radius: var(--ref-radius-sm);
+  box-shadow: none;
+}
+
+.case-detail__status-badge--unsaved,
+.case-detail__save-button--unsaved {
+  border-color: var(--ref-accent-border);
+}
+
+.case-detail__saved-badge {
+  color: var(--ref-success);
+  background: var(--ref-success-bg);
+  border-radius: var(--ref-radius-sm);
+}
+
+/* =========================
+ * Task monitor: same information hierarchy as TopTabs
+ * ========================= */
+.monitor-header {
+  border-bottom: 1px solid var(--ref-border);
+}
+
+.stats-grid {
+  border-color: var(--ref-border);
+  border-radius: var(--ref-radius-md);
+  box-shadow: none;
+}
+
+.stat-card+.stat-card::before {
+  background: var(--ref-border);
+}
+
+.stat-label {
+  color: #77789b;
+}
+
+.task-section {
+  background: var(--ref-surface);
+  border: 1px solid var(--ref-border);
+  border-radius: var(--ref-radius-md);
+  padding: 12px;
+}
+
+/* =========================
+ * Persona
+ * ========================= */
+.persona-page {
+  background: var(--ref-bg);
+}
+
+.persona-panel {
+  border: 1px solid var(--ref-border);
+}
+
+.persona-card {
+  border: 1px solid var(--ref-border);
+}
+
+.persona-card--selected,
+.persona-card[aria-selected="true"] {
+  border-color: var(--ref-accent);
+  background: var(--ref-accent-soft);
+}
+
+.persona-card__check {
+  background: var(--ref-accent);
+  color: #fff;
+}
+
+.persona-card__name,
+.persona-card__title-row {
+  color: var(--ref-text);
+}
+
+.persona-card__meta,
+.persona-card__country,
+.persona-card__job {
+  color: var(--ref-text-secondary);
+}
+
+/* =========================
+ * Platform selection/login
+ * ========================= */
+.platform-select,
+.fb-login-mode-container {
+  background: var(--ref-bg);
+}
+
+.platform-select__card {
+  position: relative;
+  background-image: none !important;
+}
+
+.platform-select__card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: transparent;
+}
+
+.platform-select__card:hover::after {
+  background: var(--ref-accent);
+}
+
+.platform-select__label,
+.login-mode-platform-name {
+  color: var(--ref-text);
+}
+
+/* =========================
+ * Eviden Studio
+ * ========================= */
+.case-sidebar {
+  background: var(--ref-surface);
+  border-color: var(--ref-border);
+}
+
+.case-sidebar__header,
+.case-sidebar__search-area,
+.case-sidebar__pagination {
+  border-color: var(--ref-border);
+}
+
+.case-sidebar-item__button {
+  border-radius: var(--ref-radius-sm);
+  background: transparent;
+}
+
+.case-sidebar-item__button:hover {
+  background: #faf7f8;
+}
+
+.case-sidebar-item__button--selected {
+  background: var(--ref-accent-soft);
+}
+
+.case-sidebar-item__button--selected .case-sidebar-item__name {
+  color: var(--ref-accent);
+}
+
+.case-detail {
+  background: var(--ref-surface);
+}
+
+.case-detail__gallery {
+  gap: 8px;
+}
+
+.case-detail__item {
+  border: 1px solid var(--ref-border);
+  border-radius: var(--ref-radius-sm);
+  box-shadow: none;
+}
+
+.case-detail__item:hover {
+  border-color: var(--ref-accent-border);
+}
+
+.image-detail-modal,
+.confirm-modal-overlay {
+  background: rgba(28, 35, 50, 0.42);
+}
+
+.image-detail-modal__dialog,
+.confirm-modal {
+  border: 1px solid var(--ref-border);
+}
+
+.image-detail-modal__footer,
+.confirm-modal__actions {
+  border-color: var(--ref-border);
+  background: #fafbfc;
+}
+
+/* =========================
+ * Dropdowns / filters
+ * ========================= */
+.multi-select-filter__dropdown {
+  border-color: var(--ref-border);
+  border-radius: var(--ref-radius-md);
+  box-shadow: 0 8px 24px rgba(39, 53, 82, 0.12);
+}
+
+.multi-select-filter__option:hover {
+  background: var(--ref-accent-soft);
+}
+
+.multi-select-filter__option input[type="checkbox"] {
+  accent-color: var(--ref-accent);
+}
+
+/* =========================
+ * Error/empty/loading states
+ * ========================= */
+.modern-error-message,
+.automation-submit-error,
+.case-detail__error-banner,
+.persona-panel__error {
+  border-radius: var(--ref-radius-sm);
+  box-shadow: none;
+}
+
+.empty-state,
+.group-empty,
+.persona-panel__empty,
+.persona-no-options,
+.persona-unavailable {
+  color: var(--ref-text-muted);
+}
+
+/* =========================
+ * Compact scrollbar treatment
+ * ========================= */
+.custom-scroll::-webkit-scrollbar,
+.case-sidebar__list::-webkit-scrollbar,
+.task-monitor-container::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb,
+.case-sidebar__list::-webkit-scrollbar-thumb,
+.task-monitor-container::-webkit-scrollbar-thumb {
+  background: #c8cfdb;
+  border-radius: 999px;
+}
+
+/* =========================
+ * Responsive: retain compact admin layout
+ * ========================= */
+@media (max-width: 640px) {
+  .modern-navigation {
+    padding: 8px 10px;
+  }
+
+  .automation-card,
+  .automation-section,
+  .persona-panel,
+  .task-section {
+    border-radius: var(--ref-radius-sm);
+  }
+}

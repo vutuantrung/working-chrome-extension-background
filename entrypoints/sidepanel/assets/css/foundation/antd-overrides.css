@@ -1,0 +1,387 @@
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-transparent);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+/* Ant Design Tooltip internal scroll & wrapping */
+.ant-tooltip {
+  pointer-events: auto !important;
+}
+
+.ant-tooltip-inner {
+  word-break: break-word;
+  max-height: 50vh;
+  overflow-y: auto !important;
+  pointer-events: auto !important;
+  user-select: text;
+  padding: 8px 12px 8px 10px;
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--color-tooltip-scrollbar-thumb, rgba(255, 255, 255, 0.55)) var(--color-tooltip-scrollbar-track, rgba(255, 255, 255, 0.12)) !important;
+}
+
+.ant-tooltip-inner::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  display: block !important;
+}
+
+.ant-tooltip-inner::-webkit-scrollbar-track {
+  background: var(--color-tooltip-scrollbar-track, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: 6px !important;
+  margin: 4px 0 !important;
+}
+
+.ant-tooltip-inner::-webkit-scrollbar-thumb {
+  background: var(--color-tooltip-scrollbar-thumb, rgba(255, 255, 255, 0.55)) !important;
+  border-radius: 6px !important;
+  transition: background 0.15s ease !important;
+}
+
+.ant-tooltip-inner::-webkit-scrollbar-thumb:hover {
+  background: var(--color-tooltip-scrollbar-thumb-hover, rgba(255, 255, 255, 0.85)) !important;
+}
+
+/* Align Ant Design drawers to match the centered app width on iPads/Tablets */
+@media (min-width: 481px) and (max-width: 999px) {
+  .ant-drawer:not(.full-screen-drawer) {
+    max-width: 480px !important;
+    margin: 0 auto !important;
+  }
+}
+
+/* Ensure focus state matches hover state for Input and Select components */
+input:focus:not(.error):not(.is-invalid),
+select:focus:not(.error):not(.is-invalid),
+textarea:focus:not(.error):not(.is-invalid) {
+  border-color: var(--color-primary) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.ant-input:not(.ant-input-status-error):not(.ant-form-item-has-error *):focus,
+.ant-input:not(.ant-input-status-error):not(.ant-form-item-has-error *):focus-within,
+.ant-input-affix-wrapper:not(.ant-input-affix-wrapper-status-error):not(.ant-form-item-has-error *):focus,
+.ant-input-affix-wrapper:not(.ant-input-affix-wrapper-status-error):not(.ant-form-item-has-error *):focus-within,
+.ant-input-affix-wrapper-focused:not(.ant-input-affix-wrapper-status-error):not(.ant-form-item-has-error *) {
+  border-color: var(--color-primary) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.ant-select-focused:not(.ant-select-disabled).ant-select:not(.ant-select-customize-input):not(.ant-select-status-error):not(.ant-form-item-has-error *) .ant-select-selector,
+.ant-select-selector:focus,
+.ant-select-selector:focus-within {
+  border-color: var(--color-primary) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Input component border error status styling using --color-error */
+.ant-input-status-error,
+.ant-input-status-error:hover,
+.ant-input-status-error:focus,
+.ant-input-status-error:focus-within,
+.ant-input-affix-wrapper-status-error,
+.ant-input-affix-wrapper-status-error:hover,
+.ant-input-affix-wrapper-status-error:focus,
+.ant-input-affix-wrapper-status-error:focus-within,
+.ant-input-affix-wrapper-status-error.ant-input-affix-wrapper-focused,
+.ant-form-item-has-error .ant-input,
+.ant-form-item-has-error .ant-input:hover,
+.ant-form-item-has-error .ant-input:focus,
+.ant-form-item-has-error .ant-input:focus-within,
+.ant-form-item-has-error .ant-input-affix-wrapper,
+.ant-form-item-has-error .ant-input-affix-wrapper:hover,
+.ant-form-item-has-error .ant-input-affix-wrapper:focus,
+.ant-form-item-has-error .ant-input-number,
+.ant-form-item-has-error .ant-select-selector,
+.ant-form-item-has-error .ant-picker,
+input.error,
+input.is-invalid {
+  border-color: var(--color-error) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.ant-form-item-explain-error,
+.ant-form-item-has-error .ant-form-item-explain {
+  color: var(--color-error) !important;
+}
+
+/* Input, Search, Select text color using --color-text-base */
+input,
+textarea,
+select,
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-affix-wrapper input,
+.ant-input-search,
+.ant-input-search input,
+.ant-input-number-input,
+.ant-picker-input>input,
+.ant-select,
+.ant-select-selection-search-input,
+.ant-select-selection-item,
+.ant-select-selection-item-content,
+.ant-select-selector,
+.ant-select-tree-title,
+.ant-select-dropdown .ant-select-item-option-content,
+.ant-dropdown-menu-item,
+.ant-dropdown-menu-title-content {
+  color: var(--color-text-base) !important;
+}
+
+/* Filter & Form labels text color using --color-text-base */
+.ant-form-item-label>label,
+.filter-label,
+label {
+  color: var(--color-text-base);
+}
+
+/* Selected option background and text color in Select & TreeSelect dropdowns */
+.ant-select-dropdown .ant-select-item-option-selected,
+.ant-select-tree-dropdown .ant-select-tree-node-selected,
+.ant-select-tree-dropdown .ant-select-tree-node-content-wrapper.ant-select-tree-node-selected,
+.ant-tree-select-dropdown .ant-select-tree-node-selected,
+.ant-tree-select-dropdown .ant-select-tree-node-content-wrapper.ant-select-tree-node-selected {
+  background-color: var(--color-primary-lighter) !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-selected .ant-select-item-option-content,
+.ant-select-tree-dropdown .ant-select-tree-node-selected .ant-select-tree-title,
+.ant-tree-select-dropdown .ant-select-tree-node-selected .ant-select-tree-title {
+  color: var(--color-text-base) !important;
+  font-weight: 600 !important;
+}
+
+/* TreeSelect & Tree checkboxes primary color and hover state */
+.ant-select-tree-checkbox .ant-select-tree-checkbox-inner,
+.ant-tree-checkbox .ant-tree-checkbox-inner,
+.ant-checkbox .ant-checkbox-inner {
+  transition: border-color 0.15s ease, background-color 0.15s ease !important;
+}
+
+.ant-select-tree-checkbox-checked .ant-select-tree-checkbox-inner,
+.ant-tree-checkbox-checked .ant-tree-checkbox-inner,
+.ant-checkbox-checked .ant-checkbox-inner,
+.ant-select-tree-treenode:hover .ant-select-tree-checkbox-checked .ant-select-tree-checkbox-inner,
+.ant-select-tree-treenode-hover .ant-select-tree-checkbox-checked .ant-select-tree-checkbox-inner,
+.ant-select-tree-treenode-active .ant-select-tree-checkbox-checked .ant-select-tree-checkbox-inner,
+.ant-tree-treenode:hover .ant-tree-checkbox-checked .ant-tree-checkbox-inner,
+.ant-tree-treenode-hover .ant-tree-checkbox-checked .ant-tree-checkbox-inner,
+.ant-tree-treenode-active .ant-tree-checkbox-checked .ant-tree-checkbox-inner,
+.ant-select-tree-dropdown .ant-select-tree-checkbox-checked .ant-select-tree-checkbox-inner,
+.ant-tree-select-dropdown .ant-select-tree-checkbox-checked .ant-tree-checkbox-inner {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+.ant-select-tree-checkbox-checked:hover .ant-select-tree-checkbox-inner,
+.ant-select-tree-treenode:hover .ant-select-tree-checkbox-checked:hover .ant-select-tree-checkbox-inner,
+.ant-tree-checkbox-checked:hover .ant-tree-checkbox-inner,
+.ant-checkbox-checked:hover .ant-checkbox-inner {
+  background-color: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+}
+
+.ant-select-tree-checkbox-indeterminate .ant-select-tree-checkbox-inner::after,
+.ant-tree-checkbox-indeterminate .ant-tree-checkbox-inner::after,
+.ant-checkbox-indeterminate .ant-checkbox-inner::after {
+  background-color: var(--color-primary) !important;
+}
+
+.ant-select-tree-checkbox-indeterminate .ant-select-tree-checkbox-inner,
+.ant-tree-checkbox-indeterminate .ant-tree-checkbox-inner,
+.ant-checkbox-indeterminate .ant-checkbox-inner,
+.ant-select-tree-treenode:hover .ant-select-tree-checkbox-indeterminate .ant-select-tree-checkbox-inner,
+.ant-tree-treenode:hover .ant-tree-checkbox-indeterminate .ant-tree-checkbox-inner {
+  border-color: var(--color-primary) !important;
+}
+
+/* TreeSelect & Tree & Checkbox Hover state - Turn border primary for unchecked checkboxes */
+.ant-select-tree-checkbox:hover .ant-select-tree-checkbox-inner,
+.ant-select-tree-checkbox-wrapper:hover .ant-select-tree-checkbox-inner,
+.ant-select-tree-treenode:hover .ant-select-tree-checkbox .ant-select-tree-checkbox-inner,
+.ant-select-tree-treenode:hover .ant-select-tree-node-content-wrapper~.ant-select-tree-checkbox .ant-select-tree-checkbox-inner,
+.ant-select-tree-treenode-hover .ant-select-tree-checkbox .ant-select-tree-checkbox-inner,
+.ant-select-tree-treenode-active .ant-select-tree-checkbox .ant-select-tree-checkbox-inner,
+.ant-tree-checkbox:hover .ant-tree-checkbox-inner,
+.ant-tree-checkbox-wrapper:hover .ant-tree-checkbox-inner,
+.ant-tree-treenode:hover .ant-tree-checkbox .ant-tree-checkbox-inner,
+.ant-tree-treenode-hover .ant-tree-checkbox .ant-tree-checkbox-inner,
+.ant-tree-treenode-active .ant-tree-checkbox .ant-tree-checkbox-inner,
+.ant-checkbox:hover .ant-checkbox-inner,
+.ant-checkbox-wrapper:hover .ant-checkbox-inner,
+.ant-select-tree-dropdown .ant-select-tree-checkbox:hover .ant-select-tree-checkbox-inner,
+.ant-select-tree-dropdown .ant-select-tree-treenode:hover .ant-select-tree-checkbox .ant-select-tree-checkbox-inner,
+.ant-tree-select-dropdown .ant-select-tree-checkbox:hover .ant-select-tree-checkbox-inner,
+.ant-tree-select-dropdown .ant-select-tree-treenode:hover .ant-select-tree-checkbox .ant-select-tree-checkbox-inner {
+  border-color: var(--color-primary) !important;
+}
+
+/* Ant Design RangePicker & DatePicker range selection styling */
+.ant-picker-cell-in-range,
+.ant-picker-cell-in-range::before,
+.ant-picker-cell-in-range.ant-picker-cell-range-hover::before,
+.ant-picker-cell-range-hover::before,
+.ant-picker-cell-range-hover-cell::before,
+.ant-picker-dropdown .ant-picker-cell-in-range,
+.ant-picker-dropdown .ant-picker-cell-in-range::before,
+.ant-picker-dropdown .ant-picker-cell-in-range.ant-picker-cell-range-hover::before,
+.ant-picker-dropdown .ant-picker-cell-range-hover::before,
+.ant-picker-dropdown .ant-picker-cell-range-hover-cell::before {
+  background: var(--color-primary-lighter) !important;
+  background-color: var(--color-primary-lighter) !important;
+}
+
+.ant-picker-cell-in-range>.ant-picker-cell-inner,
+.ant-picker-cell-in-range .ant-picker-cell-inner,
+.ant-picker-dropdown .ant-picker-cell-in-range>.ant-picker-cell-inner,
+.ant-picker-dropdown .ant-picker-cell-in-range .ant-picker-cell-inner {
+  color: var(--color-primary-dark) !important;
+  font-weight: 500 !important;
+}
+
+.ant-picker-cell-range-start::before,
+.ant-picker-cell-range-start.ant-picker-cell-range-hover-start::before {
+  background: linear-gradient(to right, var(--color-transparent) 50%, var(--color-primary-lighter) 50%) !important;
+}
+
+.ant-picker-cell-range-end::before,
+.ant-picker-cell-range-end.ant-picker-cell-range-hover-end::before {
+  background: linear-gradient(to right, var(--color-primary-lighter) 50%, var(--color-transparent) 50%) !important;
+}
+
+.ant-picker-cell-range-start>.ant-picker-cell-inner,
+.ant-picker-cell-range-end>.ant-picker-cell-inner,
+.ant-picker-cell-selected>.ant-picker-cell-inner,
+.ant-picker-cell-selected.ant-picker-cell-today>.ant-picker-cell-inner,
+.ant-picker-dropdown .ant-picker-cell-selected>.ant-picker-cell-inner,
+.ant-picker-dropdown .ant-picker-cell-selected.ant-picker-cell-today>.ant-picker-cell-inner {
+  background-color: var(--color-primary) !important;
+  background: var(--color-primary) !important;
+  color: var(--color-white) !important;
+  border-radius: 6px !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.ant-picker-cell-today .ant-picker-cell-inner::before,
+.ant-picker-cell-selected .ant-picker-cell-inner::before,
+.ant-picker-cell-selected::before,
+.ant-picker-cell-selected::after {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Ant Design TimePicker & DatePicker Time Panel Selected Cell styling */
+.ant-picker-time-panel-cell-selected,
+.ant-picker-time-panel-cell-selected .ant-picker-time-panel-cell-inner,
+.ant-picker-dropdown .ant-picker-time-panel-cell-selected,
+.ant-picker-dropdown .ant-picker-time-panel-cell-selected .ant-picker-time-panel-cell-inner,
+.ant-picker-time-panel-column>li.ant-picker-time-panel-cell-selected,
+.ant-picker-time-panel-column>li.ant-picker-time-panel-cell-selected .ant-picker-time-panel-cell-inner,
+.ant-picker-dropdown .ant-picker-time-panel-column>li.ant-picker-time-panel-cell-selected,
+.ant-picker-dropdown .ant-picker-time-panel-column>li.ant-picker-time-panel-cell-selected .ant-picker-time-panel-cell-inner {
+  background-color: var(--color-primary) !important;
+  background: var(--color-primary) !important;
+  color: var(--color-white) !important;
+}
+
+/* Ant Design DatePicker OK Confirmation Button styling */
+.ant-picker-dropdown .ant-picker-ok button,
+.ant-picker-dropdown .ant-picker-ranges .ant-picker-ok button {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-white) !important;
+  border-radius: 4px !important;
+  font-size: var(--font-size-md) !important;
+  font-weight: 500 !important;
+  height: 28px !important;
+  padding: 0 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+  transition: background-color 0.2s, border-color 0.2s !important;
+}
+
+.ant-picker-dropdown .ant-picker-ok button:hover,
+.ant-picker-dropdown .ant-picker-ranges .ant-picker-ok button:hover {
+  background-color: var(--color-primary-darker) !important;
+  border-color: var(--color-primary-darker) !important;
+  color: var(--color-white) !important;
+}
+
+.ant-picker-dropdown .ant-picker-ok button:disabled,
+.ant-picker-dropdown .ant-picker-ranges .ant-picker-ok button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* Table and Spin loading indicator primary color styling */
+.ant-spin-dot-item,
+.ant-spin-dot i,
+.ant-spin .ant-spin-dot-item,
+.ant-spin-nested-loading .ant-spin-dot-item,
+.ant-table-wrapper .ant-spin-dot-item,
+.ant-table-wrapper .ant-spin-dot i {
+  background-color: var(--color-primary) !important;
+}
+
+.ant-spin-text,
+.ant-spin-nested-loading .ant-spin-text,
+.ant-table-wrapper .ant-spin-text {
+  color: var(--color-primary) !important;
+}
+
+/* Action button & Icon button hover background color: primary lighter */
+.actionBtn:hover,
+.btnIcon:hover,
+.iconBtn:hover,
+button.actionBtn:hover,
+button.btnIcon:hover,
+button.iconBtn:hover,
+.ant-btn-icon-only:hover {
+  background-color: var(--color-primary-lighter) !important;
+}
+
+
+/* Global Ant Design primary controls */
+.ant-btn-primary,
+.ant-btn-color-primary,
+.ant-switch.ant-switch-checked {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+.ant-btn-primary:hover,
+.ant-btn-color-primary:hover,
+.ant-switch.ant-switch-checked:hover {
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+}
+
+.ant-checkbox-checked .ant-checkbox-inner,
+.ant-radio-wrapper .ant-radio-checked .ant-radio-inner {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}

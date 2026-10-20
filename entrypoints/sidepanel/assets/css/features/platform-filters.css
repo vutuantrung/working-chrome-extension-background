@@ -1,0 +1,204 @@
+/* Override focus outlines on interactive components (remove dark borders on click) */
+.top-tabs__tab:focus,
+.bottom-nav__item:focus,
+.group-filter-pill:focus,
+.group-pagination__btn:focus,
+.multi-select-filter__trigger:focus,
+.top-tabs__tab:focus-visible,
+.bottom-nav__item:focus-visible,
+.group-filter-pill:focus-visible,
+.group-pagination__btn:focus-visible,
+.multi-select-filter__trigger:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.group-filter-pill--active:focus,
+.group-filter-pill--active:focus-visible,
+.group-pagination__num--active:focus,
+.group-pagination__num--active:focus-visible {
+  border-color: var(--color-primary) !important;
+}
+
+/* Global version footer docked at bottom */
+.global-version-footer {
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: #94a3b8;
+  background: #ffffff;
+  padding: 6px 0;
+  border-top: 1px solid #f1f5f9;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+/* ========== Platform Select Grid ========== */
+.platform-select-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f4ff;
+  padding: 1.5rem;
+}
+
+.platform-select-container {
+  width: 100%;
+  max-width: 420px;
+}
+
+.platform-select-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.platform-select-title {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0.4rem;
+  letter-spacing: -0.02em;
+}
+
+.platform-select-subtitle {
+  color: #64748b;
+  font-size: var(--font-size-md);
+  margin: 0;
+}
+
+/* Advanced Filters in Group Page */
+.group-page__advanced-filters {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.multi-select-filter {
+  position: relative;
+  display: inline-block;
+  flex: 1;
+}
+
+.multi-select-filter__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none !important;
+}
+
+.multi-select-filter__trigger:focus,
+.multi-select-filter__trigger:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.multi-select-filter__trigger:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+.multi-select-filter__trigger--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-lighter);
+  color: var(--color-primary-hover);
+  font-weight: 600;
+}
+
+.multi-select-filter__leading-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  flex-shrink: 0;
+}
+
+.multi-select-filter__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.multi-select-filter__arrow {
+  color: #64748b;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.multi-select-filter__arrow.open {
+  transform: rotate(180deg);
+}
+
+.multi-select-filter__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 6px 0;
+  max-height: 220px;
+  overflow-y: auto;
+  min-width: 140px;
+}
+
+.multi-select-filter__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: var(--font-size-sm);
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  user-select: none;
+}
+
+.multi-select-filter__option:hover {
+  background: #f1f5f9;
+}
+
+.multi-select-filter__option input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.multi-select-filter__footer {
+  border-top: 1px solid #f1f5f9;
+  padding: 4px 8px;
+  margin-top: 4px;
+  text-align: right;
+}
+
+.multi-select-filter__clear-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.multi-select-filter__clear-btn:hover {
+  background: #fef2f2;
+  text-decoration: underline;
+}

@@ -1,0 +1,204 @@
+
+:root {
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light;
+  color: var(--color-text-base);
+  background-color: var(--color-bg-layout);
+
+  --external-ui-primary: var(--color-primary);
+  --external-ui-primary-soft: var(--color-primary-lighter);
+  --external-ui-surface: var(--color-white);
+  --external-ui-surface-alt: var(--color-bg-card);
+  --external-ui-border: var(--color-border);
+  --external-ui-text: var(--color-text-base);
+  --external-ui-text-muted: var(--color-text-secondary);
+  --external-ui-shadow: 0 10px 30px var(--color-primary-alpha-8);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: var(--color-primary);
+}
+
+body {
+  margin: 0;
+  min-width: 0;
+  min-height: 0;
+  display: block;
+  background: #f6f7fb;
+    color: var(--color-text-base);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+h1 {
+  font-size: var(--font-size-display);
+  line-height: 1.1;
+}
+
+.button {
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--color-primary);
+  color: #fff;
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  transition: background-color 0.3s;
+  border-radius: 7px;
+    box-shadow: none;
+    font-weight: var(--font-weight-medium);
+}
+
+.button:hover {
+  background-color: var(--color-primary-hover);
+}
+
+html {
+  background: #f6f7fb;
+    color: var(--color-text-base);
+}
+
+#root {
+  background: #f6f7fb;
+    color: var(--color-text-base);
+}
+
+button {
+  transition:
+      border-color 0.16s ease,
+      background-color 0.16s ease,
+      color 0.16s ease,
+      box-shadow 0.16s ease;
+}
+
+input {
+  transition:
+      border-color 0.16s ease,
+      background-color 0.16s ease,
+      color 0.16s ease,
+      box-shadow 0.16s ease;
+}
+
+textarea {
+  transition:
+      border-color 0.16s ease,
+      background-color 0.16s ease,
+      color 0.16s ease,
+      box-shadow 0.16s ease;
+  background: #ffffff;
+    border-color: #dce3ee;
+    border-radius: 4px;
+    color: var(--color-text-base);
+    box-shadow: none;
+}
+
+select {
+  transition:
+      border-color 0.16s ease,
+      background-color 0.16s ease,
+      color 0.16s ease,
+      box-shadow 0.16s ease;
+  background: #ffffff;
+    border-color: #dce3ee;
+    border-radius: 4px;
+    color: var(--color-text-base);
+    box-shadow: none;
+}
+
+input:not([type="checkbox"]):not([type="radio"]) {
+  background: #ffffff;
+    border-color: #dce3ee;
+    border-radius: 4px;
+    color: var(--color-text-base);
+    box-shadow: none;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):hover {
+  border-color: #c4ccda;
+}
+
+textarea:hover {
+  border-color: #c4ccda;
+}
+
+select:hover {
+  border-color: #c4ccda;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus {
+  outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-alpha-8);
+}
+
+textarea:focus {
+  outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-alpha-8);
+}
+
+select:focus {
+  outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-alpha-8);
+}
+
+
+/* Global primary color conventions */
+:where(body, #root) {
+  color: var(--color-text-base);
+}
+
+:where(svg):not([data-preserve-color="true"]) {
+  color: var(--color-primary);
+}
+
+:where(button, a) > svg:not([data-preserve-color="true"]),
+:where(button, a) svg:not([data-preserve-color="true"]) {
+  color: currentColor;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-primary);
+}
+
+button:not(:disabled):hover {
+  border-color: var(--color-primary);
+}
+
+button:not(:disabled):focus-visible {
+  outline: 2px solid var(--color-primary-alpha-20);
+  outline-offset: 2px;
+}
+
+/* Standalone icons use the app primary red. Icons inside controls follow text color. */
+svg:not([data-preserve-color="true"]) {
+  color: var(--color-primary) !important;
+}
+
+button svg:not([data-preserve-color="true"]),
+a svg:not([data-preserve-color="true"]),
+[role="button"] svg:not([data-preserve-color="true"]) {
+  color: currentColor !important;
+}

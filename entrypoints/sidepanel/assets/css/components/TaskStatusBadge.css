@@ -1,0 +1,72 @@
+.task-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.task-status-badge__icon {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  color: currentColor !important;
+}
+
+.task-status-badge__icon--spin {
+  animation: task-status-badge-spin 1s linear infinite;
+}
+
+.task-status-badge--running {
+  color: #0369a1;
+  background: #e0f2fe;
+  border-color: #bae6fd;
+}
+
+.task-status-badge--pending {
+  color: #a16207;
+  background: #fef3c7;
+  border-color: #fde68a;
+}
+
+.task-status-badge--finished {
+  color: #047857;
+  background: #d1fae5;
+  border-color: #a7f3d0;
+}
+
+.task-status-badge--canceled {
+  color: #b91c1c;
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
+.task-status-badge--neutral {
+  color: #4b5563;
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.gallery-task-status-badges {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 52px;
+  flex-wrap: wrap;
+}
+
+@keyframes task-status-badge-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

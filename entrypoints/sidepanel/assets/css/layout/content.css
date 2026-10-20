@@ -1,0 +1,86 @@
+/* Main scrollable content area between header/tabs and bottom nav */
+.app-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  color: var(--color-text-base);
+}
+
+.app-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.app-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.app-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #1a1a1a;
+  border-bottom: 1px solid #333;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.nav-link:hover {
+  background-color: #333;
+}
+
+.nav-user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logout-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: var(--font-size-md);
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background-color: #b91c1c;
+  border-color: transparent;
+}
+
+
+.page {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.content-wrapper {
+  background: #f6f7fb;
+}
+
+.app-container {
+  color: var(--color-text-base);
+}
