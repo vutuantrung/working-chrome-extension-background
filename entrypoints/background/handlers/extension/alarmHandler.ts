@@ -12,6 +12,7 @@ import { handleUpdateScheduleActivities, fetchScheduledActivities } from "../../
 import { StorageService } from "../../services/storageServices";
 import { ProxyService } from "../../services/proxyServices";
 import { syncFacebookJoinedGroups, syncFacebookPendingGroups } from "../../services/fbGroupSyncService";
+import { chromeApi } from "../../chrome-api";
 
 export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
   const storageService = StorageService.getInstance();
@@ -110,7 +111,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       const [_, activityId] = alarm?.name?.split("_");
       const activity = storageActivities?.find((t) => t.id === activityId);
       if (!activity) {
-        chrome.alarms.clear(alarm.name, (wasCleared) => { });
+        chromeApi.alarms.clear(alarm.name, (wasCleared) => { });
         return;
       }
 
@@ -187,10 +188,10 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
 
             lastTask.state = State.CANCELED;
             lastTask.result = "Canceled. Reason: Higher or equal priority task replaced."
-            chrome.tabs.sendMessage(
+            chromeApi.tabs.sendMessage(
               lastTask.tabId,
               { type: "STOP_TASK", taskId: lastTask.taskId },
-              () => { void chrome.runtime.lastError; },
+              () => { void chromeApi.runtime.lastError; },
             );
           }
 

@@ -26,6 +26,7 @@ import { clearSocialPlatformCookies } from "../../helpers/cookieUtils";
 import { StorageService } from "../../services/storageServices";
 import { ProxyService } from "../../services/proxyServices";
 import { ensureJoinedGroupsAlarmSchedule } from "../../services/fbGroupSyncService";
+import { chromeApi } from "../../chrome-api";
 
 // ========================================
 // INTERNAL HELPERS
@@ -450,8 +451,8 @@ export async function handleInitializeAfterLogin(
       }),
     });
 
-    await chrome.alarms.clear(SETTINGS_SYNC_ALARM);
-    chrome.alarms.create(SETTINGS_SYNC_ALARM, {
+    await chromeApi.alarms.clear(SETTINGS_SYNC_ALARM);
+    chromeApi.alarms.create(SETTINGS_SYNC_ALARM, {
       delayInMinutes: 2,
       periodInMinutes: 2,
     });
@@ -527,7 +528,7 @@ export async function handleClearDataAfterLogout(
 
     // Clear ALL alarms (MV3-safe): periodic, scheduleTask_*, sendFacebookPostData, etc.
     await new Promise<void>((resolve) => {
-      chrome.alarms.clearAll(() => resolve());
+      chromeApi.alarms.clearAll(() => resolve());
     });
 
     setTimeout(() => {
@@ -536,14 +537,14 @@ export async function handleClearDataAfterLogout(
 
     ProxyService.getInstance().clearProxy();
 
-    chrome.action.setBadgeText({ text: "0" });
-    chrome.action.setBadgeBackgroundColor({ color: "#0000FF" });
-
+    chromeApi.action.setBadgeText({ text: "0" });
+    chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
+    
     if (!skipCookies) {
       await clearSocialPlatformCookies();
     }
 
-    await chrome.storage.local.remove([
+    await chromeApi.storage.local.remove([
       "settings",
       "taskList",
       "activities",
@@ -572,8 +573,8 @@ export async function handleClearDataAfterLogout(
       "youtube_profiles_info",
     ]);
 
-    chrome.action.setBadgeText({ text: "0" });
-    chrome.action.setBadgeBackgroundColor({ color: "#0000FF" });
+    chromeApi.action.setBadgeText({ text: "0" });
+    chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
 
     console.log("[handleClearDataAfterLogout] Cleanup completed successfully");
 
@@ -601,16 +602,16 @@ export async function handleStartPeriodicCheck(
 ) {
   console.log("[handleStartPeriodicCheck] Starting periodic check alarm...");
   try {
-    const existingAlarm = await chrome.alarms.get("periodicCheck");
+    const existingAlarm = await chromeApi.alarms.get("periodicCheck");
     const periodicTimeCheck = 3;
     const shouldRecreate =
       !existingAlarm || existingAlarm.periodInMinutes !== periodicTimeCheck;
 
     if (shouldRecreate) {
       if (existingAlarm) {
-        await chrome.alarms.clear("periodicCheck");
+        await chromeApi.alarms.clear("periodicCheck");
       }
-      chrome.alarms.create("periodicCheck", {
+      chromeApi.alarms.create("periodicCheck", {
         delayInMinutes: 0.5,
         periodInMinutes: periodicTimeCheck,
       });
@@ -649,10 +650,10 @@ export async function handleSetBadgeText(
 ): Promise<void> {
   let badgeValue = Number(message.inputs.badgeData);
   if (!Number.isFinite(badgeValue) || badgeValue < 0) badgeValue = 0;
-  chrome.action.setBadgeText({
+  chromeApi.action.setBadgeText({
     text: badgeValue.toString(),
   });
-  chrome.action.setBadgeBackgroundColor({ color: "#0000FF" });
+  chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
 
   if (sendResponse) {
     sendResponse({ success: true });
@@ -699,11 +700,11 @@ export async function handleCancelTask(
     // Ask the content script (if any) to stop this task loop immediately.
     if (typeof task.tabId === "number" && task.tabId > 0) {
       try {
-        chrome.tabs.sendMessage(
+        chromeApi.tabs.sendMessage(
           task.tabId,
           { type: "STOP_TASK", taskId },
           () => {
-            void chrome.runtime.lastError;
+            void chromeApi.runtime.lastError;
           },
         );
       } catch { }
@@ -744,7 +745,7 @@ export async function handleDownloadImage(
   sendResponse?: (resp: any) => void,
 ): Promise<void> {
   const { url, fileName = "extImgDownload.jpg" } = message.inputs;
-  await chrome.downloads.download({
+  await chromeApi.downloads.download({
     url,
     filename: fileName,
     conflictAction: "uniquify",
@@ -862,7 +863,7 @@ export async function handleChangeTabUrl(
     }
 
     await StorageService.getInstance().setStorageCached({ taskList: storageTaskList });
-    chrome.tabs.update(parseInt(message.inputs.tabId), {
+    chromeApi.tabs.update(parseInt(message.inputs.tabId), {
       url: message.inputs.url,
     });
   }

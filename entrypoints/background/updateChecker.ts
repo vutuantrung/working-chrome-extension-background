@@ -2,10 +2,11 @@ import { bgState, EXTENSION_UPDATE_CHECK_URL, EXTENSION_UPDATE_COOKIE_NAME } fro
 import { safeTabsSendMessage } from "./helpers/tabUtils";
 import { ExtensionVersionInfo } from "./types/types";
 import { StorageService } from "./services/storageServices";
+import { chromeApi } from "./chrome-api";
 
 async function getUpdateCookieValue(): Promise<string | undefined> {
   try {
-    const cookie = await chrome.cookies.get({
+    const cookie = await chromeApi.cookies.get({
       url: import.meta.env.VITE_AXIOS_BASE_URL,
       name: EXTENSION_UPDATE_COOKIE_NAME,
     });
@@ -49,7 +50,7 @@ async function fetchLatestExtensionVersion(): Promise<ExtensionVersionInfo | nul
 
 export async function showExtensionUpdateInActiveTab(currentVersion: string, latestVersion: string, downloadUrl?: string): Promise<void> {
   try {
-    const [tab] = await chrome.tabs.query({
+    const [tab] = await chromeApi.tabs.query({
       active: true,
       lastFocusedWindow: true,
     });
@@ -80,7 +81,7 @@ export async function checkExtensionUpdateAndNotify(): Promise<void> {
       const latest = await fetchLatestExtensionVersion();
       if (!latest?.version) return;
 
-      const currentVersion = chrome.runtime.getManifest().version || "";
+      const currentVersion = chromeApi.runtime.getManifest().version || "";
       if (!currentVersion || currentVersion === latest.version) return;
 
       const { extensionUpdateNotice } =

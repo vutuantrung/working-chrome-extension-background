@@ -1,7 +1,10 @@
 import { ProxyService } from "../../services/proxyServices";
 import { StorageService } from "../../services/storageServices";
 
-export function webRequestOnAuthRequiredHandler(details: any, callback?: (response: chrome.webRequest.BlockingResponse) => void): chrome.webRequest.BlockingResponse | undefined {
+export function webRequestOnAuthRequiredHandler(
+    details: any,
+    callback?: (response: chrome.webRequest.BlockingResponse) => void
+): chrome.webRequest.BlockingResponse | undefined {
     // Only handle proxy auth challenges; leave site auth challenges untouched.
     if (!details?.isProxy) {
         // callback();

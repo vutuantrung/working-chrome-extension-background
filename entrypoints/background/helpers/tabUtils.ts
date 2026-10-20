@@ -2,11 +2,12 @@ import { bgState } from "../state";
 import { isSupportedPlatformUrl, PLATFORM_URL_PATTERNS } from "./tools";
 import { PLATFORM_TAB_GLOBS } from "./constants";
 import { StorageService } from "../services/storageServices";
+import { chromeApi } from "../chrome-api";
 
 export function safeTabsSendMessage(tabId: number, message: any, context: string): void {
   try {
-    chrome.tabs.sendMessage(tabId, message, () => {
-      const err = chrome.runtime.lastError;
+    chromeApi.tabs.sendMessage(tabId, message, () => {
+      const err = chromeApi.runtime.lastError;
       if (!err) return;
 
       // Common, non-fatal: tab has no content script (closed/reloaded/not matching).
@@ -25,8 +26,8 @@ export function safeTabsSendMessage(tabId: number, message: any, context: string
 export function safeTabsSendMessageWithResponse(tabId: number, message: any, context: string): Promise<any | null> {
   return new Promise((resolve) => {
     try {
-      chrome.tabs.sendMessage(tabId, message, (response) => {
-        const err = chrome.runtime.lastError;
+      chromeApi.tabs.sendMessage(tabId, message, (response) => {
+        const err = chromeApi.runtime.lastError;
         if (!err) {
           resolve(response ?? null);
           return;
@@ -51,11 +52,11 @@ export function safeTabsSendMessageWithResponse(tabId: number, message: any, con
 
 export async function getActiveFacebookTabId(): Promise<number | null> {
   try {
-    const allActiveTabs = await chrome.tabs.query({ active: true });
+    const allActiveTabs = await chromeApi.tabs.query({ active: true });
     const activeFacebook = allActiveTabs.find((tab) => tab?.id && tab?.url && PLATFORM_URL_PATTERNS.facebook.test(tab.url));
     if (activeFacebook?.id) return activeFacebook.id;
 
-    const allFacebookTabs = await chrome.tabs.query({ url: "*://*.facebook.com/*" });
+    const allFacebookTabs = await chromeApi.tabs.query({ url: "*://*.facebook.com/*" });
     return allFacebookTabs[0]?.id ?? null;
   } catch (error) {
     console.warn("[getActiveFacebookTabId] query error:", error);
@@ -65,7 +66,7 @@ export async function getActiveFacebookTabId(): Promise<number | null> {
 
 export async function findDeterministicFacebookTabId(): Promise<number | null> {
   try {
-    const tabs = await chrome.tabs.query({ url: PLATFORM_TAB_GLOBS });
+    const tabs = await chromeApi.tabs.query({ url: PLATFORM_TAB_GLOBS });
 
     const fbTabs = (tabs || []).filter((t) => t.id && isSupportedPlatformUrl(t.url));
     if (fbTabs.length === 0) return null;
@@ -97,7 +98,7 @@ export async function getCorrectFacebookTabId(): Promise<number> {
         // Only verify the tab still exists.
         // Don't reject it based on URL because during reload/navigation the URL can temporarily differ,
         // which caused unstable "jumping" to other tabs.
-        await chrome.tabs.get(boundTabId);
+        await chromeApi.tabs.get(boundTabId);
         console.debug(`[getCorrectFacebookTabId] Using bound tab: ${boundTabId}`);
 
         return boundTabId;
@@ -118,7 +119,7 @@ export async function getCorrectFacebookTabId(): Promise<number> {
     if (targetTabId) {
       try {
         // Only verify the tab still exists; don't reset based on URL.
-        await chrome.tabs.get(targetTabId);
+        await chromeApi.tabs.get(targetTabId);
         console.debug(
           `[getCorrectFacebookTabId] Using first tab: ${targetTabId}`,
         );

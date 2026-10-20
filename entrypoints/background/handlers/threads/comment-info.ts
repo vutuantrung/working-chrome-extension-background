@@ -1,5 +1,6 @@
 import { ParseType, ThreadsCommentData } from "@/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
+import { chromeApi } from "../../chrome-api";
 
 export const handleThreadsCommentInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
@@ -23,7 +24,7 @@ export const handleThreadsCommentInfo = async (dt: ParseType, ctx: HandlerContex
         await sendThreadsCachedData();
     } else {
         console.log("[Threads Interceptor] Scheduling send in", MAXIMUM_TIME_WAIT_SECOND, "seconds");
-        chrome.alarms.create(SEND_THREADS_DATA_ALARM, {
+        chromeApi.alarms.create(SEND_THREADS_DATA_ALARM, {
             delayInMinutes: Math.max(0.05, MAXIMUM_TIME_WAIT_SECOND / 60),
         });
     }

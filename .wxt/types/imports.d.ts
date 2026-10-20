@@ -31,7 +31,6 @@ declare global {
   const findPersonaFacebookAccountProxy: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').findPersonaFacebookAccountProxy
   const findPersonaSocialAccountProxy: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').findPersonaSocialAccountProxy
   const formatTimeFromISO: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/time-format').formatTimeFromISO
-  const getAppConfig: typeof import('wxt/utils/app-config').getAppConfig
   const getPlatformCookieDomains: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/social-cookie-domains').getPlatformCookieDomains
   const getPlatformLabel: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/platformDisplay').getPlatformLabel
   const getProxyEndpoints: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').getProxyEndpoints
@@ -70,7 +69,7 @@ declare global {
   export type { Browser } from 'wxt/browser'
   import('wxt/browser')
   // @ts-ignore
-  export type { WxtStorage, WxtStorageItem, StorageArea, StorageItemKey, StorageAreaChanges, MigrationError } from 'wxt/utils/storage'
+  export type { StorageArea, WxtStorage, WxtStorageItem, StorageItemKey, StorageAreaChanges, MigrationError } from 'wxt/utils/storage'
   import('wxt/utils/storage')
   // @ts-ignore
   export type { WxtWindowEventMap } from 'wxt/utils/content-script-context'

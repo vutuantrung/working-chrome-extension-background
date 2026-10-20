@@ -67,6 +67,7 @@ import {
   handleScreenshotCropped,
 } from "../eviden-collection";
 import { sendYoutubeCachedData } from "../../dataPublishers/youtubePublisher";
+import { chromeApi } from "../../chrome-api";
 
 function blockNotificationPopup() {
   const maxAttempts = 10;
@@ -133,7 +134,7 @@ async function handleBodyDataIntercepted(
     let tabUrl = "",
       isProfileTab = false;
     try {
-      const tab = await chrome.tabs.get(senderTabId);
+      const tab = await chromeApi.tabs.get(senderTabId);
       isProfileTab = isLikelyProfilePageUrl(tab?.url || "");
       tabUrl = tab?.url || "";
     } catch {
@@ -314,7 +315,7 @@ export function runTimeOnMessageHandler(
         .then(({ settings }) => {
           if (settings?.openingDevtoolsTabId === sender.tab?.id) {
             setTimeout(() => {
-              chrome.tabs.sendMessage(
+              chromeApi.tabs.sendMessage(
                 sender?.tab!.id as any,
                 {
                   platform: "facebook",
@@ -322,7 +323,7 @@ export function runTimeOnMessageHandler(
                   tabId: sender.tab?.id,
                 },
                 (response: any) => {
-                  void chrome.runtime.lastError;
+                  void chromeApi.runtime.lastError;
                 },
               );
             }, 1000);
@@ -331,7 +332,7 @@ export function runTimeOnMessageHandler(
     }
 
         if (message.name === "clickAboutButton" && sender.tab?.id) {
-            chrome.tabs.sendMessage(
+            chromeApi.tabs.sendMessage(
                 sender?.tab!.id as any,
                 {
                     type: "CLICK_ABOUT_BUTTON",
@@ -339,13 +340,13 @@ export function runTimeOnMessageHandler(
                     tabId: sender.tab?.id,
                 },
                 (response: any) => {
-                    void chrome.runtime.lastError;
+                    void chromeApi.runtime.lastError;
                 },
             );
         }
 
         if (message.name === "clickTranscriptButton" && sender.tab?.id) {
-            chrome.tabs.sendMessage(
+            chromeApi.tabs.sendMessage(
                 sender?.tab!.id as any,
                 {
                     type: "CLICK_TRANSCRIPT_BUTTON",
@@ -353,7 +354,7 @@ export function runTimeOnMessageHandler(
                     tabId: sender.tab?.id,
                 },
                 (response: any) => {
-                    void chrome.runtime.lastError;
+                    void chromeApi.runtime.lastError;
                 },
             );
         }
@@ -451,7 +452,7 @@ export async function runTimeOnInstalledHandler(
   details: chrome.runtime.InstalledDetails,
 ): Promise<void> {
   console.log("Extension installed/updated", details);
-  bgState.manifests = chrome.runtime.getManifest();
+  bgState.manifests = chromeApi.runtime.getManifest();
 
   if (details.reason === "install") {
   } else if (details.reason === "update") {
@@ -469,8 +470,8 @@ export async function runTimeOnInstalledHandler(
     }
   }
 
-  chrome.action.setBadgeText({ text: "0" });
-  chrome.action.setBadgeBackgroundColor({ color: "#0000FF" });
+  chromeApi.action.setBadgeText({ text: "0" });
+  chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
 
   try {
     await bootstrapExistingFacebookTabs();

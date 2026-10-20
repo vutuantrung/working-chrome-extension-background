@@ -12,6 +12,7 @@ import {
   ensureFacebookProfileIdBootstrapInstalled,
 } from "../../scriptInjection";
 import { StorageService } from "../../services/storageServices";
+import { chromeApi } from "../../chrome-api";
 
 export async function tabsOnActivatedHandler(tabId: any) {
   await handleMaybeFacebookTab(tabId);
@@ -65,8 +66,8 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      chrome.tabs.sendMessage(tabId, getFbProfileIdMsgData, (response) => {
-        const err = chrome.runtime.lastError;
+      chromeApi.tabs.sendMessage(tabId, getFbProfileIdMsgData, (response) => {
+        const err = chromeApi.runtime.lastError;
         if (err) {
           if (err.message?.includes("Receiving end does not exist")) {
             console.debug(
@@ -96,8 +97,8 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      chrome.tabs.sendMessage(tabId, injectFbLabelingRules, (response) => {
-        const err = chrome.runtime.lastError;
+      chromeApi.tabs.sendMessage(tabId, injectFbLabelingRules, (response) => {
+        const err = chromeApi.runtime.lastError;
         if (err) {
           console.warn(
             "[tabsOnUpdatedHandler] Failed to send ENHANCE_SPAN message:",
@@ -118,8 +119,8 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      chrome.tabs.sendMessage(tabId, msgData, (response) => {
-        const err = chrome.runtime.lastError;
+      chromeApi.tabs.sendMessage(tabId, msgData, (response) => {
+        const err = chromeApi.runtime.lastError;
         if (err) {
           if (err.message?.includes("Receiving end does not exist")) {
             console.debug(
@@ -204,7 +205,7 @@ export async function tabsOnUpdatedHandler(
   }
 
   try {
-    await chrome.tabs.get(runningTaskInfo.tabId);
+    await chromeApi.tabs.get(runningTaskInfo.tabId);
   } catch (error) {
     runningTaskInfo.state = State.CANCELED;
     runningTaskInfo.result = `Canceled. Reason: Tab with id ${runningTaskInfo.tabId} not found`;
@@ -234,8 +235,8 @@ export async function tabsOnUpdatedHandler(
       // Instead of injecting TS files by path (which won't exist at runtime),
       // simply send a message to the tab and let the content script listener pick it up.
       try {
-        chrome.tabs.sendMessage(dtsTabId, runningTaskInfo, () => {
-          const err = chrome.runtime.lastError;
+        chromeApi.tabs.sendMessage(dtsTabId, runningTaskInfo, () => {
+          const err = chromeApi.runtime.lastError;
           if (err) {
             console.warn(
               "[tabsOnUpdatedHandler] sendMessage error:",
@@ -332,7 +333,7 @@ export async function tabsOnRemovedHandler(tabId: number) {
 // ========================================
 export async function handleMaybeFacebookTab(tabId: any) {
   try {
-    const tab = await chrome.tabs.get(tabId);
+    const tab = await chromeApi.tabs.get(tabId);
     const url = tab.url || "";
     if (!isSupportedPlatformUrl(url)) return;
 

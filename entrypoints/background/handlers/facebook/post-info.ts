@@ -1,5 +1,6 @@
 import { FacebookPostData, ParseType } from "@/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
+import { chromeApi } from "../../chrome-api";
 
 export const handleFbPostInfo = async (dt: ParseType, ctx: HandlerContext) => {
   const {
@@ -35,7 +36,7 @@ export const handleFbPostInfo = async (dt: ParseType, ctx: HandlerContext) => {
       // console.log("[Facebook Interceptor] Post owner status check result:", mergedResult);
       // You can further process the mergedResult if needed, such as caching it or sending it to the server
 
-      chrome.tabs.sendMessage(senderTabId, {
+      chromeApi.tabs.sendMessage(senderTabId, {
         activityName: "INJECT_POST_OWNER_DATA",
         tabId: senderTabId,
         taskId: "inject_post_owner_data_task",
@@ -59,7 +60,7 @@ export const handleFbPostInfo = async (dt: ParseType, ctx: HandlerContext) => {
     sendFacebookUserData();
   } else {
     console.log("[Facebook Interceptor] Scheduling send in", MAXIMUM_TIME_WAIT_SECOND, "seconds");
-    chrome.alarms.create(SEND_FACEBOOK_DATA_ALARM, {
+    chromeApi.alarms.create(SEND_FACEBOOK_DATA_ALARM, {
       delayInMinutes: Math.max(0.05, MAXIMUM_TIME_WAIT_SECOND / 60),
     });
   }

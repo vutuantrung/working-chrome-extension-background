@@ -12,7 +12,7 @@ export async function parseDataJoinedGroup(payload: any): Promise<Result<{ fbGro
         let accountId = "";
         
         try{
-            const cookie = await chrome.cookies.get({ url: "https://www.facebook.com", name: "c_user" });
+            const cookie = await chromeApi.cookies.get({ url: "https://www.facebook.com", name: "c_user" });
             accountId = cookie?.value || "";
         }
         catch {}

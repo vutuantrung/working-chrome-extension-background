@@ -12,6 +12,7 @@ import {
 import { getCorrectFacebookTabId } from "../helpers/tabUtils";
 import { safeTabsSendMessageWithResponse } from "../helpers/tabUtils";
 import { StorageService } from "./storageServices";
+import { chromeApi } from "../chrome-api";
 
 export async function ensureJoinedGroupsAlarmSchedule(
   targetScheduleTime?: number,
@@ -32,12 +33,12 @@ export async function ensureJoinedGroupsAlarmSchedule(
     }
   }
 
-  const existingAlarm = await chrome.alarms.get(SYNC_FB_JOINED_GROUPS_ALARM);
+  const existingAlarm = await chromeApi.alarms.get(SYNC_FB_JOINED_GROUPS_ALARM);
   if (!existingAlarm || existingAlarm.periodInMinutes !== periodMin) {
     if (existingAlarm) {
-      await chrome.alarms.clear(SYNC_FB_JOINED_GROUPS_ALARM);
+      await chromeApi.alarms.clear(SYNC_FB_JOINED_GROUPS_ALARM);
     }
-    chrome.alarms.create(SYNC_FB_JOINED_GROUPS_ALARM, {
+    chromeApi.alarms.create(SYNC_FB_JOINED_GROUPS_ALARM, {
       delayInMinutes: 1,
       periodInMinutes: periodMin,
     });
@@ -56,7 +57,7 @@ export async function syncFacebookJoinedGroups(): Promise<void> {
     // 1. Get current c_user cookie to verify login state and obtain Facebook account ID
     let accountId = "";
     try {
-      const cookie = await chrome.cookies.get({
+      const cookie = await chromeApi.cookies.get({
         url: "https://www.facebook.com",
         name: "c_user",
       });
@@ -119,7 +120,7 @@ export async function syncFacebookJoinedGroups(): Promise<void> {
           "[FB Group Sync] Failed direct publish, scheduling alarm for retry:",
           err.message,
         );
-        chrome.alarms.create(SEND_FB_JOINED_GROUPS_ALARM, {
+        chromeApi.alarms.create(SEND_FB_JOINED_GROUPS_ALARM, {
           delayInMinutes: 0.05,
         });
       }
@@ -141,7 +142,7 @@ export async function syncFacebookPendingGroups(): Promise<void> {
     // 1. Get current c_user cookie to verify login state and obtain Facebook account ID
     let accountId = "";
     try {
-      const cookie = await chrome.cookies.get({
+      const cookie = await chromeApi.cookies.get({
         url: "https://www.facebook.com",
         name: "c_user",
       });
@@ -207,7 +208,7 @@ export async function syncFacebookPendingGroups(): Promise<void> {
           "[FB Pending Groups Sync] Failed direct publish, scheduling alarm for retry:",
           err.message,
         );
-        chrome.alarms.create(SEND_FB_PENDING_GROUPS_ALARM, {
+        chromeApi.alarms.create(SEND_FB_PENDING_GROUPS_ALARM, {
           delayInMinutes: 0.05,
         });
       }

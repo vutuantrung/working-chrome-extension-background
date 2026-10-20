@@ -1,6 +1,6 @@
 import { ParseType, XUserProfileData } from "@/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-
+import { chromeApi } from "../../chrome-api";
 export const handleXUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
         cachedXData,
@@ -23,7 +23,7 @@ export const handleXUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
         await sendXCachedData();
     } else {
         console.log("[X Interceptor] Scheduling send in", MAXIMUM_TIME_WAIT_SECOND, "seconds");
-        chrome.alarms.create(SEND_X_DATA_ALARM, {
+        chromeApi.alarms.create(SEND_X_DATA_ALARM, {
             delayInMinutes: Math.max(0.05, MAXIMUM_TIME_WAIT_SECOND / 60),
         });
     }

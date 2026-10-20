@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
 import { isValidArrayAct } from "../helpers/tools";
 import { Archive, Settings, StorageData } from "../types/types";
 import { ProxyService } from "./proxyServices";
+import { chromeApi } from "../chrome-api";
 
 export class StorageService {
     private static _instance: StorageService | null = null;
@@ -26,7 +27,7 @@ export class StorageService {
     }
 
     public async getStorageByKeys(keys: string[]): Promise<Record<string, any>> {
-        return new Promise((resolve) => chrome.storage.local.get(keys, resolve));
+        return new Promise((resolve) => chromeApi.storage.local.get(keys, resolve));
     }
 
     public async getStorageCachedByKeys(keys: string[]): Promise<StorageData> {
@@ -55,7 +56,7 @@ export class StorageService {
 
         const fetchArg = isValidArrayAct(keys) ? keys : undefined;
 
-        this._storageInFlight = chrome.storage.local
+        this._storageInFlight = chromeApi.storage.local
             .get(fetchArg)
             .then((vals) => {
                 if (this._storageCache) {
@@ -79,7 +80,7 @@ export class StorageService {
 
     public async setStorageCached(patchObj: Record<string, any>): Promise<void> {
         if (this._storageCache) Object.assign(this._storageCache, patchObj);
-        await chrome.storage.local.set(patchObj);
+        await chromeApi.storage.local.set(patchObj);
     }
 
     public clearStorageCache() {
@@ -89,7 +90,7 @@ export class StorageService {
 
     public async handleUpdateArchive(message: any, sendResponse?: (resp: any) => void) {
         try {
-            const storageData = await chrome.storage.local.get(["settings"]);
+            const storageData = await chromeApi.storage.local.get(["settings"]);
             const currentSettings: any = storageData.settings || DEFAULT_SETTINGS_JSON;
 
             const updatedArchive: Archive = {
@@ -103,11 +104,11 @@ export class StorageService {
 
             this.clearStorageCache();
 
-            await chrome.storage.local.set({ settings: updatedSettings });
+            await chromeApi.storage.local.set({ settings: updatedSettings });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
-            const verification = await chrome.storage.local.get(["settings"]);
+            const verification = await chromeApi.storage.local.get(["settings"]);
 
             const archiveKeys = Object.keys(updatedArchive);
             const savedArchiveKeys = Object.keys((verification.settings as any)?.archive || {});
@@ -149,7 +150,7 @@ export class StorageService {
             ...storageSettings,
             ...updatedSettingsInputs,
         };
-        await chrome.storage.local.set({ settings: updatedSettings });
+        await chromeApi.storage.local.set({ settings: updatedSettings });
         if (sendResponse) {
             sendResponse({ success: true });
         }
@@ -188,7 +189,7 @@ export class StorageService {
 
             this.clearStorageCache();
 
-            await chrome.storage.local.set({ settings: updatedSettings });
+            await chromeApi.storage.local.set({ settings: updatedSettings });
 
             console.log("[handleSetSettings] Settings saved successfully");
 

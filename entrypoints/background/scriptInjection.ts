@@ -1,11 +1,12 @@
 import { State } from "./types/types";
 import { isSupportedPlatformUrl } from "./helpers/tools";
 import { PLATFORM_TAB_GLOBS } from "./helpers/constants";
+import { chromeApi } from "./chrome-api";
 
 export async function ensureFacebookProfileIdBootstrapInstalled(tabId: number, options?: { force?: boolean }): Promise<{ injected: boolean }> {
   try {
     const bootstrapToken = options?.force ? String(Date.now()) : "default";
-    await chrome.scripting.executeScript({
+    await chromeApi.scripting.executeScript({
       target: { tabId },
       func: (token: string) => {
         try {
@@ -48,14 +49,14 @@ export async function ensureFacebookProfileIdBootstrapInstalled(tabId: number, o
               if (g.__fbProfileIdFound === profileId) return true;
               g.__fbProfileIdFound = profileId;
               try {
-                chrome.runtime.sendMessage(
+                chromeApi.runtime.sendMessage(
                   {
                     type: "UPDATE_ARCHIVE",
                     inputs: { updateArchive: { profileId } },
                   },
                   () => {
                     // Prevent: Uncaught (in promise) Receiving end does not exist
-                    void chrome.runtime.lastError;
+                    void chromeApi.runtime.lastError;
                   },
                 );
               } catch { }
@@ -93,7 +94,7 @@ export async function ensureFacebookProfileIdBootstrapInstalled(tabId: number, o
 
 export async function ensureFacebookGraphForwarderInstalled(tabId: number): Promise<{ injected: boolean }> {
   try {
-    await chrome.scripting.executeScript({
+    await chromeApi.scripting.executeScript({
       target: { tabId },
       func: () => {
         try {
@@ -109,13 +110,13 @@ export async function ensureFacebookGraphForwarderInstalled(tabId: number): Prom
               data?.source === "network-interceptor" &&
               data?.data?.responseText
             ) {
-              chrome.runtime.sendMessage(
+              chromeApi.runtime.sendMessage(
                 {
                   type: "BODY_DATA_INTERCEPTED",
                   data: data.data,
                 },
                 () => {
-                  void chrome.runtime.lastError;
+                  void chromeApi.runtime.lastError;
                 },
               );
             }
@@ -134,7 +135,7 @@ export async function ensureFacebookGraphForwarderInstalled(tabId: number): Prom
 export async function ensureFacebookGraphInterceptorInstalled(tabId: number): Promise<{ injected: boolean }> {
   // Best-effort: inject into MAIN world; the injected function is idempotent via a window flag.
   try {
-    await chrome.scripting.executeScript({
+    await chromeApi.scripting.executeScript({
       target: { tabId },
       world: "MAIN" as any,
       func: () => {
@@ -253,7 +254,7 @@ export async function ensureFacebookGraphInterceptorInstalled(tabId: number): Pr
 }
 
 export async function bootstrapExistingFacebookTabs(options?: { forceProfileIdBootstrap?: boolean }): Promise<void> {
-  const tabs = await chrome.tabs.query({ url: PLATFORM_TAB_GLOBS });
+  const tabs = await chromeApi.tabs.query({ url: PLATFORM_TAB_GLOBS });
   const targetTabs = (tabs || []).filter((t) => isSupportedPlatformUrl(t.url));
   if (targetTabs.length === 0) {
     console.log("[SETUP] No existing Facebook tabs to bootstrap");
@@ -282,13 +283,13 @@ export async function bootstrapExistingFacebookTabs(options?: { forceProfileIdBo
 
 export async function cleanupFacebookTabs(): Promise<void> {
   try {
-    const tabs = await chrome.tabs.query({
+    const tabs = await chromeApi.tabs.query({
       url: ["*://*.facebook.com/*", "*://*.fb.com/*"],
     });
 
     for (const tab of tabs) {
       if (tab.id) {
-        chrome.tabs
+        chromeApi.tabs
           .sendMessage(tab.id, { type: "CLEANUP_AFTER_LOGOUT" })
           .catch(() => { });
       }

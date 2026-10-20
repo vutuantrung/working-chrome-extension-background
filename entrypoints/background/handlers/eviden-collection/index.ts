@@ -1,14 +1,15 @@
+import { chromeApi } from "../../chrome-api";
 import { getCaseStorageKey } from "../../helpers/eviden-studio";
 import { Message, Screenshot } from "../../types/types";
 
 export function handleCaptureScreenshot(
   sendResponse: (resp: any) => void,
 ) {
-  chrome.tabs.captureVisibleTab(
+  chromeApi.tabs.captureVisibleTab(
     { format: "png" },
     (dataUrl) => {
-      if (chrome.runtime.lastError) {
-        sendResponse({ error: chrome.runtime.lastError.message });
+      if (chromeApi.runtime.lastError) {
+        sendResponse({ error: chromeApi.runtime.lastError.message });
       } else {
         sendResponse({ dataUrl });
       }
@@ -22,16 +23,16 @@ export async function handleScreenshotCropped(
 ) {
   const { dataUrl, caseId, windowId } = message;
 
-  chrome.sidePanel.open({ windowId }).catch(console.error)
+  chromeApi.sidePanel.open({ windowId }).catch(console.error)
 
   const storageKey = getCaseStorageKey(caseId);
   const timestamp = Date.now();
   const entry: Screenshot = { dataUrl, timestamp };
 
-  const data = await chrome.storage.local.get([storageKey]);
+  const data = await chromeApi.storage.local.get([storageKey]);
   const list = [...((data[storageKey] ?? []) as typeof entry[]), entry];  
-  await chrome.storage.local.set({ [storageKey]: list });
-  await chrome.storage.local.set({ lastUnsavedProfileCase: {id: caseId, timestamp} });
+  await chromeApi.storage.local.set({ [storageKey]: list });
+  await chromeApi.storage.local.set({ lastUnsavedProfileCase: {id: caseId, timestamp} });
 
   sendResponse({ ok: true });
 }

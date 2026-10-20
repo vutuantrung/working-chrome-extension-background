@@ -20,4 +20,4 @@ export const chromeApi = {
   get notifications() { return chrome.notifications; },
   get webNavigation() { return chrome.webNavigation; },
   get sidePanel() { return chrome.sidePanel; },
-} as const;
+}

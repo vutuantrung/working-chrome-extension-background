@@ -1,4 +1,5 @@
 import axios from "axios";
+import { chromeApi } from "../chrome-api";
 
 export const http = axios.create({
   baseURL: import.meta.env.VITE_AXIOS_BASE_URL || "http://localhost:3002",
@@ -17,7 +18,7 @@ http.interceptors.response.use(
         window.dispatchEvent(new CustomEvent("AUTH_EXPIRED"));
       } else {
         // Background service worker context runtime message
-        chrome.runtime.sendMessage({ type: "AUTH_EXPIRED" }).catch(() => {});
+        chromeApi.runtime.sendMessage({ type: "AUTH_EXPIRED" }).catch(() => {});
       }
     }
     return Promise.reject(error);

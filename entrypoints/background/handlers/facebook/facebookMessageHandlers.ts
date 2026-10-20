@@ -6,6 +6,7 @@ import {
   parseFacebookNameFromHtml,
   getStartDayTimestamp
 } from "../../helpers/tools";
+import { chromeApi } from "../../chrome-api";
 
 export async function handleGetFacebookAccount(message: Message, sendResponse: (resp: any) => void): Promise<void> {
   try {
@@ -59,7 +60,7 @@ export async function handleGetFacebookAccountCache(_message: any, sendResponse:
       }
     }
 
-    const cookie = await chrome.cookies.get({
+    const cookie = await chromeApi.cookies.get({
       url: "https://www.facebook.com/",
       name: "c_user",
     });
@@ -74,7 +75,7 @@ export async function handleGetFacebookAccountCache(_message: any, sendResponse:
     try {
       const allowedTabId = await getCorrectFacebookTabId();
       if (allowedTabId && allowedTabId !== -1) {
-        const resp = await chrome.tabs
+        const resp = await chromeApi.tabs
           .sendMessage(allowedTabId, { type: "GET_FB_ACCOUNT_CONTEXT" })
           .catch(() => null);
         if (resp?.ok && typeof resp?.name === "string" && resp.name.trim()) {

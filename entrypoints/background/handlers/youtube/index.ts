@@ -1,6 +1,6 @@
 import { ParseType, YoutubeDataType, YoutubePostData } from '@/utils/parsers/types';
 import { HandlerContext } from '../../types/handle';
-
+import { chromeApi } from "../../chrome-api";
 export const handleYoutubeDataInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
         cachedYoutubeData,
@@ -43,7 +43,7 @@ export const handleYoutubeDataInfo = async (dt: ParseType, ctx: HandlerContext) 
         await sendYoutubeCachedData();
     } else {
         console.log("[Youtube Interceptor] Scheduling send in", MAXIMUM_TIME_WAIT_SECOND, "seconds");
-        chrome.alarms.create(SEND_YOUTUBE_DATA_ALARM, {
+        chromeApi.alarms.create(SEND_YOUTUBE_DATA_ALARM, {
             delayInMinutes: Math.max(0.05, MAXIMUM_TIME_WAIT_SECOND / 60),
         });
     }

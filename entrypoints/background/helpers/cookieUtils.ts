@@ -1,6 +1,6 @@
 import { SOCIAL_COOKIE_DOMAINS } from "@/utils/social-cookie-domains";
 
-function cookieRemovalUrl(cookie: chrome.cookies.Cookie): string {
+function cookieRemovalUrl(cookie: chromeApi.cookies.Cookie): string {
   const host = cookie.domain.startsWith(".")
     ? cookie.domain.slice(1)
     : cookie.domain;
@@ -10,11 +10,11 @@ function cookieRemovalUrl(cookie: chrome.cookies.Cookie): string {
 
 export async function clearCookiesForDomain(domain: string): Promise<void> {
   return new Promise((resolve) => {
-    chrome.cookies.getAll({ domain }, (cookies) => {
+    chromeApi.cookies.getAll({ domain }, (cookies) => {
       const removePromises = (cookies || []).map(
         (cookie) =>
           new Promise<void>((res) => {
-            chrome.cookies.remove(
+            chromeApi.cookies.remove(
               { url: cookieRemovalUrl(cookie), name: cookie.name },
               () => res(),
             );

@@ -3,6 +3,7 @@ import { readTrimmedString } from "../helpers/tools";
 import { Message, ProxyAuthCredentials, ProxyHealth, Settings } from "../types/types";
 import { StorageService } from "./storageServices";
 import { isActiveProxy } from "@/utils/resolveEffectiveProxy";
+import { chromeApi } from "../chrome-api";
 
 interface Proxy {
     host: string;
@@ -29,7 +30,7 @@ export class ProxyService {
     }
 
     public clearProxy(): void {
-        chrome.proxy.settings.clear({ scope: "regular" }, () => {
+        chromeApi.proxy.settings.clear({ scope: "regular" }, () => {
             console.log("Proxy cleared.");
         });
 
@@ -69,7 +70,7 @@ export class ProxyService {
             rules: rules,
         };
 
-        chrome.proxy.settings.set({ value: config, scope: "regular" }, () => {
+        chromeApi.proxy.settings.set({ value: config, scope: "regular" }, () => {
             console.log("Proxy is/are set");
         });
 
@@ -106,7 +107,7 @@ export class ProxyService {
                 consecutiveFailures: prev?.consecutiveFailures ?? 0,
                 ...patch,
             };
-            chrome.storage.local.set({ proxyHealth: next });
+            chromeApi.storage.local.set({ proxyHealth: next });
 
             // Keep cache in sync even if storage event is delayed.
             try {
@@ -308,7 +309,7 @@ export class ProxyService {
             // Persist effective proxy so popup can reflect changes (Restart button logic depends on it).
             try {
                 const proxyActive = isActiveProxy(proxyConfig);
-                await chrome.storage.local.set({ activeProxy: proxyActive ? proxyConfig : {} });
+                await chromeApi.storage.local.set({ activeProxy: proxyActive ? proxyConfig : {} });
             } catch { }
 
             const { settings } = await StorageService.getInstance().getStorageCachedByKeys(["settings"]);
@@ -323,7 +324,7 @@ export class ProxyService {
                     ...settingsFromProxy,
                 };
 
-            await chrome.storage.local.set({ settings: finalSettings });
+            await chromeApi.storage.local.set({ settings: finalSettings });
             if (sendResponse) {
                 sendResponse({
                     success: true,

@@ -2,6 +2,7 @@ import { bgState } from "../state";
 import { KafkaPublishConfig, Settings } from "../types/types";
 import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
 import { StorageService } from "../services/storageServices";
+import { chromeApi } from "../chrome-api";
 
 export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<void> {
 
@@ -111,8 +112,8 @@ export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<voi
           settings: { ...cs, n_c: newNC },
         });
       }
-      await chrome.action.setBadgeText({ text: String(newNC) });
-      await chrome.action.setBadgeBackgroundColor({ color: "#0000FF" });
+      await chromeApi.action.setBadgeText({ text: String(newNC) });
+      await chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
     };
 
     // 7. Delegate to platform-specific publish steps
@@ -147,7 +148,7 @@ export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<voi
         bgState.cachedFacebookData.length > 0 ||
         bgState.cachedTiktokData.length > 0;
       if (hasPending) {
-        chrome.alarms.create(kConfig.retryAlarm, { delayInMinutes: 0.05 });
+        chromeApi.alarms.create(kConfig.retryAlarm, { delayInMinutes: 0.05 });
       }
     });
 

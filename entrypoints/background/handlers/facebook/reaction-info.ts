@@ -1,5 +1,6 @@
 import { FacebookReactionData, ParseType } from "@/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
+import { chromeApi } from "../../chrome-api";
 
 export const handleFbReactionInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
@@ -26,7 +27,7 @@ export const handleFbReactionInfo = async (dt: ParseType, ctx: HandlerContext) =
         await sendFacebookCachedData();
     } else {
         console.log("[Facebook Interceptor] Scheduling send in", MAXIMUM_TIME_WAIT_SECOND, "seconds");
-        chrome.alarms.create(SEND_FACEBOOK_DATA_ALARM, {
+        chromeApi.alarms.create(SEND_FACEBOOK_DATA_ALARM, {
             delayInMinutes: Math.max(0.05, MAXIMUM_TIME_WAIT_SECOND / 60),
         });
     }
