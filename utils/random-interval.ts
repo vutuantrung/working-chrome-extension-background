@@ -10,9 +10,7 @@ export function randomInterval(
   if (direction === "decrease") return persist - interval;
 }
 
-export function randomFromPair(
-  input: string | number | undefined | null | any,
-): number | undefined {
+export function randomFromPair(input: string | number | undefined | null | any): number | undefined {
   if (input == null) return undefined;
   if (typeof input === "number") return isNaN(input) ? undefined : input;
   if (typeof input === "string") {

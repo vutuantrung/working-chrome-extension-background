@@ -1,13 +1,8 @@
-export async function hashStringArr(
-  stringArr: string[],
-): Promise<string | null> {
+export async function hashStringArr(stringArr: string[]): Promise<string | null> {
   if (Array.isArray(stringArr) && stringArr.length > 0) {
     const s = stringArr.join("_");
     // Create SHA-256 hash of the uniqueString
-    const hashBuffer = await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(s),
-    );
+    const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
 
     // Convert the hash buffer to a hexadecimal string
     const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -25,8 +20,7 @@ export async function hashStringArr(
 }
 export function makeid(length: number): string {
   let result = "";
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const charactersLength = characters.length;
   let counter = 0;
   while (counter < length) {

@@ -2,6 +2,7 @@
 public
 entrypoints/sidepanel/
 entrypoints/content/
+test-results/
 
 # Logs
 logs
