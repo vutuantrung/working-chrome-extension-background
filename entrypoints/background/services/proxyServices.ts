@@ -95,9 +95,9 @@ export function setProxyHealth(patch: Partial<ProxyHealth>) {
             chromeApi.storage.local.set({ proxyHealth: next });
 
             // Keep cache in sync even if storage event is delayed.
-            const getStorageCache() = getStorageCache();
-            if (getStorageCache()) {
-                (getStorageCache() as any).proxyHealth = next;
+            const cache = getStorageCache();
+            if (cache) {
+                (cache as any).proxyHealth = next;
             }
         } catch { }
     }
