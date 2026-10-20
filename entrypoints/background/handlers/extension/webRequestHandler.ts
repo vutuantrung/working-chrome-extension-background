@@ -1,5 +1,5 @@
 import { extractProxyAuthCredentials } from "../../services/proxyServices";
-import { StorageService } from "../../services/storageServices";
+import { getStorageCachedByKeys, getStorageCache } from "../../services/storageServices";
 
 export function webRequestOnAuthRequiredHandler(
     details: any,
@@ -10,7 +10,7 @@ export function webRequestOnAuthRequiredHandler(
         // callback();
         return;
     }
-    StorageService.getInstance().getStorageCachedByKeys([
+    getStorageCachedByKeys([
         "activeProxy",
         "extensionProxy",
         "personaProxy",

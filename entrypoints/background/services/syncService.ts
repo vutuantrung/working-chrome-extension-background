@@ -13,7 +13,7 @@ import {
 } from "../helpers/constants";
 import { handleUpdateScheduleActivities } from "./scheduleService";
 import { ProxyService } from "./proxyServices";
-import { StorageService } from "./storageServices";
+import { getStorageCachedByKeys, setStorageCached, getStorageCache, setStorageCache } from "./storageServices";
 import { ensureJoinedGroupsAlarmSchedule } from "./fbGroupSyncService";
 import {
   getSocialAccountsByPersona,
@@ -23,11 +23,10 @@ import {
 
 export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promise<void> {
   try {
-    const storageService = StorageService.getInstance();
     const proxyService = ProxyService.getInstance();
 
     const { settings, user, activities, fbLoginMode } =
-      await storageService.getStorageCachedByKeys([
+      await getStorageCachedByKeys([
         "settings",
         "user",
         "activities",
@@ -41,13 +40,13 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
       return;
     }
 
-    const { personaProxy, personaFacebookAccounts } = await storageService.getStorageCachedByKeys(["personaProxy", "personaFacebookAccounts"]);
+    const { personaProxy, personaFacebookAccounts } = await getStorageCachedByKeys(["personaProxy", "personaFacebookAccounts"]);
 
     if (!useExtensionConfig) {
       let personaAccountProxy: Record<string, unknown> | null = null;
       if (fbLoginMode?.mode === "auto") {
         let freshAccounts: any[] | null = null;
-        const getPersonaIdResult = await storageService.getStorageCachedByKeys(["selectedPersonaId"]);
+        const getPersonaIdResult = await getStorageCachedByKeys(["selectedPersonaId"]);
         const selectedPersonaId: string | undefined = getPersonaIdResult?.selectedPersonaId;
 
         if (selectedPersonaId) {
@@ -82,7 +81,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
                   }),
               );
 
-              await StorageService.getInstance().setStorageCached({
+              await setStorageCached({
                 allSocialAccounts: freshAccounts,
                 personaFacebookAccounts: freshAccounts.filter(
                   (a) => a.platform === "facebook",
@@ -97,7 +96,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
           }
         }
 
-        const { allSocialAccounts } = await storageService.getStorageCachedByKeys(["allSocialAccounts"]);
+        const { allSocialAccounts } = await getStorageCachedByKeys(["allSocialAccounts"]);
         const accountList = freshAccounts ?? allSocialAccounts ?? personaFacebookAccounts ?? [];
 
         personaAccountProxy = findPersonaSocialAccountProxy(
@@ -126,7 +125,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
       }
 
       try {
-        await storageService.setStorageCached({
+        await setStorageCached({
           activeProxy: hasEffectiveProxy ? proxyInfo : {},
           personaProxy: personaProxy || {},
         });
@@ -158,7 +157,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
       typeof joinedGroupScheduleTime === "number" &&
       joinedGroupScheduleTime > 0
     ) {
-      await storageService.setStorageCached({ joinedGroupScheduleTime });
+      await setStorageCached({ joinedGroupScheduleTime });
     }
     await ensureJoinedGroupsAlarmSchedule(
       typeof joinedGroupScheduleTime === "number" && joinedGroupScheduleTime > 0
@@ -241,7 +240,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
     }
 
     try {
-      await storageService.setStorageCached({
+      await setStorageCached({
         activeProxy: hasEffectiveProxy ? proxyInfo : {},
         extensionProxy: extensionConfigProxy || {},
         personaProxy: personaProxy || {},
@@ -284,7 +283,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
         schedule_end_time,
       },
     };
-    await storageService.setStorageCached({
+    await setStorageCached({
       user: updatedUser,
       settings: updatedSettings as any,
     });

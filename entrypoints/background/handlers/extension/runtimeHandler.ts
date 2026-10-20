@@ -28,7 +28,7 @@ import {
     handleFetchJoinGroupPreparationData
 } from "../facebook/facebookMessageHandlers";
 import { DEFAULT_SETTINGS_JSON } from "../../helpers/constants";
-import { StorageService } from "../../services/storageServices";
+import { getStorageCachedByKeys, setStorageCached, handleUpdateArchive, handleUpdateSettings, handleGetSettings, handleSetSettings, getStorageCache, setStorageCache } from "../../services/storageServices";
 import { handleProxy } from "../../services/proxyServices";
 import { getCorrectFacebookTabId } from "../../helpers/tabUtils";
 import { isLikelyProfilePageUrl } from "../../helpers/user-info";
@@ -273,7 +273,6 @@ export function runTimeOnMessageHandler(
   sender: chrome.runtime.MessageSender,
   sendResponse: (response?: any) => void,
 ): boolean {
-  const storageService = StorageService.getInstance();
 
   if (message.type === "GET_MY_TAB_ID") {
     sendResponse?.({ success: true, tabId: sender.tab?.id });
@@ -384,17 +383,17 @@ export function runTimeOnMessageHandler(
 
             // SYSTEM REQUESTS
             case "SET_SETTINGS":
-                return storageService.handleSetSettings(message, sendResponse);
+                return handleSetSettings(message, sendResponse);
             case "GET_SETTINGS":
-                return storageService.handleGetSettings(message, sendResponse);
+                return handleGetSettings(message, sendResponse);
             case "GET_USERINFO":
                 return handleGetUserInfo(message, sendResponse);
             case "GET_PENDING_USERINFO":
                 return handleGetPendingUserInfo(message, sendResponse);
             case "UPDATE_SETTINGS":
-                return storageService.handleUpdateSettings(message, sendResponse);
+                return handleUpdateSettings(message, sendResponse);
             case "UPDATE_ARCHIVE":
-                return storageService.handleUpdateArchive(message, sendResponse);
+                return handleUpdateArchive(message, sendResponse);
             case "REMOVE_PENDING_USERINFO":
                 return handleRemovePendingUserInfo(message, sendResponse);
             case "CONFIRM_GATHER_USERINFO":
@@ -456,14 +455,14 @@ export async function runTimeOnInstalledHandler(
   if (details.reason === "install") {
   } else if (details.reason === "update") {
     const { settings } =
-      await StorageService.getInstance().getStorageCachedByKeys(["settings"]);
+      await getStorageCachedByKeys(["settings"]);
     if (settings) {
       const mergedSettings = {
         ...DEFAULT_SETTINGS_JSON,
         ...settings,
         archive: settings.archive || {},
       };
-      await StorageService.getInstance().setStorageCached({
+      await setStorageCached({
         settings: mergedSettings,
       });
     }

@@ -11,14 +11,14 @@ import {
 } from "../dataPublishers/facebookPublisher";
 import { getCorrectFacebookTabId } from "../helpers/tabUtils";
 import { safeTabsSendMessage } from "../helpers/tabUtils";
-import { StorageService } from "./storageServices";
+import { getStorageCachedByKeys, getStorageCache } from "./storageServices";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { FB_WEB_URL } from "../helpers/constants";
 
 export async function ensureJoinedGroupsAlarmSchedule(targetScheduleTime?: number): Promise<void> {
   let periodMin = targetScheduleTime;
   if (typeof periodMin !== "number" || periodMin <= 0) {
-    const { joinedGroupScheduleTime } = await StorageService.getInstance().getStorageCachedByKeys(["joinedGroupScheduleTime"]);
+    const { joinedGroupScheduleTime } = await getStorageCachedByKeys(["joinedGroupScheduleTime"]);
     periodMin = typeof joinedGroupScheduleTime === "number" && joinedGroupScheduleTime > 0
       ? joinedGroupScheduleTime
       : 20;

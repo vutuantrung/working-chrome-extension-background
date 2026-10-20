@@ -7,94 +7,83 @@ import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 
 export type LocalStorageAdapter = Pick<typeof chrome.storage.local, "get" | "set">;
 
-export class StorageService {
-    constructor(private readonly storage: LocalStorageAdapter = chromeApi.storage.local) {}
+let currentStorageAdapter: LocalStorageAdapter | undefined;
+let storageCache: StorageData = {};
+let storageInFlight: Promise<StorageData> | null = null;
 
-    private static _instance: StorageService | null = null;
-    private _storageCache: StorageData = {};
-    private _storageInFlight: Promise<StorageData> | null = null;
+function storage(): LocalStorageAdapter { return currentStorageAdapter ?? chromeApi.storage.local; }
+export function setStorageAdapter(adapter?: LocalStorageAdapter): void {
+    currentStorageAdapter = adapter;
+    clearStorageCache();
+}
+export function getStorageCache(): StorageData { return storageCache; }
+export function setStorageCache(value: StorageData): void { storageCache = value; }
 
-    public get storageCache() {
-        return this._storageCache;
+export async function getStorageByKeys(keys: string[]): Promise<Record<string, any>> {
+        return storage().get(keys);
     }
 
-    public set storageCache(value: StorageData) {
-        this._storageCache = value;
-    }
-
-    static getInstance(): StorageService {
-        if (!this._instance) {
-            this._instance = new StorageService();
-        }
-        return this._instance;
-    }
-
-    public async getStorageByKeys(keys: string[]): Promise<Record<string, any>> {
-        return this.storage.get(keys);
-    }
-
-    public async getStorageCachedByKeys(keys: string[]): Promise<StorageData> {
-        if (this._storageCache) {
+export async function getStorageCachedByKeys(keys: string[]): Promise<StorageData> {
+        if (storageCache) {
             if (!keys) {
-                return this._storageCache;
+                return storageCache;
             }
             
             const out: any = {};
             let allPresent = true;
             for (const k of keys) {
-                if (!Object.prototype.hasOwnProperty.call(this._storageCache, k)) {
+                if (!Object.prototype.hasOwnProperty.call(storageCache, k)) {
                     allPresent = false;
                     break;
                 }
-                out[k] = (this._storageCache as any)[k];
+                out[k] = (storageCache as any)[k];
             }
             if (allPresent) {
                 return out;
             }
         }
 
-        if (this._storageInFlight) {
-            await this._storageInFlight;
-            return this.getStorageCachedByKeys(keys);
+        if (storageInFlight) {
+            await storageInFlight;
+            return getStorageCachedByKeys(keys);
         }
 
         const fetchArg = isValidArrayAct(keys) ? keys : undefined;
 
-        this._storageInFlight = chromeApi.storage.local
-            .get(fetchArg)
+        storageInFlight = storage().get(fetchArg)
             .then((vals) => {
-                if (this._storageCache) {
-                    Object.assign(this._storageCache, vals);
+                if (storageCache) {
+                    Object.assign(storageCache, vals);
                 } else {
-                    this._storageCache = vals;
+                    storageCache = vals;
                 }
-                return this._storageCache;
+                return storageCache;
             })
             .finally(() => {
-                this._storageInFlight = null;
+                storageInFlight = null;
             });
-        await this._storageInFlight;
+        await storageInFlight;
 
         const out: any = {};
         for (const k of keys) {
-            out[k] = (this._storageCache as any)[k];
+            out[k] = (storageCache as any)[k];
         }
         return out;
     }
 
-    public async setStorageCached(patchObj: Record<string, any>): Promise<void> {
-        if (this._storageCache) Object.assign(this._storageCache, patchObj);
-        await this.storage.set(patchObj);
+export async function setStorageCached(patchObj: Record<string, any>): Promise<void> {
+        if (storageCache) Object.assign(storageCache, patchObj);
+        await storage().set(patchObj);
     }
 
-    public clearStorageCache() {
-        this._storageCache = {};
-        this._storageInFlight = null;
+export function clearStorageCache() {
+        storageCache = {};
+        storageInFlight = null;
     }
 
-    public async handleUpdateArchive(message: any, sendResponse?: (resp: any) => void) {
+export async function handleUpdateArchive(message: any, sendResponse?: (resp: any) => void) {
         try {
-            const storageData = await this.storage.get(["settings"]);
+            const storageData = await storage().get(["settings"]);
             const currentSettings: any = storageData.settings || DEFAULT_SETTINGS_JSON;
 
             const updatedArchive: Archive = {
@@ -106,13 +95,13 @@ export class StorageService {
                 archive: updatedArchive,
             };
 
-            this.clearStorageCache();
+            clearStorageCache();
 
-            await this.storage.set({ settings: updatedSettings });
+            await storage().set({ settings: updatedSettings });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
-            const verification = await this.storage.get(["settings"]);
+            const verification = await storage().get(["settings"]);
 
             const archiveKeys = Object.keys(updatedArchive);
             const savedArchiveKeys = Object.keys((verification.settings as any)?.archive || {});
@@ -144,8 +133,8 @@ export class StorageService {
         }
     }
 
-    public async handleUpdateSettings(message: any, sendResponse?: (resp: any) => void) {
-        const { settings: storageSettings } = await this.getStorageCachedByKeys(["settings"]);
+export async function handleUpdateSettings(message: any, sendResponse?: (resp: any) => void) {
+        const { settings: storageSettings } = await getStorageCachedByKeys(["settings"]);
         const updatedSettingsInputs = normalizeTabSpecificSetting(
             message.inputs?.updateSetting || {},
         );
@@ -154,22 +143,22 @@ export class StorageService {
             ...storageSettings,
             ...updatedSettingsInputs,
         };
-        await this.storage.set({ settings: updatedSettings });
+        await storage().set({ settings: updatedSettings });
         if (sendResponse) {
             sendResponse({ success: true });
         }
     }
 
-    public async handleGetSettings(message: any, sendResponse: (resp: any) => void) {
-        const { settings } = (await this.getStorageCachedByKeys(["settings"])) ?? DEFAULT_SETTINGS_JSON;
+export async function handleGetSettings(message: any, sendResponse: (resp: any) => void) {
+        const { settings } = (await getStorageCachedByKeys(["settings"])) ?? DEFAULT_SETTINGS_JSON;
         if (sendResponse) {
             sendResponse({ data: settings });
         }
     }
 
-    public async handleSetSettings(message: any, sendResponse?: (resp: any) => void) {
+export async function handleSetSettings(message: any, sendResponse?: (resp: any) => void) {
         try {
-            const { settings: storageSettings } = await this.getStorageCachedByKeys(["settings"]);
+            const { settings: storageSettings } = await getStorageCachedByKeys(["settings"]);
 
             const currentSettingsInputs = message.inputs;
             const normalizedSettingsData = normalizeTabSpecificSetting(
@@ -191,9 +180,9 @@ export class StorageService {
                 };
             }
 
-            this.clearStorageCache();
+            clearStorageCache();
 
-            await this.storage.set({ settings: updatedSettings });
+            await storage().set({ settings: updatedSettings });
 
             console.log("[handleSetSettings] Settings saved successfully");
 
@@ -225,4 +214,3 @@ export class StorageService {
             }
         }
     }
-}

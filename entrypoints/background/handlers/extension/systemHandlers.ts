@@ -23,7 +23,7 @@ import {
   cleanupFacebookTabs,
 } from "../../scriptInjection";
 import { clearSocialPlatformCookies } from "../../helpers/cookieUtils";
-import { StorageService } from "../../services/storageServices";
+import { getStorageCachedByKeys, setStorageCached, clearStorageCache, getStorageCache, setStorageCache } from "../../services/storageServices";
 import { setProxy, clearProxy } from "../../services/proxyServices";
 import { ensureJoinedGroupsAlarmSchedule } from "../../services/fbGroupSyncService";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
@@ -38,7 +38,7 @@ async function waitForUserInfoDescription(
   let lastParsed: any = undefined;
 
   while (Date.now() - startedAt < maxWaitMs) {
-    const { pendingUserInfo } = (await StorageService.getInstance().getStorageCachedByKeys(["pendingUserInfo"])) || {};
+    const { pendingUserInfo } = (await getStorageCachedByKeys(["pendingUserInfo"])) || {};
     const parsed = pendingUserInfo?.parsed;
     if (parsed) lastParsed = parsed;
     if (hasUserDescription(parsed)) return { found: true, info: parsed };
@@ -53,7 +53,7 @@ async function waitForUserInfoDescription(
 // ========================================
 
 export async function handleGetUserInfo(message: any, sendResponse: (resp: any) => void) {
-  const { user } = await StorageService.getInstance().getStorageCachedByKeys(["user"]);
+  const { user } = await getStorageCachedByKeys(["user"]);
   if (sendResponse) {
     sendResponse({ data: user });
   }
@@ -69,7 +69,7 @@ export async function handleGetPendingUserInfo(
     "userInfoPublishStatus",
   ];
   const { pendingUserInfo, pendingUserInfoList, userInfoPublishStatus } =
-    await StorageService.getInstance().getStorageCachedByKeys(keys);
+    await getStorageCachedByKeys(keys);
 
   if (sendResponse) {
     sendResponse({
@@ -96,7 +96,7 @@ export async function handleConfirmGatherUserInfo(
 
     const keys = ["pendingUserInfo", "pendingUserInfoList"];
     let { pendingUserInfo, pendingUserInfoList } =
-      await StorageService.getInstance().getStorageCachedByKeys(keys);
+      await getStorageCachedByKeys(keys);
 
     const candidateRaw = overrideRaw || pendingUserInfo?.raw;
     const candidateParsed =
@@ -113,7 +113,7 @@ export async function handleConfirmGatherUserInfo(
     const shouldWaitForDescription =
       !overrideRaw && !overrideParsed && !hasUserDescription(candidateParsed);
     if (shouldWaitForDescription) {
-      await StorageService.getInstance().setStorageCached({
+      await setStorageCached({
         userInfoPublishStatus: {
           status: "pending",
           ts: Date.now(),
@@ -123,7 +123,7 @@ export async function handleConfirmGatherUserInfo(
 
       await waitForUserInfoDescription(USERINFO_DESCRIPTION_WAIT_MS);
       const refreshed =
-        (await StorageService.getInstance().getStorageCachedByKeys([
+        (await getStorageCachedByKeys([
           "pendingUserInfo",
         ])) || {};
       pendingUserInfo = refreshed.pendingUserInfo || pendingUserInfo;
@@ -132,7 +132,7 @@ export async function handleConfirmGatherUserInfo(
     bgState.cachedFacebookUserInfoToPublish =
       overrideRaw || pendingUserInfo?.raw || candidateRaw;
 
-    await StorageService.getInstance().setStorageCached({
+    await setStorageCached({
       userInfoPublishStatus: {
         status: "pending",
         ts: Date.now(),
@@ -166,7 +166,7 @@ export async function handleConfirmGatherUserInfo(
         ? nextList[nextList.length - 1]
         : null;
 
-      await StorageService.getInstance().setStorageCached({
+      await setStorageCached({
         pendingUserInfo: nextPending,
         pendingUserInfoList: nextList,
         userInfoPublishStatus: status,
@@ -189,7 +189,7 @@ export async function handleConfirmGatherUserInfo(
 
     bgState.cachedFacebookUserInfoToPublish = null;
 
-    await StorageService.getInstance().setStorageCached({
+    await setStorageCached({
       userInfoPublishStatus: failStatus,
     });
 
@@ -208,7 +208,7 @@ export async function handleConfirmGatherUserInfo(
 
     bgState.cachedFacebookUserInfoToPublish = null;
 
-    await StorageService.getInstance().setStorageCached({
+    await setStorageCached({
       userInfoPublishStatus: failStatus,
     });
 
@@ -227,7 +227,7 @@ export async function handleRemovePendingUserInfo(
   try {
     const { inputs } = message || {};
     const { pendingUserInfoList } =
-      await StorageService.getInstance().getStorageCachedByKeys([
+      await getStorageCachedByKeys([
         "pendingUserInfoList",
       ]);
     const list = Array.isArray(pendingUserInfoList) ? pendingUserInfoList : [];
@@ -238,7 +238,7 @@ export async function handleRemovePendingUserInfo(
     });
     const nextPending = nextList.length ? nextList[nextList.length - 1] : null;
 
-    await StorageService.getInstance().setStorageCached({
+    await setStorageCached({
       pendingUserInfoList: nextList,
       pendingUserInfo: nextPending,
     });
@@ -262,7 +262,7 @@ export async function handleInitializeAfterLogin(
 ) {
   try {
     const keys = ["settings", "taskList", "activities", "automationByUser"];
-    const { settings, taskList, activities, automationByUser } = await StorageService.getInstance().getStorageCachedByKeys(keys);
+    const { settings, taskList, activities, automationByUser } = await getStorageCachedByKeys(keys);
 
     const {
       extension_session: extensionSession,
@@ -330,7 +330,7 @@ export async function handleInitializeAfterLogin(
       extensionSession?.extension_config_id ?? extensionConfig?.id;
     const useExtensionConfig = hasExtensionConfigId(extensionConfigId);
     const { personaProxy, personaFacebookAccounts, fbLoginMode } =
-      await StorageService.getInstance().getStorageCachedByKeys([
+      await getStorageCachedByKeys([
         "personaProxy",
         "personaFacebookAccounts",
         "fbLoginMode",
@@ -340,7 +340,7 @@ export async function handleInitializeAfterLogin(
     let personaAccountProxy: Record<string, unknown> | null = null;
     if (fbLoginMode?.mode === "auto") {
       if (useExtensionConfig) {
-        const { allSocialAccounts: storedSocialAccounts } = await StorageService.getInstance().getStorageCachedByKeys(["allSocialAccounts"]);
+        const { allSocialAccounts: storedSocialAccounts } = await getStorageCachedByKeys(["allSocialAccounts"]);
         const savedPlatform = (fbLoginMode as any)?.platform ?? "facebook";
         extensionAccountProxy = findExtensionAccountProxyByPlatform(
           extensionConfig?.social_accounts ?? storedSocialAccounts ?? [],
@@ -355,7 +355,7 @@ export async function handleInitializeAfterLogin(
           : [];
 
         const { allSocialAccounts } =
-          await StorageService.getInstance().getStorageCachedByKeys([
+          await getStorageCachedByKeys([
             "allSocialAccounts",
           ]);
 
@@ -381,7 +381,7 @@ export async function handleInitializeAfterLogin(
         );
 
         if (accountsFromMessage.length > 0) {
-          await StorageService.getInstance().setStorageCached({
+          await setStorageCached({
             allSocialAccounts: accountsFromMessage,
             personaFacebookAccounts: accountsFromMessage.filter(
               (a: any) => a.platform === "facebook",
@@ -410,7 +410,7 @@ export async function handleInitializeAfterLogin(
         );
       }
       try {
-        await StorageService.getInstance().setStorageCached({
+        await setStorageCached({
           activeProxy: effectiveProxy,
           extensionProxy: extensionConfigProxy || {},
           personaProxy: personaProxy || {},
@@ -423,13 +423,13 @@ export async function handleInitializeAfterLogin(
     ) {
       clearProxy();
       try {
-        await StorageService.getInstance().setStorageCached({
+        await setStorageCached({
           activeProxy: {},
         });
       } catch { }
     }
 
-    StorageService.getInstance().clearStorageCache();
+    clearStorageCache();
 
     const finalSettings = settings
       ? {
@@ -442,7 +442,7 @@ export async function handleInitializeAfterLogin(
         ...settingsFromAPI,
       };
 
-    await StorageService.getInstance().setStorageCached({
+    await setStorageCached({
       settings: finalSettings,
       taskList: taskList || [],
       activities: activities || [],
@@ -459,7 +459,7 @@ export async function handleInitializeAfterLogin(
 
     const initialScheduleTime = extensionConfig?.joinedGroupScheduleTime;
     if (typeof initialScheduleTime === "number" && initialScheduleTime > 0) {
-      await StorageService.getInstance().setStorageCached({
+      await setStorageCached({
         joinedGroupScheduleTime: initialScheduleTime,
       });
     }
@@ -508,7 +508,7 @@ export async function handleClearDataAfterLogout(
 
     const skipCookies = message?.inputs?.skipCookies === true;
 
-    StorageService.getInstance().clearStorageCache();
+    clearStorageCache();
 
     // Cancel any in-flight send from previous session.
     bgState.__sendDataKafkaRunId += 1;
@@ -672,7 +672,7 @@ export async function handleCancelTask(
     }
 
     const { taskList: storageTaskList } =
-      await StorageService.getInstance().getStorageCachedByKeys(["taskList"]);
+      await getStorageCachedByKeys(["taskList"]);
     if (!storageTaskList || !Array.isArray(storageTaskList)) {
       sendResponse?.({ success: false, error: "No taskList" });
       return;
@@ -693,7 +693,7 @@ export async function handleCancelTask(
     task.result = "Canceled. Reason: Canceled by user.";
     task.endTime = Date.now();
 
-    await StorageService.getInstance().setStorageCached({
+    await setStorageCached({
       taskList: storageTaskList,
     });
 
@@ -762,12 +762,11 @@ export async function handleScriptExecuteResult(
   sender: chrome.runtime.MessageSender,
   sendResponse?: (resp: any) => void,
 ): Promise<void> {
-  const storageService = StorageService.getInstance();
   const {
     settings: storageSettings,
     taskList: storageTaskList,
     user: storageUser,
-  } = await storageService.getStorageCachedByKeys([
+  } = await getStorageCachedByKeys([
     "settings",
     "taskList",
     "user",
@@ -825,8 +824,8 @@ export async function handleScriptExecuteResult(
   }
 
   if (localUpdating) {
-    storageService.clearStorageCache();
-    await storageService.setStorageCached(localUpdating);
+    clearStorageCache();
+    await setStorageCached(localUpdating);
     if (runningTask) {
       bgState.injectedTabs.delete(runningTask.tabId);
     }
@@ -843,7 +842,7 @@ export async function handleChangeTabUrl(
   sendResponse?: (resp: any) => void,
 ) {
   const { taskList: storageTaskList, user: storageUser } =
-    await StorageService.getInstance().getStorageCachedByKeys([
+    await getStorageCachedByKeys([
       "taskList",
       "user",
     ]);
@@ -862,7 +861,7 @@ export async function handleChangeTabUrl(
       };
     }
 
-    await StorageService.getInstance().setStorageCached({ taskList: storageTaskList });
+    await setStorageCached({ taskList: storageTaskList });
     chromeApi.tabs.update(parseInt(message.inputs.tabId), {
       url: message.inputs.url,
     });

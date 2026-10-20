@@ -1,7 +1,7 @@
 import { DEFAULT_SETTINGS_JSON, FB_WEB_FAVICON } from "../helpers/constants";
 import { readTrimmedString } from "../helpers/tools";
 import { Message, ProxyAuthCredentials, ProxyHealth, Settings } from "../types/types";
-import { StorageService } from "./storageServices";
+import { getStorageCachedByKeys, getStorageCache } from "./storageServices";
 import { isActiveProxy } from "@/utils/resolveEffectiveProxy";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 
@@ -74,7 +74,7 @@ export function setProxy(httpProxy?: Proxy, httpsProxy?: Proxy) {
 
 export function getCachedProxyHealth(): ProxyHealth | undefined {
         try {
-            return (StorageService.getInstance().storageCache as any)?.proxyHealth as ProxyHealth | undefined;
+            return (getStorageCache() as any)?.proxyHealth as ProxyHealth | undefined;
         } catch {
             return undefined;
         }
@@ -95,9 +95,9 @@ export function setProxyHealth(patch: Partial<ProxyHealth>) {
             chromeApi.storage.local.set({ proxyHealth: next });
 
             // Keep cache in sync even if storage event is delayed.
-            const storageCache = StorageService.getInstance().storageCache;
-            if (storageCache) {
-                (storageCache as any).proxyHealth = next;
+            const getStorageCache() = getStorageCache();
+            if (getStorageCache()) {
+                (getStorageCache() as any).proxyHealth = next;
             }
         } catch { }
     }
@@ -292,7 +292,7 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
                 await chromeApi.storage.local.set({ activeProxy: proxyActive ? proxyConfig : {} });
             } catch { }
 
-            const { settings } = await StorageService.getInstance().getStorageCachedByKeys(["settings"]);
+            const { settings } = await getStorageCachedByKeys(["settings"]);
             const finalSettings = settings
                 ? {
                     ...settings,
