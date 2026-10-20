@@ -17,7 +17,9 @@
     "crx": "wxt build && npx crx pack .output/chrome-mv3 extension.crx -p key.pem",
     "background:test": "vitest run --config vitest.background.config.ts",
     "background:test:watch": "vitest --config vitest.background.config.ts",
-    "background:typecheck": "tsc --noEmit"
+    "background:typecheck": "tsc --noEmit",
+    "background:test:e2e": "playwright test --config=playwright.background.config.ts",
+    "background:test:all": "pnpm background:test && pnpm background:test:e2e"
   },
   "dependencies": {
     "axios": "^1.13.2",
@@ -39,7 +41,8 @@
     "tailwindcss": "^4.3.1",
     "typescript": "^5.9.2",
     "wxt": "^0.20.6",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@playwright/test": "^1.56.1"
   },
   "packageManager": "pnpm@10.26.0+sha512.3b3f6c725ebe712506c0ab1ad4133cf86b1f4b687effce62a9b38b4d72e3954242e643190fc51fa1642949c735f403debd44f5cb0edd657abe63a8b6a7e1e402"
 }
