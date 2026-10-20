@@ -30,7 +30,7 @@ export class StorageService {
     }
 
     public async getStorageByKeys(keys: string[]): Promise<Record<string, any>> {
-        return new Promise((resolve) => this.storage.get(keys, resolve));
+        return this.storage.get(keys);
     }
 
     public async getStorageCachedByKeys(keys: string[]): Promise<StorageData> {
