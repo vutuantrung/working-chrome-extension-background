@@ -308,8 +308,7 @@ export function runTimeOnMessageHandler(
       sender.tab?.id,
     );
     if (message.name === "getFbProfileId" && sender.tab?.id) {
-      storageService
-        .getStorageCachedByKeys(["settings"])
+      getStorageCachedByKeys(["settings"])
         .then(({ settings }) => {
           if (settings?.openingDevtoolsTabId === sender.tab?.id) {
             setTimeout(() => {
