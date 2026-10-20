@@ -31,11 +31,20 @@ test("starts a genuine Manifest V3 background Service Worker", async () => {
   expect(extensionId).toMatch(/^[a-p]{32}$/);
 });
 
-test("uses Chrome runtime messaging in the worker", async () => {
-  const response = await worker.evaluate(async () =>
-    chrome.runtime.sendMessage({ type: "TEST_PING" }),
-  );
-  expect(response).toEqual({ ok: true, source: "background-fixture" });
+test("receives Chrome runtime messages from an extension page", async () => {
+  // A message originating inside the Service Worker is not delivered back
+  // to its own onMessage listener. Use a separate extension page as sender.
+  const extensionId = new URL(worker.url()).hostname;
+  const page = await context.newPage();
+  try {
+    await page.goto(`chrome-extension://${extensionId}/sender.html`);
+    const response = await page.evaluate(async () =>
+      chrome.runtime.sendMessage({ type: "TEST_PING" }),
+    );
+    expect(response).toEqual({ ok: true, source: "background-fixture" });
+  } finally {
+    await page.close();
+  }
 });
 
 test("observes genuine chrome.storage change events", async () => {
