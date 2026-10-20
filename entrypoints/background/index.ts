@@ -1,3 +1,4 @@
+import { chromeApi } from "./chrome-api";
 import { browser } from "wxt/browser";
 import { PROXY_HEALTH_CHECK_ALARM } from "./state";
 import { ProxyService } from "./services/proxyServices";
@@ -25,7 +26,7 @@ function initializeBackgroundServices() {
   // ========================================
   // ACTION HANDLERS
   // ========================================
-  chrome.action.onClicked.addListener(extensionHandlers.actionOnClickedHandler);
+  chromeApi.action.onClicked.addListener(extensionHandlers.actionOnClickedHandler);
 
   // Setup side panel - open when extension icon clicked
   extensionHandlers.setupSidePanelBehavior();
@@ -33,24 +34,24 @@ function initializeBackgroundServices() {
   // ========================================
   // RUNTIME HANDLERS
   // ========================================
-  chrome.runtime.onMessage.addListener(extensionHandlers.runTimeOnMessageHandler);
-  chrome.runtime.onInstalled.addListener(extensionHandlers.runTimeOnInstalledHandler);
+  chromeApi.runtime.onMessage.addListener(extensionHandlers.runTimeOnMessageHandler);
+  chromeApi.runtime.onInstalled.addListener(extensionHandlers.runTimeOnInstalledHandler);
 
   // ========================================
   // TAB HANDLERS
   // ========================================
-  chrome.tabs.onUpdated.addListener(extensionHandlers.tabsOnUpdatedHandler);
-  chrome.tabs.onRemoved.addListener(extensionHandlers.tabsOnRemovedHandler);
-  chrome.tabs.onActivated.addListener(extensionHandlers.tabsOnActivatedHandler);
+  chromeApi.tabs.onUpdated.addListener(extensionHandlers.tabsOnUpdatedHandler);
+  chromeApi.tabs.onRemoved.addListener(extensionHandlers.tabsOnRemovedHandler);
+  chromeApi.tabs.onActivated.addListener(extensionHandlers.tabsOnActivatedHandler);
 
   // ========================================
   // ALARMS HANDLERS
   // ========================================
-  chrome.alarms.onAlarm.addListener(extensionHandlers.alarmsOnAlarmHandler);
+  chromeApi.alarms.onAlarm.addListener(extensionHandlers.alarmsOnAlarmHandler);
   try {
-    chrome.alarms.get(PROXY_HEALTH_CHECK_ALARM, (existing) => {
+    chromeApi.alarms.get(PROXY_HEALTH_CHECK_ALARM, (existing) => {
       if (existing) return;
-      chrome.alarms.create(PROXY_HEALTH_CHECK_ALARM, {
+      chromeApi.alarms.create(PROXY_HEALTH_CHECK_ALARM, {
         delayInMinutes: 0.2,
         periodInMinutes: 1,
       });
@@ -60,30 +61,30 @@ function initializeBackgroundServices() {
   // ========================================
   // STORAGE HANDLERS
   // ========================================
-  chrome.storage.onChanged.addListener(extensionHandlers.storageOnChangedHandler);
+  chromeApi.storage.onChanged.addListener(extensionHandlers.storageOnChangedHandler);
 
   // ========================================
   // WINDOWS HANDLERS
   // ========================================
-  chrome.windows.onFocusChanged.addListener(extensionHandlers.windowOnFocusChangedHandler);
+  chromeApi.windows.onFocusChanged.addListener(extensionHandlers.windowOnFocusChangedHandler);
 
   // ========================================
   // WEB REQUEST HANDLERS
   // ========================================
-  chrome.webRequest.onAuthRequired.addListener(
+  chromeApi.webRequest.onAuthRequired.addListener(
     extensionHandlers.webRequestOnAuthRequiredHandler,
     { urls: ["<all_urls>"] },
     ["asyncBlocking"],
   );
 
   // Provide proxy auth credentials (username/password) to avoid browser prompt.
-  // NOTE: chrome.proxy.settings cannot apply credentials; must use webRequest.onAuthRequired.
+  // NOTE: chromeApi.proxy.settings cannot apply credentials; must use webRequest.onAuthRequired.
   // ProxyService.getInstance().registerProxyAuthProvider();
 
   // ========================================
   // PROXY HANDLERS
   // ========================================
-  chrome.proxy.onProxyError.addListener(extensionHandlers.onProxyErrorHandler);
+  chromeApi.proxy.onProxyError.addListener(extensionHandlers.onProxyErrorHandler);
   try {
     ProxyService.getInstance().setProxyHealth({
       state: "ok",

@@ -1,3 +1,4 @@
+import { chromeApi } from "../chrome-api";
 import { Activity } from "../types/types";
 import { parseDelayAndPeriodInMinutes } from "../helpers/tools";
 import { StorageService } from "./storageServices";
@@ -27,7 +28,7 @@ export async function handleUpdateScheduleActivities(scheduledActivities: Activi
     ) {
       alarmName = "scheduleTask_" + activity.id;
       scheduledTime = parseDelayAndPeriodInMinutes(activity.scheduleTime);
-      const alarm = await chrome.alarms.get(alarmName);
+      const alarm = await chromeApi.alarms.get(alarmName);
       if (alarm) {
         // If the alarm already has the correct period, leave it alone.
         if (
@@ -38,7 +39,7 @@ export async function handleUpdateScheduleActivities(scheduledActivities: Activi
           continue;
         }
         // Period mismatch — clear the stale alarm so it gets recreated below.
-        await chrome.alarms.clear(alarmName);
+        await chromeApi.alarms.clear(alarmName);
         // When recreating after a mismatch, delay = 1 period so the first fire is on schedule.
         scheduledTime = {
           ...scheduledTime,
@@ -49,7 +50,7 @@ export async function handleUpdateScheduleActivities(scheduledActivities: Activi
 
     if (activity.scheduleType === "alarm" && activity.type === "auto-scripts") {
       alarmName = "scheduleTask_" + activity.id;
-      let alarm = await chrome.alarms.get(alarmName);
+      let alarm = await chromeApi.alarms.get(alarmName);
       if (alarm) continue;
 
       let assignedTask = taskList?.find((task) => task.activityId === activity.id);
@@ -61,14 +62,14 @@ export async function handleUpdateScheduleActivities(scheduledActivities: Activi
     if (activity.scheduleType === "system-scripts") {
       alarmName = activity?.name?.toLowerCase();
       if (!alarmName) continue;
-      let alarm = await chrome.alarms.get(alarmName);
+      let alarm = await chromeApi.alarms.get(alarmName);
       if (alarm) continue;
 
       scheduledTime = parseDelayAndPeriodInMinutes(activity.scheduleTime);
     }
 
     if (alarmName && scheduledTime) {
-      chrome.alarms.create(alarmName, scheduledTime);
+      chromeApi.alarms.create(alarmName, scheduledTime);
       console.log("Alarm created:", alarmName);
     }
   }
