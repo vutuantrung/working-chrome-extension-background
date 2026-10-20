@@ -24,7 +24,7 @@ import {
 } from "../../scriptInjection";
 import { clearSocialPlatformCookies } from "../../helpers/cookieUtils";
 import { StorageService } from "../../services/storageServices";
-import { ProxyService } from "../../services/proxyServices";
+import { setProxy, clearProxy } from "../../services/proxyServices";
 import { ensureJoinedGroupsAlarmSchedule } from "../../services/fbGroupSyncService";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
@@ -404,7 +404,7 @@ export async function handleInitializeAfterLogin(
       settingsFromAPI.proxyOption = "manual";
       const { httpProxy, httpsProxy } = getProxyEndpoints(effectiveProxy);
       if (httpProxy || httpsProxy) {
-        ProxyService.getInstance().setProxy(
+        setProxy(
           httpProxy ?? undefined,
           httpsProxy ?? undefined,
         );
@@ -421,7 +421,7 @@ export async function handleInitializeAfterLogin(
         !Object.entries(extensionConfigProxy as object).length) ||
       (extensionProxy && !Object.entries(extensionProxy).length)
     ) {
-      ProxyService.getInstance().clearProxy();
+      clearProxy();
       try {
         await StorageService.getInstance().setStorageCached({
           activeProxy: {},
@@ -535,7 +535,7 @@ export async function handleClearDataAfterLogout(
       cleanupFacebookTabs().catch(() => { });
     }, 0);
 
-    ProxyService.getInstance().clearProxy();
+    clearProxy();
 
     chromeApi.action.setBadgeText({ text: "0" });
     chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });

@@ -1,4 +1,4 @@
-import { ProxyService } from "../../services/proxyServices";
+import { extractProxyAuthCredentials } from "../../services/proxyServices";
 import { StorageService } from "../../services/storageServices";
 
 export function webRequestOnAuthRequiredHandler(
@@ -10,8 +10,6 @@ export function webRequestOnAuthRequiredHandler(
         // callback();
         return;
     }
-
-    const proxyService = ProxyService.getInstance();
     StorageService.getInstance().getStorageCachedByKeys([
         "activeProxy",
         "extensionProxy",
@@ -20,10 +18,10 @@ export function webRequestOnAuthRequiredHandler(
     ]).then((result) => {
         const { activeProxy, extensionProxy, personaProxy, settings } = result;
         const creds =
-            proxyService.extractProxyAuthCredentials(activeProxy) ||
-            proxyService.extractProxyAuthCredentials(extensionProxy) ||
-            proxyService.extractProxyAuthCredentials(personaProxy) ||
-            proxyService.extractProxyAuthCredentials((settings as any)?.proxy);
+            extractProxyAuthCredentials(activeProxy) ||
+            extractProxyAuthCredentials(extensionProxy) ||
+            extractProxyAuthCredentials(personaProxy) ||
+            extractProxyAuthCredentials((settings as any)?.proxy);
 
         if (creds && callback) {
             callback({ authCredentials: creds });

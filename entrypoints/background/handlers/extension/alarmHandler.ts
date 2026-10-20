@@ -10,7 +10,7 @@ import { checkExtensionUpdateAndNotify } from "../../updateChecker";
 import { handleSyncExtensionInfo } from "../../services/syncService";
 import { handleUpdateScheduleActivities, fetchScheduledActivities } from "../../services/scheduleService";
 import { StorageService } from "../../services/storageServices";
-import { ProxyService } from "../../services/proxyServices";
+import { handleProxyHealthCheck } from "../../services/proxyServices";
 import { syncFacebookJoinedGroups, syncFacebookPendingGroups } from "../../services/fbGroupSyncService";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
@@ -18,7 +18,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
   const storageService = StorageService.getInstance();
   try {
     if (alarm.name === PROXY_HEALTH_CHECK_ALARM) {
-      await ProxyService.getInstance().handleProxyHealthCheck();
+      await handleProxyHealthCheck();
       return;
     }
 

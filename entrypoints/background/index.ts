@@ -1,7 +1,7 @@
 import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 import { browser } from "wxt/browser";
 import { PROXY_HEALTH_CHECK_ALARM } from "./state";
-import { ProxyService } from "./services/proxyServices";
+import { setProxyHealth, handleProxyHealthCheck } from "./services/proxyServices";
 
 import * as extensionHandlers from "./handlers/extension";
 
@@ -79,14 +79,14 @@ function initializeBackgroundServices() {
 
   // Provide proxy auth credentials (username/password) to avoid browser prompt.
   // NOTE: chromeApi.proxy.settings cannot apply credentials; must use webRequest.onAuthRequired.
-  // ProxyService.getInstance().registerProxyAuthProvider();
+  // registerProxyAuthProvider();
 
   // ========================================
   // PROXY HANDLERS
   // ========================================
   chromeApi.proxy.onProxyError.addListener(extensionHandlers.onProxyErrorHandler);
   try {
-    ProxyService.getInstance().setProxyHealth({
+    setProxyHealth({
       state: "ok",
       reason: "sw_boot",
       lastOkAt: Date.now(),
@@ -96,6 +96,6 @@ function initializeBackgroundServices() {
       consecutiveFailures: 0,
     });
 
-    Promise.resolve(ProxyService.getInstance().handleProxyHealthCheck());
+    Promise.resolve(handleProxyHealthCheck());
   } catch { }
 }

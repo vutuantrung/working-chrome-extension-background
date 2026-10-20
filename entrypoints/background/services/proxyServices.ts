@@ -10,31 +10,16 @@ interface Proxy {
     port: string
 }
 
-export class ProxyService {
-    private static _instance: ProxyService | null = null;
-    private __lastProxyErrorWriteAt = 0;
+let lastProxyErrorWriteAt = 0;
+export function getLastProxyErrorWriteAt(): number { return lastProxyErrorWriteAt; }
+export function setLastProxyErrorWriteAt(value: number): void { lastProxyErrorWriteAt = value; }
 
-    static getInstance(): ProxyService {
-        if (!this._instance) {
-            this._instance = new ProxyService();
-        }
-        return this._instance;
-    }
-
-    public get lastProxyErrorWriteAt(): number {
-        return this.__lastProxyErrorWriteAt;
-    }
-
-    public set lastProxyErrorWriteAt(value: number) {
-        this.__lastProxyErrorWriteAt = value;
-    }
-
-    public clearProxy(): void {
+export function clearProxy(): void {
         chromeApi.proxy.settings.clear({ scope: "regular" }, () => {
             console.log("Proxy cleared.");
         });
 
-        this.setProxyHealth({
+        setProxyHealth({
             state: "ok",
             updatedAt: Date.now(),
             reason: "proxy_cleared",
@@ -44,7 +29,7 @@ export class ProxyService {
         });
     }
 
-    public setProxy(httpProxy?: Proxy, httpsProxy?: Proxy) {
+export function setProxy(httpProxy?: Proxy, httpsProxy?: Proxy) {
         const rules: any = {
             bypassList: ["localhost", "127.0.0.1"],
         };
@@ -74,7 +59,7 @@ export class ProxyService {
             console.log("Proxy is/are set");
         });
 
-        this.setProxyHealth({
+        setProxyHealth({
             state: "ok",
             updatedAt: Date.now(),
             reason: "proxy_set",
@@ -83,11 +68,11 @@ export class ProxyService {
             lastErrorAt: undefined,
         });
 
-        try { Promise.resolve(this.handleProxyHealthCheck()).catch(() => { }); }
+        try { Promise.resolve(handleProxyHealthCheck()).catch(() => { }); }
         catch { }
     }
 
-    public getCachedProxyHealth(): ProxyHealth | undefined {
+export function getCachedProxyHealth(): ProxyHealth | undefined {
         try {
             return (StorageService.getInstance().storageCache as any)?.proxyHealth as ProxyHealth | undefined;
         } catch {
@@ -95,9 +80,9 @@ export class ProxyService {
         }
     }
 
-    public setProxyHealth(patch: Partial<ProxyHealth>) {
+export function setProxyHealth(patch: Partial<ProxyHealth>) {
         try {
-            const prev = this.getCachedProxyHealth();
+            const prev = getCachedProxyHealth();
             const now = Date.now();
 
             const next: ProxyHealth = {
@@ -117,7 +102,7 @@ export class ProxyService {
         } catch { }
     }
 
-    public async handleProxyHealthCheck() {
+export async function handleProxyHealthCheck() {
         const startedAt = Date.now();
         const getProxyValue = async (): Promise<chrome.proxy.ProxyConfig | null> => {
             const proxySettings = chromeApi.proxy.settings;
@@ -131,12 +116,12 @@ export class ProxyService {
         };
 
         const proxyValue = await getProxyValue();
-        const prevHealth = this.getCachedProxyHealth();
+        const prevHealth = getCachedProxyHealth();
         const prevFailures = prevHealth?.consecutiveFailures ?? 0;
 
         // If proxy isn't active, keep state as OK (Restart button won't show anyway because proxy won't match).
         if (!proxyValue || proxyValue.mode !== "fixed_servers") {
-            this.setProxyHealth({
+            setProxyHealth({
                 state: "ok",
                 updatedAt: Date.now(),
                 lastOkAt: Date.now(),
@@ -164,7 +149,7 @@ export class ProxyService {
             const ok = resp && resp.status >= 200 && resp.status < 400;
 
             if (ok) {
-                this.setProxyHealth({
+                setProxyHealth({
                     state: "ok",
                     updatedAt: Date.now(),
                     lastOkAt: Date.now(),
@@ -188,18 +173,18 @@ export class ProxyService {
                 // Avoid false positives (e.g. transient errors right after applying proxy).
                 // Only enter hard error state after 2 consecutive failures.
                 if (consecutiveFailures < 2) {
-                    this.setProxyHealth({
+                    setProxyHealth({
                         ...basePatch,
                         state: "ok",
                         reason: "alarm_check_bad_status_soft",
                     });
 
                     setTimeout(() => {
-                        try { void this.handleProxyHealthCheck(); }
+                        try { void handleProxyHealthCheck(); }
                         catch { }
                     }, 5000);
                 } else {
-                    this.setProxyHealth({
+                    setProxyHealth({
                         ...basePatch,
                         state: "error",
                     });
@@ -218,18 +203,18 @@ export class ProxyService {
             } satisfies Partial<ProxyHealth>;
 
             if (consecutiveFailures < 2) {
-                this.setProxyHealth({
+                setProxyHealth({
                     ...basePatch,
                     state: "ok",
                     reason: "alarm_check_failed_soft",
                 });
 
                 setTimeout(() => {
-                    try { void this.handleProxyHealthCheck(); }
+                    try { void handleProxyHealthCheck(); }
                     catch { }
                 }, 5000);
             } else {
-                this.setProxyHealth({
+                setProxyHealth({
                     ...basePatch,
                     state: "error",
                 });
@@ -239,17 +224,17 @@ export class ProxyService {
         }
     }
 
-    public onProxyErrorHandler(details: any) {
+export function onProxyErrorHandler(details: any) {
         const now = Date.now();
         // Throttle storage writes to avoid spam.
-        if (now - this.__lastProxyErrorWriteAt < 3000) return;
-        this.__lastProxyErrorWriteAt = now;
+        if (now - lastProxyErrorWriteAt < 3000) return;
+        lastProxyErrorWriteAt = now;
 
         try {
             // Only mark error when proxy is actually in fixed_servers mode.
             const proxyApi: any = (chrome as any)?.proxy?.settings;
             if (!proxyApi?.get) {
-                this.setProxyHealth({
+                setProxyHealth({
                     state: "error",
                     updatedAt: now,
                     lastErrorAt: now,
@@ -265,7 +250,7 @@ export class ProxyService {
                 const value = current?.value;
                 if (value?.mode !== "fixed_servers") return;
 
-                this.setProxyHealth({
+                setProxyHealth({
                     state: "error",
                     updatedAt: now,
                     lastErrorAt: now,
@@ -278,7 +263,7 @@ export class ProxyService {
         } catch { }
     }
 
-    public async handleProxy(message: Message, sendResponse: (resp: any) => void) {
+export async function handleProxy(message: Message, sendResponse: (resp: any) => void) {
         try {
             const { extension_proxy: proxyConfig } = message.inputs;
             const settingsFromProxy: Partial<Settings> = {};
@@ -295,10 +280,10 @@ export class ProxyService {
                     : undefined;
 
                 if (httpProxy || httpsProxy) {
-                    this.setProxy(httpProxy, httpsProxy);
+                    setProxy(httpProxy, httpsProxy);
                 }
             } else if (!proxyConfig || (typeof proxyConfig === "object" && !Object.keys(proxyConfig).length)) {
-                this.clearProxy();
+                clearProxy();
             }
 
             // Persist effective proxy so popup can reflect changes (Restart button logic depends on it).
@@ -341,7 +326,7 @@ export class ProxyService {
         }
     }
 
-    public extractProxyAuthCredentials(proxyLike: any): ProxyAuthCredentials | null {
+export function extractProxyAuthCredentials(proxyLike: any): ProxyAuthCredentials | null {
         if (!proxyLike || typeof proxyLike !== "object") return null;
 
         const candidates: Array<{ u: any; p: any }> = [
@@ -382,4 +367,3 @@ export class ProxyService {
 
         return null;
     }
-}

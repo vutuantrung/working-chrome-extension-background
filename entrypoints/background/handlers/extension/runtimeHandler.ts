@@ -29,7 +29,7 @@ import {
 } from "../facebook/facebookMessageHandlers";
 import { DEFAULT_SETTINGS_JSON } from "../../helpers/constants";
 import { StorageService } from "../../services/storageServices";
-import { ProxyService } from "../../services/proxyServices";
+import { handleProxy } from "../../services/proxyServices";
 import { getCorrectFacebookTabId } from "../../helpers/tabUtils";
 import { isLikelyProfilePageUrl } from "../../helpers/user-info";
 import { HandlerContext } from "../../types/handle";
@@ -274,7 +274,6 @@ export function runTimeOnMessageHandler(
   sendResponse: (response?: any) => void,
 ): boolean {
   const storageService = StorageService.getInstance();
-  const proxyService = ProxyService.getInstance();
 
   if (message.type === "GET_MY_TAB_ID") {
     sendResponse?.({ success: true, tabId: sender.tab?.id });
@@ -405,7 +404,7 @@ export function runTimeOnMessageHandler(
             case "CLEAR_DATA_AFTER_LOGOUT":
                 return handleClearDataAfterLogout(message, sendResponse);
             case "SET_PROXY":
-                return proxyService.handleProxy(message, sendResponse);
+                return handleProxy(message, sendResponse);
             case "SET_BADGE_TEXT":
                 return handleSetBadgeText(message, sendResponse);
             case "CANCEL_TASK":

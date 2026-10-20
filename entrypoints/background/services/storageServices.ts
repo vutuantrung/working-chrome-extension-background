@@ -2,7 +2,7 @@ import { normalizeTabSpecificSetting } from "../helpers/specific-tab";
 import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
 import { isValidArrayAct } from "../helpers/tools";
 import { Archive, Settings, StorageData } from "../types/types";
-import { ProxyService } from "./proxyServices";
+import { setProxy, clearProxy } from "./proxyServices";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 
 export type LocalStorageAdapter = Pick<typeof chrome.storage.local, "get" | "set">;
@@ -203,12 +203,12 @@ export class StorageService {
                 updatedSettings = { ...updatedSettings, proxy: updatedProxy };
                 const proxyData = JSON.parse(updatedProxy);
                 if (proxyData === "system") {
-                    ProxyService.getInstance().clearProxy();
+                    clearProxy();
                 } else {
                     const { http, https } = proxyData;
                     const httpProxy = http.host && http.port ? http : null;
                     const httpsProxy = https.host && https.port ? https : null;
-                    ProxyService.getInstance().setProxy(httpProxy, httpsProxy);
+                    setProxy(httpProxy, httpsProxy);
                 }
             }
 
