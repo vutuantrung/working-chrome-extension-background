@@ -1,7 +1,7 @@
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { Activity } from "../types/types";
 import { parseDelayAndPeriodInMinutes } from "../helpers/tools";
-import { getStorageCachedByKeys, setStorageCached, getStorageCache, setStorageCache } from "./storageServices";
+import { getStorageCachedByKeys, setStorageCached } from "./storageServices";
 import { getExtensionConfigInfo } from "../infrastructure/api/source-member.api";
 import { User } from "@/entrypoints/sidepanel/types/types";
 
