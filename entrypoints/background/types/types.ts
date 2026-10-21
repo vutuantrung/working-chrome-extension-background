@@ -1,5 +1,4 @@
 import { FacebookUserFollowData, FacebookUserFriendData } from "@/entrypoints/background/utils/parsers/types";
-import { User } from "@/entrypoints/sidepanel/types/types";
 
 export type EffectiveProxySource = "extension" | "persona" | "account" | "none";
 
@@ -170,6 +169,15 @@ export interface Task {
   endTime?: number;
   wsReporter?: WebSocket | null;
   profileId?: string;
+}
+
+export interface User {
+    id: string;
+    username: string;
+    name: string;
+    apikey: string;
+    tenants: any;
+    extension_session: any;
 }
 
 export interface StorageData {

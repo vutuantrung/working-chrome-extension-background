@@ -2,9 +2,7 @@ import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 import { getCaseStorageKey } from "../../utils/helpers/evidentStudio";
 import { Message, Screenshot } from "../../types/types";
 
-export function handleCaptureScreenshot(
-  sendResponse: (resp: any) => void,
-) {
+export function handleCaptureScreenshot(sendResponse: (resp: any) => void) {
   chromeApi.tabs.captureVisibleTab(
     { format: "png" },
     (dataUrl) => {
@@ -16,7 +14,7 @@ export function handleCaptureScreenshot(
     }
   );
 }
- 
+
 export async function handleScreenshotCropped(
   message: Message,
   sendResponse: (resp: any) => void,
@@ -30,9 +28,9 @@ export async function handleScreenshotCropped(
   const entry: Screenshot = { dataUrl, timestamp };
 
   const data = await chromeApi.storage.local.get([storageKey]);
-  const list = [...((data[storageKey] ?? []) as typeof entry[]), entry];  
+  const list = [...((data[storageKey] ?? []) as typeof entry[]), entry];
   await chromeApi.storage.local.set({ [storageKey]: list });
-  await chromeApi.storage.local.set({ lastUnsavedProfileCase: {id: caseId, timestamp} });
+  await chromeApi.storage.local.set({ lastUnsavedProfileCase: { id: caseId, timestamp } });
 
   sendResponse({ ok: true });
 }

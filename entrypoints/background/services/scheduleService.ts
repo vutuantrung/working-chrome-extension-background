@@ -3,7 +3,7 @@ import { Activity } from "../types/types";
 import { parseDelayAndPeriodInMinutes } from "../utils/tools";
 import { getStorageCachedByKeys, setStorageCached } from "./storageServices";
 import { getExtensionConfigInfo } from "../infrastructure/api/source-member.api";
-import { User } from "@/entrypoints/sidepanel/types/types";
+import type { User } from "../types/types";
 
 export interface ScheduleDependencies {
   alarms: Pick<typeof chrome.alarms, "get" | "clear" | "create">;

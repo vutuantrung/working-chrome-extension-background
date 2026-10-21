@@ -7,7 +7,6 @@ import {
     YoutubeDataType,
 } from "@/entrypoints/background/utils/parsers/types";
 
-
 type SetStorageCachedFn = (data: Record<string, any>) => Promise<void>;
 type DebounceFn = (...args: any[]) => void;
 
