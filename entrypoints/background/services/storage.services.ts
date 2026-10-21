@@ -1,7 +1,7 @@
+import * as services from "../services";
 import { normalizeTabSpecificSetting } from "../utils/helpers/tabControl";
 import { isValidArrayAct } from "../utils/tools";
 import { Archive, Settings, StorageData } from "../types/types";
-import { setProxy, clearProxy } from "./proxyServices";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { DefaultValues } from "../utils/constants";
 
@@ -192,12 +192,12 @@ export async function handleSetSettings(message: any, sendResponse?: (resp: any)
             updatedSettings = { ...updatedSettings, proxy: updatedProxy };
             const proxyData = JSON.parse(updatedProxy);
             if (proxyData === "system") {
-                clearProxy();
+                services.proxyServices.clearProxy();
             } else {
                 const { http, https } = proxyData;
                 const httpProxy = http.host && http.port ? http : null;
                 const httpsProxy = https.host && https.port ? https : null;
-                setProxy(httpProxy, httpsProxy);
+                services.proxyServices.setProxy(httpProxy, httpsProxy);
             }
         }
 

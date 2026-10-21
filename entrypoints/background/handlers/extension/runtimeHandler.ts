@@ -32,15 +32,7 @@ import {
   handleReportJoinGroupResponse,
   handleFetchJoinGroupPreparationData
 } from "../facebook/facebookMessageHandlers";
-import {
-  getStorageCachedByKeys,
-  setStorageCached,
-  handleUpdateArchive,
-  handleUpdateSettings,
-  handleGetSettings,
-  handleSetSettings,
-} from "../../services/storageServices";
-import { handleProxy } from "../../services/proxyServices";
+import * as services from "../../services";
 import * as helpers from "../../utils/helpers";
 import { isLikelyProfilePageUrl } from "../../utils/helpers/userInfo";
 import { HandlerContext } from "../../types/handle";
@@ -275,7 +267,7 @@ export function runTimeOnMessageHandler(
       sender.tab?.id,
     );
     if (message.name === "getFbProfileId" && sender.tab?.id) {
-      getStorageCachedByKeys(["settings"])
+      services.storageServices.getStorageCachedByKeys(["settings"])
         .then(({ settings }) => {
           if (settings?.openingDevtoolsTabId === sender.tab?.id) {
             setTimeout(() => {
@@ -349,17 +341,17 @@ export function runTimeOnMessageHandler(
 
       // SYSTEM REQUESTS
       case "SET_SETTINGS":
-        return handleSetSettings(message, sendResponse);
+        return services.storageServices.handleSetSettings(message, sendResponse);
       case "GET_SETTINGS":
-        return handleGetSettings(message, sendResponse);
+        return services.storageServices.handleGetSettings(message, sendResponse);
       case "GET_USERINFO":
         return handleGetUserInfo(message, sendResponse);
       case "GET_PENDING_USERINFO":
         return handleGetPendingUserInfo(message, sendResponse);
       case "UPDATE_SETTINGS":
-        return handleUpdateSettings(message, sendResponse);
+        return services.storageServices.handleUpdateSettings(message, sendResponse);
       case "UPDATE_ARCHIVE":
-        return handleUpdateArchive(message, sendResponse);
+        return services.storageServices.handleUpdateArchive(message, sendResponse);
       case "REMOVE_PENDING_USERINFO":
         return handleRemovePendingUserInfo(message, sendResponse);
       case "CONFIRM_GATHER_USERINFO":
@@ -369,7 +361,7 @@ export function runTimeOnMessageHandler(
       case "CLEAR_DATA_AFTER_LOGOUT":
         return handleClearDataAfterLogout(message, sendResponse);
       case "SET_PROXY":
-        return handleProxy(message, sendResponse);
+        return services.proxyServices.handleProxy(message, sendResponse);
       case "SET_BADGE_TEXT":
         return handleSetBadgeText(message, sendResponse);
       case "CANCEL_TASK":
@@ -421,14 +413,14 @@ export async function runTimeOnInstalledHandler(
   if (details.reason === "install") {
   } else if (details.reason === "update") {
     const { settings } =
-      await getStorageCachedByKeys(["settings"]);
+      await services.storageServices.getStorageCachedByKeys(["settings"]);
     if (settings) {
       const mergedSettings = {
         ...DefaultValues.SETTINGS_DATA,
         ...settings,
         archive: settings.archive || {},
       };
-      await setStorageCached({
+      await services.storageServices.setStorageCached({
         settings: mergedSettings,
       });
     }

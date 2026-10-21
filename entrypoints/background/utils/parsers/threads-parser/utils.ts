@@ -1,6 +1,7 @@
 import SparkMD5 from "spark-md5";
 import { ThreadsPostData, ThreadsPostLocalStorageInfo, ThreadsUserLocalStorageInfo, ThreadsUserProfileData } from "../types";
-import { getStorageByKeys, setStorageCached } from "@/entrypoints/background/services/storageServices";
+import * as services from "../../../services";
+
 export const MAXIMUM_USERS = 10;
 export const THREADS_USER_INFO_KEY = "threads_user_info";
 export const THREADS_POST_INFO_KEY = "threads_post_info";
@@ -30,7 +31,7 @@ export function parseThreadsUserInfo(threadsUserInfoStr = ""): ThreadsUserLocalS
 }
 
 export async function storeThreadsProfileData(newUsers: ThreadsUserProfileData[] = []): Promise<ThreadsUserLocalStorageInfo[]> {
-    const localStorageUserInfo = await getStorageByKeys([THREADS_USER_INFO_KEY]);
+    const localStorageUserInfo = await services.storageServices.getStorageByKeys([THREADS_USER_INFO_KEY]);
     const threadsUserInfoStr = localStorageUserInfo[THREADS_USER_INFO_KEY] || "";
     const currentUserInfo = parseThreadsUserInfo(threadsUserInfoStr);
     const tmpCurrentUserInfo = [...currentUserInfo];
@@ -49,7 +50,7 @@ export async function storeThreadsProfileData(newUsers: ThreadsUserProfileData[]
         };
         tmpCurrentUserInfo.push(newSavingUser);
     }
-    setStorageCached({ [THREADS_USER_INFO_KEY]: JSON.stringify(tmpCurrentUserInfo) });
+    services.storageServices.setStorageCached({ [THREADS_USER_INFO_KEY]: JSON.stringify(tmpCurrentUserInfo) });
     return tmpCurrentUserInfo;
 }
 
@@ -61,7 +62,7 @@ export function parseThreadsPostsInfo(threadsPostsInfoStr = ""): ThreadsPostLoca
 }
 
 export async function storeThreadsPostData(postsData: ThreadsPostData[] = []): Promise<ThreadsPostLocalStorageInfo[]> {
-    const localStoragePostInfo = await getStorageByKeys([THREADS_POST_INFO_KEY]);
+    const localStoragePostInfo = await services.storageServices.getStorageByKeys([THREADS_POST_INFO_KEY]);
     const threadsPostInfoStr = localStoragePostInfo[THREADS_POST_INFO_KEY] || "";
     const currentPostInfo = parseThreadsPostsInfo(threadsPostInfoStr);
     const tmpCurrentPostInfo = [...currentPostInfo];
@@ -85,6 +86,6 @@ export async function storeThreadsPostData(postsData: ThreadsPostData[] = []): P
         tmpCurrentPostInfo.push(newPostLocalStorageInfo);
     }
 
-    setStorageCached({ [THREADS_POST_INFO_KEY]: JSON.stringify(tmpCurrentPostInfo) });
+    services.storageServices.setStorageCached({ [THREADS_POST_INFO_KEY]: JSON.stringify(tmpCurrentPostInfo) });
     return tmpCurrentPostInfo;
 }

@@ -1,6 +1,6 @@
+import * as services from "../services"
 import { readTrimmedString } from "../utils/tools";
 import { Message, ProxyAuthCredentials, ProxyHealth, Settings } from "../types/types";
-import { getStorageCachedByKeys, getStorageCache } from "./storageServices";
 import { isActiveProxy } from "@/entrypoints/background/utils/helpers/proxy";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { DefaultValues, Constants } from "../utils/constants";
@@ -74,7 +74,7 @@ export function setProxy(httpProxy?: Proxy, httpsProxy?: Proxy) {
 
 export function getCachedProxyHealth(): ProxyHealth | undefined {
     try {
-        return (getStorageCache() as any)?.proxyHealth as ProxyHealth | undefined;
+        return (services.storageServices.getStorageCache() as any)?.proxyHealth as ProxyHealth | undefined;
     } catch {
         return undefined;
     }
@@ -95,7 +95,7 @@ export function setProxyHealth(patch: Partial<ProxyHealth>) {
         chromeApi.storage.local.set({ proxyHealth: next });
 
         // Keep cache in sync even if storage event is delayed.
-        const cache = getStorageCache();
+        const cache = services.storageServices.getStorageCache();
         if (cache) {
             (cache as any).proxyHealth = next;
         }
@@ -292,7 +292,7 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
             await chromeApi.storage.local.set({ activeProxy: proxyActive ? proxyConfig : {} });
         } catch { }
 
-        const { settings } = await getStorageCachedByKeys(["settings"]);
+        const { settings } = await services.storageServices.getStorageCachedByKeys(["settings"]);
         const finalSettings = settings
             ? {
                 ...settings,

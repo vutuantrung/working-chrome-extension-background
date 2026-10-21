@@ -1,7 +1,7 @@
-import { getStorageCachedByKeys } from "../../services/storageServices";
 import { PendingUserInfo } from "../../types/types";
 import { delayMs } from "../tools";
 import { Constants } from "../constants";
+import * as services from "../../services";
 
 export type UserProfileMainFieldKey = (typeof Constants.USER_PROFILE_MAIN_FIELD_KEYS)[number];
 
@@ -120,7 +120,7 @@ export async function waitForUserInfoDescription(maxWaitMs: number): Promise<{ f
   let lastParsed: any = undefined;
 
   while (Date.now() - startedAt < maxWaitMs) {
-    const { pendingUserInfo } = (await getStorageCachedByKeys(["pendingUserInfo"])) || {};
+    const { pendingUserInfo } = (await services.storageServices.getStorageCachedByKeys(["pendingUserInfo"])) || {};
     const parsed = pendingUserInfo?.parsed;
     if (parsed) lastParsed = parsed;
     if (hasUserDescription(parsed)) return { found: true, info: parsed };
@@ -135,7 +135,7 @@ export async function waitForUserInfoCollectReady(maxWaitMs: number): Promise<Re
   let lastFiltered: Record<string, any> | null = null;
 
   while (Date.now() - startedAt < maxWaitMs) {
-    const { pendingUserInfo } = (await getStorageCachedByKeys(["pendingUserInfo"])) || {};
+    const { pendingUserInfo } = (await services.storageServices.getStorageCachedByKeys(["pendingUserInfo"])) || {};
     let parsed = pendingUserInfo?.parsed;
     if (!parsed && pendingUserInfo?.raw) {
       try {

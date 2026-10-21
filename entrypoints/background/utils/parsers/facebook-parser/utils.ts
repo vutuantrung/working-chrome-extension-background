@@ -1,8 +1,8 @@
-import { getStorageByKeys, setStorageCached } from "@/entrypoints/background/services/storageServices";
+
 // FACEBOOK PARSING UTILS
 // ===============================================
 import SparkMD5 from "spark-md5";
-import { } from "@/entrypoints/background/services/storageServices";
+import * as services from "../../../services";
 import { FacebookPostData, FacebookPostLocalStorageInfo } from "../types";
 
 export function deriveArticleId(postId: string): string {
@@ -505,7 +505,7 @@ export function parseFacebookPostInfo(facebookPostsOwnersStr: string = ""): Face
 }
 
 export async function storeFacebookPostInfo(newGroupPost: FacebookPostData[] = []): Promise<FacebookPostLocalStorageInfo[]> {
-  const localStoragePostOwner = await getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
+  const localStoragePostOwner = await services.storageServices.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
   const facebookPostsOwnersStr = localStoragePostOwner[FACEBOOK_POST_INFO_KEY] || "";
   const currentGroupPosts = parseFacebookPostInfo(facebookPostsOwnersStr);
   const tmpCurrentGroupPosts = [...currentGroupPosts];
@@ -529,7 +529,7 @@ export async function storeFacebookPostInfo(newGroupPost: FacebookPostData[] = [
 
   const updatingPostsString = tmpCurrentGroupPosts
     .map((p) => `${p.entry_rowkey}|${p.post_id}|${p.owner_id}|${p.owner_name}|${p.owner_type}`).join("::");
-  setStorageCached({ [FACEBOOK_POST_INFO_KEY]: updatingPostsString });
+  services.storageServices.setStorageCached({ [FACEBOOK_POST_INFO_KEY]: updatingPostsString });
 
   return tmpCurrentGroupPosts;
 }

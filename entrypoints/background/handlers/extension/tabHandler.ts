@@ -2,13 +2,13 @@ import { bgState } from "../../state";
 import { isSupportedPlatformUrl } from "../../utils/tools";
 import { DefaultValues, State } from "../../utils/constants";
 import * as helpers from "../../utils/helpers";
+import * as services from "../../services";
 import {
   ensureFacebookGraphInterceptorInstalled,
   ensureFacebookGraphForwarderInstalled,
   ensureFacebookProfileIdBootstrapInstalled,
 } from "../../scriptInjection";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
-import { getStorageCachedByKeys, setStorageCached } from "../../services/storageServices";
 
 export async function tabsOnActivatedHandler(tabId: any) {
   await handleMaybeFacebookTab(tabId);
@@ -26,7 +26,7 @@ export async function tabsOnUpdatedHandler(
     settings: storageSettings,
     taskList: storageTaskList,
     user: storageUser,
-  } = await getStorageCachedByKeys([
+  } = await services.storageServices.getStorageCachedByKeys([
     "settings",
     "taskList",
     "user",
@@ -202,7 +202,7 @@ export async function tabsOnUpdatedHandler(
     runningTaskInfo.state = State.TaskState.CANCELED;
     runningTaskInfo.result = `Canceled. Reason: Tab with id ${runningTaskInfo.tabId} not found`;
     runningTaskInfo.endTime = Date.now();
-    await setStorageCached({
+    await services.storageServices.setStorageCached({
       taskList: storageTaskList,
     });
     return;
@@ -252,7 +252,7 @@ export async function tabsOnUpdatedHandler(
 export async function tabsOnRemovedHandler(tabId: number) {
   try {
     const { settings } =
-      await getStorageCachedByKeys(["settings"]);
+      await services.storageServices.getStorageCachedByKeys(["settings"]);
 
     const storedFirstTabId = settings?.firstFacebookTabId || 0;
     const storedBoundTabId = settings?.openingDevtoolsTabId || 0;
@@ -262,14 +262,14 @@ export async function tabsOnRemovedHandler(tabId: number) {
       bgState.firstFacebookTabId = null;
 
       const updatedSettings = { ...settings, firstFacebookTabId: 0 };
-      await setStorageCached({ settings: updatedSettings });
+      await services.storageServices.setStorageCached({ settings: updatedSettings });
 
       // In first-tab mode, only when the default tab is closed, pick a new one (if any exist)
       if ((settings?.isTabSpecific ?? false) === false) {
         const replacementTabId = await helpers.tabControl.findDeterministicFacebookTabId();
         if (replacementTabId) {
           bgState.firstFacebookTabId = replacementTabId;
-          await setStorageCached({
+          await services.storageServices.setStorageCached({
             settings: {
               ...updatedSettings,
               firstFacebookTabId: replacementTabId,
@@ -288,7 +288,7 @@ export async function tabsOnRemovedHandler(tabId: number) {
         `[tabsOnRemovedHandler] Bound tab ${tabId} was closed. Clearing binding.`,
       );
 
-      await setStorageCached({
+      await services.storageServices.setStorageCached({
         settings: {
           ...settings,
           openingDevtoolsTabId: 0,
@@ -326,7 +326,7 @@ export async function handleMaybeFacebookTab(tabId: any) {
     await ensureFacebookProfileIdBootstrapInstalled(tabId);
     await ensureFacebookGraphForwarderInstalled(tabId);
 
-    await setStorageCached({
+    await services.storageServices.setStorageCached({
       lastActiveFacebookTab: {
         id: tab.id,
         title: tab.title || "",
@@ -335,7 +335,7 @@ export async function handleMaybeFacebookTab(tabId: any) {
     });
 
     const { settings } =
-      await getStorageCachedByKeys(["settings"]);
+      await services.storageServices.getStorageCachedByKeys(["settings"]);
     const isTabSpecific = settings?.isTabSpecific ?? false;
 
     // ── NEW: if a manual bind is active, never auto-override it ──────────
@@ -354,7 +354,7 @@ export async function handleMaybeFacebookTab(tabId: any) {
           ...settings,
           openingDevtoolsTabId: tabId,
         };
-        await setStorageCached({ settings: updatedSettings });
+        await services.storageServices.setStorageCached({ settings: updatedSettings });
       }
     } else {
       if (!settings?.openingDevtoolsTabId) {
@@ -363,7 +363,7 @@ export async function handleMaybeFacebookTab(tabId: any) {
           ...(settings || DefaultValues.SETTINGS_DATA),
           openingDevtoolsTabId: tabId,
         };
-        await setStorageCached({ settings: updatedSettings });
+        await services.storageServices.setStorageCached({ settings: updatedSettings });
       }
     }
   } catch (e) {

@@ -1,6 +1,6 @@
+import * as services from "../services";
 import { bgState } from "../state";
 import { _runKafkaPublish } from "./kafkaPublisher";
-import { handleSyncExtensionInfo } from "../services/syncService";
 import { ThreadsPostData } from "@/entrypoints/background/utils/parsers/types";
 import { Constants, DefaultValues } from "../utils/constants";
 
@@ -48,7 +48,7 @@ export async function sendThreadsCachedData(): Promise<void> {
 
         bgState.cachedThreadsData = [];
         try {
-          await handleSyncExtensionInfo(true);
+          await services.syncServices.handleSyncExtensionInfo(true);
         } catch (e) {
           console.warn(this.logTag, "handleSyncExtensionInfo failed:", e);
         }

@@ -1,6 +1,6 @@
 import SparkMD5 from "spark-md5";
-import { YoutubePostData, YoutubePostLocalStorageInfo, YoutubeProfileLocalStorageInfo, YoutubeUserProfileData } from "../types";
-import { getStorageByKeys, setStorageCached } from "@/entrypoints/background/services/storageServices";
+import { YoutubePostData, YoutubePostLocalStorageInfo, YoutubeProfileLocalStorageInfo } from "../types";
+import * as services from "../../../services";
 
 export const YOUTUBE_POST_INFO_KEY = "youtube_posts_info";
 export const YOUTUBE_PROFILE_INFO_KEY = "youtube_profiles_info";
@@ -17,68 +17,68 @@ export function generateKey(socialId: string, videoId: string) {
 }
 
 export function parseYoutubePostsInfo(youtubePostsInfoStr = ""): YoutubePostLocalStorageInfo[] {
-    if (!youtubePostsInfoStr) {
-        return [];
-    }
-    return JSON.parse(youtubePostsInfoStr);
+  if (!youtubePostsInfoStr) {
+    return [];
+  }
+  return JSON.parse(youtubePostsInfoStr);
 }
 
 export function parseYoutubeProfilesInfo(youtubeProfilesInfoStr = ""): YoutubeProfileLocalStorageInfo[] {
-    if (!youtubeProfilesInfoStr) {
-        return [];
-    }
-    return JSON.parse(youtubeProfilesInfoStr);
+  if (!youtubeProfilesInfoStr) {
+    return [];
+  }
+  return JSON.parse(youtubeProfilesInfoStr);
 }
 
 export async function storeYoutubePostData(newPosts: YoutubePostData[] = []): Promise<YoutubePostLocalStorageInfo[]> {
-    const localStoragePostInfo = await getStorageByKeys([YOUTUBE_POST_INFO_KEY]);
-    const youtubePostInfoStr = localStoragePostInfo[YOUTUBE_POST_INFO_KEY] || "";
-    const currentPostInfo = parseYoutubePostsInfo(youtubePostInfoStr);
-    const tmpCurrentPostInfo = [...currentPostInfo];
+  const localStoragePostInfo = await services.storageServices.getStorageByKeys([YOUTUBE_POST_INFO_KEY]);
+  const youtubePostInfoStr = localStoragePostInfo[YOUTUBE_POST_INFO_KEY] || "";
+  const currentPostInfo = parseYoutubePostsInfo(youtubePostInfoStr);
+  const tmpCurrentPostInfo = [...currentPostInfo];
 
-    for (const newPost of newPosts) {
-        const index = tmpCurrentPostInfo.findIndex((p) => p.post_id === newPost.post_id);
-        if (index !== -1) {
-            console.log("Post info already exists in local storage, skip saving. Post ID:", newPost.post_id, "Profile ID:", newPost.owner_id);
-            continue;
-        }
-        if (tmpCurrentPostInfo.length >= MAXIMUM_USERS) {
-            tmpCurrentPostInfo.shift();
-        }
-        const newPostLocalStorageInfo: YoutubePostLocalStorageInfo = {
-          entry_rowkey: newPost.entry_rowkey,
-          post_id: newPost.post_id,
-          owner_id: newPost.owner_id,
-          owner_name: newPost.owner_name || newPost.author_name,
-        };
-        tmpCurrentPostInfo.push(newPostLocalStorageInfo);
+  for (const newPost of newPosts) {
+    const index = tmpCurrentPostInfo.findIndex((p) => p.post_id === newPost.post_id);
+    if (index !== -1) {
+      console.log("Post info already exists in local storage, skip saving. Post ID:", newPost.post_id, "Profile ID:", newPost.owner_id);
+      continue;
     }
+    if (tmpCurrentPostInfo.length >= MAXIMUM_USERS) {
+      tmpCurrentPostInfo.shift();
+    }
+    const newPostLocalStorageInfo: YoutubePostLocalStorageInfo = {
+      entry_rowkey: newPost.entry_rowkey,
+      post_id: newPost.post_id,
+      owner_id: newPost.owner_id,
+      owner_name: newPost.owner_name || newPost.author_name,
+    };
+    tmpCurrentPostInfo.push(newPostLocalStorageInfo);
+  }
 
-    setStorageCached({ [YOUTUBE_POST_INFO_KEY]: JSON.stringify(tmpCurrentPostInfo) });
-    return tmpCurrentPostInfo;
+  services.storageServices.setStorageCached({ [YOUTUBE_POST_INFO_KEY]: JSON.stringify(tmpCurrentPostInfo) });
+  return tmpCurrentPostInfo;
 }
 
 export async function storeYoutubeProfileData(newProfiles: YoutubeProfileLocalStorageInfo[] = []): Promise<YoutubeProfileLocalStorageInfo[]> {
-    const localStoragePostInfo = await getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
-    const youtubeProfileInfoStr = localStoragePostInfo[YOUTUBE_PROFILE_INFO_KEY] || "";
-    const currentProfileInfo = parseYoutubeProfilesInfo(youtubeProfileInfoStr);
-    const tmpCurrentProfileInfo = [...currentProfileInfo];
+  const localStoragePostInfo = await services.storageServices.getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
+  const youtubeProfileInfoStr = localStoragePostInfo[YOUTUBE_PROFILE_INFO_KEY] || "";
+  const currentProfileInfo = parseYoutubeProfilesInfo(youtubeProfileInfoStr);
+  const tmpCurrentProfileInfo = [...currentProfileInfo];
 
-    for (const newProfile of newProfiles) {
-        const index = tmpCurrentProfileInfo.findIndex((p) => p.profile_id === newProfile.profile_id);
-        if (index !== -1) {
-            console.log("Profile info already exists in local storage, skip saving. Profile ID:", newProfile.profile_id);
-            continue;
-        }
-        if (tmpCurrentProfileInfo.length >= MAXIMUM_USERS) {
-            tmpCurrentProfileInfo.shift();
-        }
-        const newPostLocalStorageInfo: YoutubeProfileLocalStorageInfo = { ...newProfile };
-        tmpCurrentProfileInfo.push(newPostLocalStorageInfo);
+  for (const newProfile of newProfiles) {
+    const index = tmpCurrentProfileInfo.findIndex((p) => p.profile_id === newProfile.profile_id);
+    if (index !== -1) {
+      console.log("Profile info already exists in local storage, skip saving. Profile ID:", newProfile.profile_id);
+      continue;
     }
+    if (tmpCurrentProfileInfo.length >= MAXIMUM_USERS) {
+      tmpCurrentProfileInfo.shift();
+    }
+    const newPostLocalStorageInfo: YoutubeProfileLocalStorageInfo = { ...newProfile };
+    tmpCurrentProfileInfo.push(newPostLocalStorageInfo);
+  }
 
-    setStorageCached({ [YOUTUBE_PROFILE_INFO_KEY]: JSON.stringify(tmpCurrentProfileInfo) });
-    return tmpCurrentProfileInfo;
+  services.storageServices.setStorageCached({ [YOUTUBE_PROFILE_INFO_KEY]: JSON.stringify(tmpCurrentProfileInfo) });
+  return tmpCurrentProfileInfo;
 }
 
 function parseVietnameseAbbreviatedNumber(cleaned: string): number | null {
@@ -180,18 +180,18 @@ export function parseVietnameseSubscriberCount(raw: string): number | null {
 
 export function parseVietnameseVideoCount(raw: string): number | null {
   if (!raw || typeof raw !== "string") return null;
- 
+
   const text = raw.replace(/[\u00A0\u2000-\u200B\u202F\u3000]/g, " ").trim();
- 
+
   if (/không\s*có\s*video/i.test(text)) {
     return 0;
   }
- 
+
   const cleaned = text
     .replace(/videos?/gi, "")
     .replace(/\bnào\b/gi, "")
     .trim();
- 
+
   return parseVietnameseAbbreviatedNumber(cleaned);
 }
 
@@ -265,7 +265,7 @@ export function parseVietnameseRelativeTime(
 
 export function parseVietnameseChannelJoinDate(raw: string): Date | null {
   if (!raw || typeof raw !== "string") return null;
- 
+
   const text = raw
     .replace(/[\u00A0\u2000-\u200B\u202F\u3000]/g, " ")
     .trim()
@@ -281,11 +281,11 @@ export function parseVietnameseChannelJoinDate(raw: string): Date | null {
     if (month < 1 || month > 12 || day < 1 || day > 31) return null;
     return new Date(year, month - 1, day);
   }
- 
+
   const enMatch = text.match(
     /(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s*(\d{1,2}),?\s*(\d{4})/
   );
-  
+
   if (enMatch) {
     const ENGLISH_MONTH_TO_NUMBER: Record<string, number> = {
       jan: 1,
@@ -309,7 +309,7 @@ export function parseVietnameseChannelJoinDate(raw: string): Date | null {
     if (!month || day < 1 || day > 31) return null;
     return new Date(year, month - 1, day);
   }
- 
+
   return null;
 }
 

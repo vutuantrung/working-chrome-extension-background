@@ -1,20 +1,16 @@
-import {
-    getLastProxyErrorWriteAt,
-    setLastProxyErrorWriteAt,
-    setProxyHealth
-} from "../../services/proxyServices";
+import * as services from "../../services";
 
 export function onProxyErrorHandler(details: any) {
     const now = Date.now();
     // Throttle storage writes to avoid spam.
-    if (now - getLastProxyErrorWriteAt() < 3000) return;
-    setLastProxyErrorWriteAt(now);
+    if (now - services.proxyServices.getLastProxyErrorWriteAt() < 3000) return;
+    services.proxyServices.setLastProxyErrorWriteAt(now);
 
     try {
         // Only mark error when proxy is actually in fixed_servers mode.
         const proxyApi: any = (chrome as any)?.proxy?.settings;
         if (!proxyApi?.get) {
-            setProxyHealth({
+            services.proxyServices.setProxyHealth({
                 state: "error",
                 updatedAt: now,
                 lastErrorAt: now,
@@ -30,7 +26,7 @@ export function onProxyErrorHandler(details: any) {
             const value = current?.value;
             if (value?.mode !== "fixed_servers") return;
 
-            setProxyHealth({
+            services.proxyServices.setProxyHealth({
                 state: "error",
                 updatedAt: now,
                 lastErrorAt: now,

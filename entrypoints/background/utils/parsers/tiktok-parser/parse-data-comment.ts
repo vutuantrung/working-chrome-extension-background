@@ -4,7 +4,7 @@ import {
   TIKTOK_POST_INFO_KEY,
   generateKey,
 } from "./utils";
-import { getStorageByKeys } from "@/entrypoints/background/services/storageServices";
+import * as services from "../../../services";
 
 export async function parseDataComment(
   dataArr: { data: any; getMethod: string }[] = [],
@@ -16,7 +16,7 @@ export async function parseDataComment(
 
     // 1. get owner info of posts from localstorage
     // format: postEntryRowkey|postId|ownerId|ownerName, split by comma for multiple records
-    const localStoragePostOwner = await getStorageByKeys([TIKTOK_POST_INFO_KEY]);
+    const localStoragePostOwner = await services.storageServices.getStorageByKeys([TIKTOK_POST_INFO_KEY]);
     const tiktokPostsCached = localStoragePostOwner[TIKTOK_POST_INFO_KEY] || "";
     const tiktokPostsCachedArr = parseTiktokPostInfo(tiktokPostsCached);
 

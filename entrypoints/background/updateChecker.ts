@@ -1,8 +1,8 @@
 import { bgState } from "./state";
+import * as services from "./services";
 import * as helpers from "./utils/helpers";
 import { ExtensionVersionInfo } from "./types/types";
 import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
-import { getStorageCachedByKeys, setStorageCached } from "./services/storageServices";
 import { Constants } from "./utils/constants";
 
 async function getUpdateCookieValue(): Promise<string | undefined> {
@@ -85,7 +85,7 @@ export async function checkExtensionUpdateAndNotify(): Promise<void> {
       if (!currentVersion || currentVersion === latest.version) return;
 
       const { extensionUpdateNotice } =
-        await getStorageCachedByKeys(["extensionUpdateNotice"]);
+        await services.storageServices.getStorageCachedByKeys(["extensionUpdateNotice"]);
       const lastNotifiedAt = extensionUpdateNotice?.lastNotifiedAt ?? 0;
       const shouldRepeat = Date.now() - lastNotifiedAt >= 60_000;
 
@@ -99,7 +99,7 @@ export async function checkExtensionUpdateAndNotify(): Promise<void> {
         latest.extension_zip_download_link,
       );
 
-      await setStorageCached({
+      await services.storageServices.setStorageCached({
         extensionUpdateNotice: {
           version: currentVersion,
           lastNotifiedAt: Date.now(),

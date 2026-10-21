@@ -2,7 +2,7 @@ import { bgState } from "../../state";
 import { isSupportedPlatformUrl } from "../tools";
 import { Constants } from "../constants";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
-import { getStorageCachedByKeys, setStorageCached } from "../../services/storageServices";
+import * as services from "../../services";
 import { Platform } from "../../types/types";
 
 
@@ -68,7 +68,7 @@ export async function findDeterministicFacebookTabId(): Promise<number | null> {
 }
 
 export async function getCorrectFacebookTabId(): Promise<number> {
-  const { settings } = await getStorageCachedByKeys(["settings"]);
+  const { settings } = await services.storageServices.getStorageCachedByKeys(["settings"]);
   const isTabSpecific = settings?.isTabSpecific ?? false;
 
   if (isTabSpecific) {
@@ -118,7 +118,7 @@ export async function getCorrectFacebookTabId(): Promise<number> {
           ...settings,
           firstFacebookTabId: fbTabId,
         };
-        await setStorageCached({
+        await services.storageServices.setStorageCached({
           settings: updatedSettings,
         });
 

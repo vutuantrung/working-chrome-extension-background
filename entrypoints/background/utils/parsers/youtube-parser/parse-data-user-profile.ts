@@ -1,6 +1,6 @@
 import { Result, XAttachment, YoutubeProfileLocalStorageInfo, YoutubeUserProfileData } from "../types";
 import { findByKey, parseYoutubeProfilesInfo, storeYoutubeProfileData, YOUTUBE_PROFILE_INFO_KEY } from "./utils";
-import { getStorageByKeys } from "@/entrypoints/background/services/storageServices";
+import * as services from "../../../services";
 
 export async function parseDataUserProfile(data: any, type: "channelPage" | "channelAbout"): Promise<Result<YoutubeUserProfileData[]>> {
     try {
@@ -87,7 +87,7 @@ async function normalizeAboutProfileData(aboutChannelRenderer: any): Promise<You
         })
     }
 
-    const localStorageProfile = await getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
+    const localStorageProfile = await services.storageServices.getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
     const youtubeProfilesCached = localStorageProfile[YOUTUBE_PROFILE_INFO_KEY] || "";
     const youtubeProfilesCachedArr = parseYoutubeProfilesInfo(youtubeProfilesCached);
     const youtubeProfileById = youtubeProfilesCachedArr.find(p => p.profile_id === aboutMetadata.channelId);

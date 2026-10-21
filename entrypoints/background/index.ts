@@ -1,6 +1,6 @@
 import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 import { browser } from "wxt/browser";
-import { setProxyHealth, handleProxyHealthCheck } from "./services/proxyServices";
+import * as services from "./services";
 import { Constants } from "./utils/constants";
 
 import * as extensionHandlers from "./handlers/extension";
@@ -84,7 +84,7 @@ function initializeBackgroundServices() {
   // ========================================
   chromeApi.proxy.onProxyError.addListener(extensionHandlers.onProxyErrorHandler);
   try {
-    setProxyHealth({
+    services.proxyServices.setProxyHealth({
       state: "ok",
       reason: "sw_boot",
       lastOkAt: Date.now(),
@@ -94,7 +94,7 @@ function initializeBackgroundServices() {
       consecutiveFailures: 0,
     });
 
-    Promise.resolve(handleProxyHealthCheck());
+    Promise.resolve(services.proxyServices.handleProxyHealthCheck());
   } catch { }
 
   // Setup side panel - open when extension icon clicked

@@ -1,7 +1,7 @@
 import { Result, YoutubeCommentData, YoutubePostData } from "../types";
 import { findByKey, generateKey, parseVietnameseRelativeTime, parseYoutubePostsInfo, YOUTUBE_POST_INFO_KEY } from "./utils";
 import { findAllKeyValuePairs } from "../facebook-parser/utils";
-import { getStorageByKeys } from "@/entrypoints/background/services/storageServices";
+import * as services from "../../../services";
 
 type ParseCommentDataResult = Promise<Result<{
     commentArray: YoutubeCommentData[];
@@ -21,7 +21,7 @@ export async function parseCommentData(payload: string): ParseCommentDataResult 
 
         const postId = findByKey(data, "commentSurfaceEntityPayload")?.publishedTimeCommand.innertubeCommand.watchEndpoint.videoId ?? ""
 
-        const localStoragePostOwner = await getStorageByKeys([YOUTUBE_POST_INFO_KEY]);
+        const localStoragePostOwner = await services.storageServices.getStorageByKeys([YOUTUBE_POST_INFO_KEY]);
         const youtubePostsCached = localStoragePostOwner[YOUTUBE_POST_INFO_KEY] || "";
         const youtubePostsCachedArr = parseYoutubePostsInfo(youtubePostsCached);
 

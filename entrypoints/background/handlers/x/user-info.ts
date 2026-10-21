@@ -1,6 +1,7 @@
 import { ParseType, XUserProfileData } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
+
 export const handleXUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
         cachedXData,

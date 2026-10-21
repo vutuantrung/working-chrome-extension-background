@@ -1,6 +1,6 @@
 import { Result, TiktokUserFollowData, TiktokUserLocalStorageInfo, TiktokUserProfileData } from "../types";
 import { parseTiktokUserInfo, storeTiktokUserInfo, TIKTOK_USER_INFO_KEY } from "./utils";
-import { getStorageByKeys } from "@/entrypoints/background/services/storageServices";
+import * as services from "../../../services";
 
 function parseProfile(dataJSON: any, extra: any): TiktokUserProfileData | null {
     if (!dataJSON.user.id) {
@@ -111,7 +111,7 @@ export async function parseDataUserProfile(
             const onPageUserUniqueId = extra?.requestInfo?.tabUrl?.replace("https://www.tiktok.com/@", "");
             const onPageUserProfileFromTab = userProfileArray.find((u) => u.uniqueId === onPageUserUniqueId);
 
-            const localStorageUserProfile = await getStorageByKeys([TIKTOK_USER_INFO_KEY]);
+            const localStorageUserProfile = await services.storageServices.getStorageByKeys([TIKTOK_USER_INFO_KEY]);
             const tiktokUserInfoStr = localStorageUserProfile[TIKTOK_USER_INFO_KEY] || "";
             const tiktokUserInfoArr = parseTiktokUserInfo(tiktokUserInfoStr);
             const tiktokLocalStorageUser = tiktokUserInfoArr.find((u) => u.uniqueId === onPageUserUniqueId);

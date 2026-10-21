@@ -1,20 +1,23 @@
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { Activity } from "../types/types";
 import { parseDelayAndPeriodInMinutes } from "../utils/tools";
-import { getStorageCachedByKeys, setStorageCached } from "./storageServices";
 import { getExtensionConfigInfo } from "../infrastructure/api/source-member.api";
 import type { User } from "../types/types";
+import * as services from "../services";
 
 export interface ScheduleDependencies {
   alarms: Pick<typeof chrome.alarms, "get" | "clear" | "create">;
-  storage: { getStorageCachedByKeys: typeof getStorageCachedByKeys; setStorageCached: typeof setStorageCached };
+  storage: { getStorageCachedByKeys: typeof services.storageServices.getStorageCachedByKeys; setStorageCached: typeof services.storageServices.setStorageCached };
 }
 
 /** Resolve production dependencies at invocation time, not module import time. */
 function defaultScheduleDependencies(): ScheduleDependencies {
   return {
     alarms: chromeApi.alarms,
-    storage: { getStorageCachedByKeys, setStorageCached },
+    storage: {
+      getStorageCachedByKeys: services.storageServices.getStorageCachedByKeys,
+      setStorageCached: services.storageServices.setStorageCached
+    },
   };
 }
 
