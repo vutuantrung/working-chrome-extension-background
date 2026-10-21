@@ -1,3 +1,5 @@
+import { setProxy, clearProxy } from "../services/proxyServices";
+import { getStorageCachedByKeys, setStorageCached } from "./storageServices";
 import {
   findExtensionAccountProxyByPlatform,
   findPersonaSocialAccountProxy,
@@ -12,8 +14,6 @@ import {
   DEFAULT_SETTINGS_JSON,
 } from "../helpers/constants";
 import { handleUpdateScheduleActivities } from "./scheduleService";
-import { ProxyService } from "./proxyServices";
-import { getStorageCachedByKeys, setStorageCached, getStorageCache, setStorageCache } from "./storageServices";
 import { ensureJoinedGroupsAlarmSchedule } from "./fbGroupSyncService";
 import {
   getSocialAccountsByPersona,
@@ -23,7 +23,6 @@ import {
 
 export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promise<void> {
   try {
-    const proxyService = ProxyService.getInstance();
 
     const { settings, user, activities, fbLoginMode } =
       await getStorageCachedByKeys([
@@ -115,13 +114,13 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
       if (hasEffectiveProxy) {
         const { httpProxy, httpsProxy } = getProxyEndpoints(proxyInfo);
         if (httpProxy || httpsProxy) {
-          proxyService.setProxy(
+          setProxy(
             httpProxy ?? undefined,
             httpsProxy ?? undefined,
           );
         }
       } else {
-        proxyService.clearProxy();
+        clearProxy();
       }
 
       try {
@@ -230,13 +229,13 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
     if (hasEffectiveProxy) {
       const { httpProxy, httpsProxy } = getProxyEndpoints(proxyInfo);
       if (httpProxy || httpsProxy) {
-        proxyService.setProxy(
+        setProxy(
           httpProxy ?? undefined,
           httpsProxy ?? undefined,
         );
       }
     } else {
-      proxyService.clearProxy();
+      clearProxy();
     }
 
     try {

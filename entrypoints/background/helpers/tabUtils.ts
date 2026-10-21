@@ -1,8 +1,8 @@
 import { bgState } from "../state";
 import { isSupportedPlatformUrl, PLATFORM_URL_PATTERNS } from "./tools";
 import { PLATFORM_TAB_GLOBS } from "./constants";
-import { StorageService } from "../services/storageServices";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
+import { getStorageCachedByKeys, setStorageCached } from "../services/storageServices";
 
 export function safeTabsSendMessage(tabId: number, message: any): Promise<any | null> {
   return new Promise((resolve) => {
@@ -92,7 +92,7 @@ export async function findDeterministicFacebookTabId(): Promise<number | null> {
 }
 
 export async function getCorrectFacebookTabId(): Promise<number> {
-  const { settings } = await StorageService.getInstance().getStorageCachedByKeys(["settings"]);
+  const { settings } = await getStorageCachedByKeys(["settings"]);
   const isTabSpecific = settings?.isTabSpecific ?? false;
 
   if (isTabSpecific) {
@@ -142,7 +142,7 @@ export async function getCorrectFacebookTabId(): Promise<number> {
           ...settings,
           firstFacebookTabId: fbTabId,
         };
-        await StorageService.getInstance().setStorageCached({
+        await setStorageCached({
           settings: updatedSettings,
         });
 

@@ -1,7 +1,7 @@
 import { findAllKeyValuePairs } from "../facebook-parser/utils";
 import { generateKey, parseThreadsPostsInfo, THREADS_POST_INFO_KEY } from "./utils";
 import { Result, ThreadsAttachment, ThreadsCommentData, ThreadsPostData, ThreadsPostLocalStorageInfo } from "../types";
-import { StorageService } from "@/entrypoints/background/services/storageServices";
+import { getStorageByKeys } from "@/entrypoints/background/services/storageServices";
 
 async function parseThreadsDataRecursively(
     payload: any,
@@ -213,7 +213,7 @@ export async function parsePostData(
         const threadsPostsKeyValues = findAllKeyValuePairs(payload, "post");
         // console.log(">>>>>> parsePostData - threadsPostsObjects:", threadsPostsObjects.length);
 
-        const localStoragePostInfo = await StorageService.getInstance().getStorageByKeys([THREADS_POST_INFO_KEY]);
+        const localStoragePostInfo = await getStorageByKeys([THREADS_POST_INFO_KEY]);
         const threadsPostInfoStr = localStoragePostInfo[THREADS_POST_INFO_KEY] || "";
         const cachedPostInfo = parseThreadsPostsInfo(threadsPostInfoStr);
         // console.log(">>>>>> parsePostData - currentPostInfo from local storage:", cachedPostInfo);

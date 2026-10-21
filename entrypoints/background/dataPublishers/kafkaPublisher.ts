@@ -1,8 +1,8 @@
 import { bgState } from "../state";
 import { KafkaPublishConfig, Settings } from "../types/types";
 import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
-import { StorageService } from "../services/storageServices";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
+import { getStorageCachedByKeys, setStorageCached } from "../services/storageServices";
 
 export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<void> {
 
@@ -18,7 +18,7 @@ export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<voi
     if (runId !== bgState.__sendDataKafkaRunId) return;
 
     // 1. Load settings + user
-    const runtimeReq: any = await StorageService.getInstance().getStorageCachedByKeys(["settings", "user"]);
+    const runtimeReq: any = await getStorageCachedByKeys(["settings", "user"]);
     const settings: Settings | null = runtimeReq?.settings ?? null;
 
     if (!settings || !runtimeReq?.user) {
@@ -105,10 +105,10 @@ export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<voi
     };
 
     const incrementBadge = async (delta: number) => {
-      const { settings: cs } = await StorageService.getInstance().getStorageCachedByKeys(["settings"]);
+      const { settings: cs } = await getStorageCachedByKeys(["settings"]);
       const newNC = toSafeNonNegInt(cs?.n_c) + delta;
       if (cs) {
-        await StorageService.getInstance().setStorageCached({
+        await setStorageCached({
           settings: { ...cs, n_c: newNC },
         });
       }

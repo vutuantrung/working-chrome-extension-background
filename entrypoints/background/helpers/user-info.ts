@@ -1,4 +1,4 @@
-import { StorageService } from "../services/storageServices";
+import { getStorageCachedByKeys } from "../services/storageServices";
 import { USERINFO_COLLECT_POLL_MS, USERINFO_DESCRIPTION_POLL_MS } from "../state";
 import { delayMs } from "./tools";
 
@@ -175,8 +175,7 @@ export async function waitForUserInfoDescription(
   let lastParsed: any = undefined;
 
   while (Date.now() - startedAt < maxWaitMs) {
-    const { pendingUserInfo } =
-      (await StorageService.getInstance().getStorageCachedByKeys(["pendingUserInfo"])) || {};
+    const { pendingUserInfo } = (await getStorageCachedByKeys(["pendingUserInfo"])) || {};
     const parsed = pendingUserInfo?.parsed;
     if (parsed) lastParsed = parsed;
     if (hasUserDescription(parsed)) return { found: true, info: parsed };
@@ -193,8 +192,7 @@ export async function waitForUserInfoCollectReady(
   let lastFiltered: Record<string, any> | null = null;
 
   while (Date.now() - startedAt < maxWaitMs) {
-    const { pendingUserInfo } =
-      (await StorageService.getInstance().getStorageCachedByKeys(["pendingUserInfo"])) || {};
+    const { pendingUserInfo } = (await getStorageCachedByKeys(["pendingUserInfo"])) || {};
     let parsed = pendingUserInfo?.parsed;
     if (!parsed && pendingUserInfo?.raw) {
       try {

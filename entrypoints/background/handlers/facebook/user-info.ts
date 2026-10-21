@@ -4,7 +4,6 @@ import {
     filterUserProfilePayload,
 } from "../../helpers/user-info";
 import { HandlerContext } from "../../types/handle";
-import { StorageService } from "../../services/storageServices";
 import {
     buildFacebookUserInfoMapEntry,
     extractFacebookUserIdAndName,
@@ -13,6 +12,7 @@ import { refreshPendingFollowsFromUserInfoMap } from "./follow-info";
 import { refreshPendingFriendsFromUserInfoMap } from "./friend-info";
 import { seedCollectionMapsFromProfile } from "./register-profile-collections";
 import { parseDataUserProfile } from "@/utils/parsers/facebook-parser/parse-data-user-profile";
+import { getStorageCachedByKeys, setStorageCached } from "../../services/storageServices";
 
 export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const { debounce, publishFacebookUserInfo, USERINFO_PUBLISH_DEBOUNCE_MS } =
@@ -73,7 +73,7 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
 
     const userInfoMap = buildFacebookUserInfoMapEntry(identity);
 
-    const cachedMaps = await StorageService.getInstance().getStorageCachedByKeys([
+    const cachedMaps = await getStorageCachedByKeys([
         "facebook_user_info_map",
     ]);
     const prevMap = cachedMaps.facebook_user_info_map as
@@ -103,7 +103,7 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
         seedCollectionMapsFromProfile(parsedPayload, identity.id, identity.name);
 
     const existingMaps =
-        await StorageService.getInstance().getStorageCachedByKeys([
+        await getStorageCachedByKeys([
             "facebook_follow_collection_owner_map",
             "facebook_friend_collection_owner_map",
         ]);
@@ -135,7 +135,7 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
         };
     }
 
-    await StorageService.getInstance().setStorageCached(storagePatch);
+    await setStorageCached(storagePatch);
 
     void refreshPendingFollowsFromUserInfoMap(ctx);
     void refreshPendingFriendsFromUserInfoMap(ctx);

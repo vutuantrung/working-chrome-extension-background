@@ -1,6 +1,7 @@
 import { SOCIAL_COOKIE_DOMAINS } from "@/utils/social-cookie-domains";
+import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 
-function cookieRemovalUrl(cookie: chromeApi.cookies.Cookie): string {
+function cookieRemovalUrl(cookie: chrome.cookies.Cookie): string {
   const host = cookie.domain.startsWith(".")
     ? cookie.domain.slice(1)
     : cookie.domain;

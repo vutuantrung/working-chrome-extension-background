@@ -1,6 +1,6 @@
 import SparkMD5 from "spark-md5";
-import { StorageService } from "@/entrypoints/background/services/storageServices";
 import { YoutubePostData, YoutubePostLocalStorageInfo, YoutubeProfileLocalStorageInfo, YoutubeUserProfileData } from "../types";
+import { getStorageByKeys, setStorageCached } from "@/entrypoints/background/services/storageServices";
 
 export const YOUTUBE_POST_INFO_KEY = "youtube_posts_info";
 export const YOUTUBE_PROFILE_INFO_KEY = "youtube_profiles_info";
@@ -31,7 +31,7 @@ export function parseYoutubeProfilesInfo(youtubeProfilesInfoStr = ""): YoutubePr
 }
 
 export async function storeYoutubePostData(newPosts: YoutubePostData[] = []): Promise<YoutubePostLocalStorageInfo[]> {
-    const localStoragePostInfo = await StorageService.getInstance().getStorageByKeys([YOUTUBE_POST_INFO_KEY]);
+    const localStoragePostInfo = await getStorageByKeys([YOUTUBE_POST_INFO_KEY]);
     const youtubePostInfoStr = localStoragePostInfo[YOUTUBE_POST_INFO_KEY] || "";
     const currentPostInfo = parseYoutubePostsInfo(youtubePostInfoStr);
     const tmpCurrentPostInfo = [...currentPostInfo];
@@ -54,12 +54,12 @@ export async function storeYoutubePostData(newPosts: YoutubePostData[] = []): Pr
         tmpCurrentPostInfo.push(newPostLocalStorageInfo);
     }
 
-    StorageService.getInstance().setStorageCached({ [YOUTUBE_POST_INFO_KEY]: JSON.stringify(tmpCurrentPostInfo) });
+    setStorageCached({ [YOUTUBE_POST_INFO_KEY]: JSON.stringify(tmpCurrentPostInfo) });
     return tmpCurrentPostInfo;
 }
 
 export async function storeYoutubeProfileData(newProfiles: YoutubeProfileLocalStorageInfo[] = []): Promise<YoutubeProfileLocalStorageInfo[]> {
-    const localStoragePostInfo = await StorageService.getInstance().getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
+    const localStoragePostInfo = await getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
     const youtubeProfileInfoStr = localStoragePostInfo[YOUTUBE_PROFILE_INFO_KEY] || "";
     const currentProfileInfo = parseYoutubeProfilesInfo(youtubeProfileInfoStr);
     const tmpCurrentProfileInfo = [...currentProfileInfo];
@@ -77,7 +77,7 @@ export async function storeYoutubeProfileData(newProfiles: YoutubeProfileLocalSt
         tmpCurrentProfileInfo.push(newPostLocalStorageInfo);
     }
 
-    StorageService.getInstance().setStorageCached({ [YOUTUBE_PROFILE_INFO_KEY]: JSON.stringify(tmpCurrentProfileInfo) });
+    setStorageCached({ [YOUTUBE_PROFILE_INFO_KEY]: JSON.stringify(tmpCurrentProfileInfo) });
     return tmpCurrentProfileInfo;
 }
 

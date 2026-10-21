@@ -9,13 +9,12 @@ import { sendTiktokCachedData } from "../../dataPublishers/tiktokPublisher";
 import { checkExtensionUpdateAndNotify } from "../../updateChecker";
 import { handleSyncExtensionInfo } from "../../services/syncService";
 import { handleUpdateScheduleActivities, fetchScheduledActivities } from "../../services/scheduleService";
-import { StorageService } from "../../services/storageServices";
 import { handleProxyHealthCheck } from "../../services/proxyServices";
 import { syncFacebookJoinedGroups, syncFacebookPendingGroups } from "../../services/fbGroupSyncService";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
+import { getStorageCachedByKeys, setStorageCached, clearStorageCache } from "../../services/storageServices";
 
 export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
-  const storageService = StorageService.getInstance();
   try {
     if (alarm.name === PROXY_HEALTH_CHECK_ALARM) {
       await handleProxyHealthCheck();
@@ -62,7 +61,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       taskList: storageTaskList,
       user: storageUser,
       automationByUser: automationByUser,
-    } = await storageService.getStorageCachedByKeys(keys);
+    } = await getStorageCachedByKeys(keys);
 
     if (alarm.name === "periodicCheck") {
       try {
@@ -100,7 +99,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
     if (alarm.name === "reset") {
       console.log(new Date().toLocaleTimeString(), "Performing reset task...");
       bgState.__periodicServerCheckCount = 0;
-      await storageService.setStorageCached({ activities: [], taskList: [] });
+      await setStorageCached({ activities: [], taskList: [] });
     }
 
     if (alarm.name.includes("scheduleTask") && automationByUser === true) {
@@ -117,7 +116,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
 
       // Check if task is already assigned (for alarm type), avoid duplicate
       if (activity.scheduleType === "alarm") {
-        const assignedTask = (storageTaskList || []).find((task) => task.activityId === activity.id);
+        const assignedTask = (storageTaskList || []).find((task: any) => task.activityId === activity.id);
         if (assignedTask) return;
       }
 
@@ -173,7 +172,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
 
         // Re-read taskList directly from storage (bypass cache) so we always
         // see any write performed by a concurrent alarm handler that just finished.
-        const { taskList: freshTaskListRaw } = await storageService.getStorageCachedByKeys(["taskList"]);
+        const { taskList: freshTaskListRaw } = await getStorageCachedByKeys(["taskList"]);
         const taskList: Task[] | any = freshTaskListRaw || [];
 
         for (const tabId of automationTabIds) {
@@ -204,8 +203,8 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
         }
 
         // Invalidate cache before writing so subsequent reads get fresh data.
-        storageService.clearStorageCache();
-        await storageService.setStorageCached({ taskList });
+        clearStorageCache();
+        await setStorageCached({ taskList });
       } finally {
         releaseLock();
       }

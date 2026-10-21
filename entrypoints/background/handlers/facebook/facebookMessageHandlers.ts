@@ -1,12 +1,12 @@
 import { Message } from "../../types/types";
 import { getCorrectFacebookTabId } from "../../helpers/tabUtils";
-import { StorageService } from "../../services/storageServices";
 import {
   isLikelyPlaceholderFacebookName,
   parseFacebookNameFromHtml,
   getStartDayTimestamp
 } from "../../helpers/tools";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
+import { getStorageCachedByKeys, setStorageCached } from "../../services/storageServices";
 
 export async function handleGetFacebookAccount(message: Message, sendResponse: (resp: any) => void): Promise<void> {
   try {
@@ -16,7 +16,7 @@ export async function handleGetFacebookAccount(message: Message, sendResponse: (
       return;
     }
 
-    const runtimeReq: any = await StorageService.getInstance().getStorageCachedByKeys(["facebookAccounts", "fbAccountCache"]);
+    const runtimeReq: any = await getStorageCachedByKeys(["facebookAccounts", "fbAccountCache"]);
     const facebookAccounts = runtimeReq?.facebookAccounts || [];
     const fbAccountCache = runtimeReq?.fbAccountCache || {};
     if (!facebookAccounts || !fbAccountCache) {
@@ -47,7 +47,7 @@ export async function handleGetFacebookAccount(message: Message, sendResponse: (
 
 export async function handleGetFacebookAccountCache(_message: any, sendResponse: (resp: any) => void): Promise<void> {
   try {
-    const runtimeReq: any = await StorageService.getInstance().getStorageCachedByKeys(["fbAccountCache"]);
+    const runtimeReq: any = await getStorageCachedByKeys(["fbAccountCache"]);
     const fbAccountCache = runtimeReq?.fbAccountCache || {};
     const isCacheValid = fbAccountCache?.ts && Date.now() - fbAccountCache.ts < 5 * 60 * 1000;
     const hasNameOrId = fbAccountCache?.name || fbAccountCache?.userId;
@@ -104,9 +104,7 @@ export async function handleGetFacebookAccountCache(_message: any, sendResponse:
       name: name || "",
       ts: Date.now(),
     };
-    await StorageService.getInstance().setStorageCached({
-      fbAccountCache: data,
-    });
+    await setStorageCached({ fbAccountCache: data });
     sendResponse?.({ ok: true, data });
   } catch (error: any) {
     sendResponse?.({ ok: false, error: String(error?.message || error) });
@@ -118,7 +116,7 @@ export async function handleSendAddSourceRequest(message: Message, sendResponse:
   const { profileId, profileName, profileType } = message.inputs;
 
   try {
-    const runtimeReq: any = await StorageService.getInstance().getStorageCachedByKeys(["user"]);
+    const runtimeReq: any = await getStorageCachedByKeys(["user"]);
     // username
     // const extensionUserNameRaw = runtimeReq?.user?.username || runtimeReq?.user?.name;
     // userid
@@ -292,7 +290,7 @@ Your response must be:
       return;
     }
 
-    const { settings } = await StorageService.getInstance().getStorageCachedByKeys(["settings"]);
+    const { settings } = await getStorageCachedByKeys(["settings"]);
     if (!settings) {
       throw new Error("Missing storage settings");
     }
@@ -348,7 +346,7 @@ export async function handleReportJoinGroupResponse(message: Message, sendRespon
   const { url, groupId, groupType, groupName, questions, responses, responseStatus } = message.inputs;
   console.log("[handleReportJoinGroupResponse] Received message:", message.inputs);
   try {
-    const { facebookAccounts, fbAccountCache } = await StorageService.getInstance().getStorageCachedByKeys(["facebookAccounts", "fbAccountCache"]);
+    const { facebookAccounts, fbAccountCache } = await getStorageCachedByKeys(["facebookAccounts", "fbAccountCache"]);
     if (!facebookAccounts || !fbAccountCache) {
       console.warn("[handleReportJoinGroupResponse] Missing facebookAccounts or fbAccountCache");
       return;
@@ -416,7 +414,7 @@ export async function handleReportJoinGroupResponse(message: Message, sendRespon
 
 export async function handleFetchJoinGroupPreparationData(message: Message, sendResponse: (resp: any) => void): Promise<void> {
   try {
-    const runtimeReq: any = await StorageService.getInstance().getStorageCachedByKeys(["facebookAccounts", "fbAccountCache", "settings"]);
+    const runtimeReq: any = await getStorageCachedByKeys(["facebookAccounts", "fbAccountCache", "settings"]);
     const facebookAccounts = runtimeReq?.facebookAccounts || [];
     const fbAccountCache = runtimeReq?.fbAccountCache || {};
     const settings = runtimeReq?.settings || {};

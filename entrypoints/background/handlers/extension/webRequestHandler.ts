@@ -1,5 +1,5 @@
 import { extractProxyAuthCredentials } from "../../services/proxyServices";
-import { getStorageCachedByKeys, getStorageCache } from "../../services/storageServices";
+import { getStorageCachedByKeys } from "../../services/storageServices";
 
 export function webRequestOnAuthRequiredHandler(
     details: any,

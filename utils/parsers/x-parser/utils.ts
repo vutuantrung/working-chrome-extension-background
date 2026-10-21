@@ -1,6 +1,6 @@
 import SparkMD5 from "spark-md5";
 import { XUserLocalStorageInfo, XUserProfileData } from "../types";
-import { StorageService } from "@/entrypoints/background/services/storageServices";
+import { getStorageByKeys, setStorageCached } from "@/entrypoints/background/services/storageServices";
 
 export const X_USER_INFO_KEY = "x_user_info";
 export const MAXIMUM_USERS = 10;
@@ -30,7 +30,7 @@ export function parseXUserInfo(xUserInfoStr = ""): XUserLocalStorageInfo[] {
 }
 
 export async function storeXProfileData(newUsers: XUserProfileData[] = []): Promise<XUserLocalStorageInfo[]> {
-    const localStorageUserInfo = await StorageService.getInstance().getStorageByKeys([X_USER_INFO_KEY]);
+    const localStorageUserInfo = await getStorageByKeys([X_USER_INFO_KEY]);
     const xUserInfoStr = localStorageUserInfo[X_USER_INFO_KEY] || "";
     const currentUserInfo = parseXUserInfo(xUserInfoStr);
     const tmpCurrentUserInfo = [...currentUserInfo];
@@ -49,6 +49,6 @@ export async function storeXProfileData(newUsers: XUserProfileData[] = []): Prom
         };
         tmpCurrentUserInfo.push(newSavingUser);
     }
-    StorageService.getInstance().setStorageCached({ [X_USER_INFO_KEY]: JSON.stringify(tmpCurrentUserInfo) });
+    setStorageCached({ [X_USER_INFO_KEY]: JSON.stringify(tmpCurrentUserInfo) });
     return tmpCurrentUserInfo;
 }

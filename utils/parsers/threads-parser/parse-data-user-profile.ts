@@ -1,5 +1,5 @@
-import { StorageService } from "@/entrypoints/background/services/storageServices";
-import { findAllKeyValuePairs, findParentNode } from "../facebook-parser/utils";
+import { findAllKeyValuePairs } from "../facebook-parser/utils";
+import { getStorageByKeys } from "@/entrypoints/background/services/storageServices";
 import { parseThreadsUserInfo, THREADS_USER_INFO_KEY } from "./utils";
 import { Result, ThreadsUserFollowData, ThreadsUserLocalStorageInfo, ThreadsUserProfileData } from "../types";
 import { storeThreadsProfileData } from "./utils";
@@ -114,7 +114,7 @@ export async function parseDataUserProfile(payload: any): Promise<Result<{
         if (userResultsObjects.length > 0) {
             // 1. get on page user information
             if (isFollowerUrlMatch || isFollowingUrlMatch) {
-                const localStorageUserProfile = await StorageService.getInstance().getStorageByKeys([THREADS_USER_INFO_KEY]);
+                const localStorageUserProfile = await getStorageByKeys([THREADS_USER_INFO_KEY]);
                 const threadsUserInfoStr = localStorageUserProfile[THREADS_USER_INFO_KEY] || "";
                 const threadsUserInfoArr = parseThreadsUserInfo(threadsUserInfoStr);
                 onPageUserData = threadsUserInfoArr.find((u) => u.profile_id.replace("t", "") === onPageUserId?.replace("t", ""));

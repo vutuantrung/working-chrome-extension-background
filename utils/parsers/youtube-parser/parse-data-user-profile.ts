@@ -1,11 +1,10 @@
-import { StorageService } from "@/entrypoints/background/services/storageServices";
 import { Result, XAttachment, YoutubeProfileLocalStorageInfo, YoutubeUserProfileData } from "../types";
-import { findByKey, parseVietnameseChannelJoinDate, parseVietnameseSubscriberCount, parseVietnameseVideoCount, parseVietnameseViewCount, parseYoutubeProfilesInfo, storeYoutubeProfileData, YOUTUBE_PROFILE_INFO_KEY } from "./utils";
-import { findAllKeyValuePairs } from "../facebook-parser/utils";
+import { findByKey, parseYoutubeProfilesInfo, storeYoutubeProfileData, YOUTUBE_PROFILE_INFO_KEY } from "./utils";
+import { getStorageByKeys } from "@/entrypoints/background/services/storageServices";
 
 export async function parseDataUserProfile(data: any, type: "channelPage" | "channelAbout"): Promise<Result<YoutubeUserProfileData[]>> {
     try {
-        if(type === "channelPage") {
+        if (type === "channelPage") {
             const parsedProfile = normalizeOverviewProfileData(data);
             await storeYoutubeProfileData([parsedProfile])
             return {
@@ -13,7 +12,7 @@ export async function parseDataUserProfile(data: any, type: "channelPage" | "cha
                 data: []
             }
         }
-        
+
         const parsedProfile = await normalizeAboutProfileData(data);
         return {
             ok: true,
@@ -33,7 +32,7 @@ function normalizeOverviewProfileData(data: any): YoutubeProfileLocalStorageInfo
 
     const attachments: XAttachment[] = []
     const banner = findByKey(data, "banner")?.imageBannerViewModel?.image?.sources?.[0];
-    if(banner) {
+    if (banner) {
         attachments.push({
             url: banner.url,
             width: banner.width,
@@ -42,7 +41,7 @@ function normalizeOverviewProfileData(data: any): YoutubeProfileLocalStorageInfo
         })
     }
     const avatar = channelMetadata.avatar?.thumbnails?.[0];
-    if(avatar) {
+    if (avatar) {
         attachments.push({
             url: avatar.url,
             width: avatar.width,
@@ -53,9 +52,9 @@ function normalizeOverviewProfileData(data: any): YoutubeProfileLocalStorageInfo
 
     let username = "";
     const usernamePart = findByKey(data.header, "metadataParts");
-    if(Array.isArray(usernamePart)) {
+    if (Array.isArray(usernamePart)) {
         const rawUsername = usernamePart.map((part: any) => part.text?.content as string).find((username) => username?.startsWith("@"));
-        if(rawUsername) {
+        if (rawUsername) {
             username = rawUsername.substring(1)
         }
     }
@@ -71,12 +70,12 @@ function normalizeOverviewProfileData(data: any): YoutubeProfileLocalStorageInfo
 async function normalizeAboutProfileData(aboutChannelRenderer: any): Promise<YoutubeUserProfileData> {
     const aboutMetadata = aboutChannelRenderer.metadata.aboutChannelViewModel;
 
-    const links: {link: string, title: string}[] = [];
-    if(Array.isArray(aboutMetadata.links)) {
+    const links: { link: string, title: string }[] = [];
+    if (Array.isArray(aboutMetadata.links)) {
         aboutMetadata.links.forEach((link: any) => {
             try {
                 const youtubeRedirectUrl = link?.channelExternalLinkViewModel?.link?.commandRuns?.[0].onTap?.innertubeCommand?.urlEndpoint.url;
-                if(youtubeRedirectUrl) {
+                if (youtubeRedirectUrl) {
                     const parsedUrl = new URL(youtubeRedirectUrl);
                     const externalUrl = parsedUrl.searchParams.get("q");
                     links.push({
@@ -84,11 +83,11 @@ async function normalizeAboutProfileData(aboutChannelRenderer: any): Promise<You
                         link: externalUrl ?? youtubeRedirectUrl
                     })
                 }
-            } catch (_) {}
+            } catch (_) { }
         })
     }
 
-    const localStorageProfile = await StorageService.getInstance().getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
+    const localStorageProfile = await getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
     const youtubeProfilesCached = localStorageProfile[YOUTUBE_PROFILE_INFO_KEY] || "";
     const youtubeProfilesCachedArr = parseYoutubeProfilesInfo(youtubeProfilesCached);
     const youtubeProfileById = youtubeProfilesCachedArr.find(p => p.profile_id === aboutMetadata.channelId);

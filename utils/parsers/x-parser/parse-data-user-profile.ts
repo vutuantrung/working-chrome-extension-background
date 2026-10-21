@@ -1,4 +1,4 @@
-import { StorageService } from "@/entrypoints/background/services/storageServices";
+import { getStorageByKeys } from "@/entrypoints/background/services/storageServices";
 import { findAllKeyValuePairs } from "../facebook-parser/utils";
 import { Result, XUserFollowData, XUserLocalStorageInfo, XUserProfileData } from "../types";
 import { parseXUserInfo, storeXProfileData, X_USER_INFO_KEY } from "./utils";
@@ -121,7 +121,7 @@ export async function parseDataUserProfile(
             const variablesPart = requestUrlParams.get("variables");
             const onPageUserId = variablesPart ? JSON.parse(variablesPart)?.userId : null;
 
-            const localStorageUserProfile = await StorageService.getInstance().getStorageByKeys([X_USER_INFO_KEY]);
+            const localStorageUserProfile = await getStorageByKeys([X_USER_INFO_KEY]);
             const xUserInfoStr = localStorageUserProfile[X_USER_INFO_KEY] || "";
             const xUserInfoArr = parseXUserInfo(xUserInfoStr);
             associateLocalStorageUser = xUserInfoArr.find((u) => u.profile_id === onPageUserId);

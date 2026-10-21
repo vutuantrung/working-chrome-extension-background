@@ -1,4 +1,4 @@
-import { StorageService } from "@/entrypoints/background/services/storageServices";
+import { getStorageByKeys } from "@/entrypoints/background/services/storageServices";
 import { FacebookPostLocalStorageInfo, FacebookReactionData, Result } from "../types";
 import { FACEBOOK_POST_INFO_KEY, generateReactionKey, parseFacebookPostInfo } from "./utils";
 
@@ -18,7 +18,7 @@ export async function parseDataReaction(payload: any): Promise<Result<FacebookRe
             return { ok: false, error: new Error("No reactions found") };
         }
 
-        const localStoragePostOwner = await StorageService.getInstance().getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
+        const localStoragePostOwner = await getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
         const cachedPostArray: FacebookPostLocalStorageInfo[] = parseFacebookPostInfo(localStoragePostOwner[FACEBOOK_POST_INFO_KEY] || "");
 
         const cachedPost = cachedPostArray.find((o) => o.post_id === articleIdDecoded);

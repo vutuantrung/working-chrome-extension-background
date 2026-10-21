@@ -2,10 +2,10 @@ import { bgState, SEND_FACEBOOK_DATA_ALARM, USERINFO_COLLECT_WAIT_MS, USERINFO_D
 import { _runKafkaPublish } from "./kafkaPublisher";
 import { handleSyncExtensionInfo } from "../services/syncService";
 import { FacebookPostData } from "@/utils/parsers/types";
-import { StorageService } from "../services/storageServices";
-import { PublishFacebookUserInfoOptions } from "../types/handle";
+import { getStorageCachedByKeys, handleUpdateArchive, setStorageCached } from "../services/storageServices";
 import { UserInfoPublishStatus } from "../types/types";
 import { filterUserProfilePayload, getMissingUserProfileCollectFields, hasUserDescription, isUserProfileCollectReady, PendingUserInfo, removePendingUserInfo, waitForUserInfoCollectReady, waitForUserInfoDescription } from "../helpers/user-info";
+import { PublishFacebookUserInfoOptions } from "../types/handle";
 
 export async function sendFacebookCachedData(): Promise<void> {
   return _runKafkaPublish({
@@ -150,10 +150,9 @@ export async function sendFacebookUserData(): Promise<void> {
 }
 
 export async function saveFacebookGroupData(): Promise<void> {
-  const storageService = StorageService.getInstance();
   let settings: any = null;
   try {
-    const runtimeReq: any = await storageService.getStorageCachedByKeys(["settings"]);
+    const runtimeReq: any = await getStorageCachedByKeys(["settings"]);
     settings = runtimeReq?.settings || null;
   } catch (error) {
     console.log("[Error]", "Cannot get settings:", error);
@@ -187,13 +186,13 @@ export async function saveFacebookGroupData(): Promise<void> {
     ...currentJoinedGroups.map((e: { id: string; data: string }) => e.data),
     ...newJoinedGroups,
   ];
-  await storageService.handleUpdateArchive({ inputs: { updateArchive: { fbGUrl: updatedArchiveGroups.join(",") } } });
+  await handleUpdateArchive({ inputs: { updateArchive: { fbGUrl: updatedArchiveGroups.join(",") } } });
   bgState.cachedFacebookJoinedGroupsData = [];
 }
 
 export async function saveFacebookUserData(): Promise<void> {
   if (!bgState.cachedFacebookUserInfo) return;
-  await StorageService.getInstance().handleUpdateArchive({ inputs: { updateArchive: bgState.cachedFacebookUserInfo } });
+  await handleUpdateArchive({ inputs: { updateArchive: bgState.cachedFacebookUserInfo } });
   bgState.cachedFacebookUserInfo = null;
 }
 
@@ -213,8 +212,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
     waitForDescription = true,
   } = options;
 
-  const storageService = StorageService.getInstance();
-  let { pendingUserInfo, pendingUserInfoList } = await storageService.getStorageCachedByKeys(["pendingUserInfo", "pendingUserInfoList"]);
+  let { pendingUserInfo, pendingUserInfoList } = await getStorageCachedByKeys(["pendingUserInfo", "pendingUserInfoList"]);
 
   let candidateParsed = overrideParsed || (overrideRaw ? undefined : pendingUserInfo?.parsed);
   if (!candidateParsed && overrideRaw) {
@@ -239,7 +237,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
       ts: Date.now(),
       message: "User profile data is missing required fields (id, name).",
     };
-    await storageService.setStorageCached({ userInfoPublishStatus: failStatus });
+    await setStorageCached({ userInfoPublishStatus: failStatus });
     return { ok: false, error: failStatus.message, userInfoPublishStatus: failStatus };
   }
 
@@ -247,7 +245,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
 
   const shouldWaitForDescription = waitForDescription && !hasUserDescription(profileToPublish);
   if (shouldWaitForDescription) {
-    await storageService.setStorageCached({
+    await setStorageCached({
       userInfoPublishStatus: {
         status: "pending",
         ts: Date.now(),
@@ -256,7 +254,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
     });
 
     await waitForUserInfoDescription(USERINFO_DESCRIPTION_WAIT_MS);
-    const refreshed = (await storageService.getStorageCachedByKeys(["pendingUserInfo"])) || {};
+    const refreshed = (await getStorageCachedByKeys(["pendingUserInfo"])) || {};
     pendingUserInfo = refreshed.pendingUserInfo || pendingUserInfo;
     const refreshedParsed =
       pendingUserInfo?.parsed ||
@@ -272,7 +270,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
 
   if (!isUserProfileCollectReady(profileToPublish)) {
     const missingBeforeWait = getMissingUserProfileCollectFields(profileToPublish);
-    await storageService.setStorageCached({
+    await setStorageCached({
       userInfoPublishStatus: {
         status: "pending",
         ts: Date.now(),
@@ -283,7 +281,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
     const afterWait = await waitForUserInfoCollectReady(USERINFO_COLLECT_WAIT_MS);
     if (afterWait && isUserProfileCollectReady(afterWait)) {
       profileToPublish = afterWait;
-      const refreshed = (await storageService.getStorageCachedByKeys(["pendingUserInfo"])) || {};
+      const refreshed = (await getStorageCachedByKeys(["pendingUserInfo"])) || {};
       pendingUserInfo = refreshed.pendingUserInfo || pendingUserInfo;
     }
   }
@@ -295,7 +293,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
       ts: Date.now(),
       message: `Waiting for profile fields: ${missing.join(", ")}`,
     };
-    await storageService.setStorageCached({ userInfoPublishStatus: pendingStatus });
+    await setStorageCached({ userInfoPublishStatus: pendingStatus });
     return {
       ok: false,
       error: pendingStatus.message,
@@ -307,7 +305,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
 
   bgState.cachedFacebookUserInfoToPublish = JSON.stringify(profileToPublish);
 
-  await storageService.setStorageCached({
+  await setStorageCached({
     userInfoPublishStatus: {
       status: "pending",
       ts: Date.now(),
@@ -337,7 +335,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
     });
     const nextPending = nextList.length ? nextList[nextList.length - 1] : null;
 
-    await storageService.setStorageCached({
+    await setStorageCached({
       pendingUserInfo: nextPending,
       pendingUserInfoList: nextList,
       userInfoPublishStatus: status,
@@ -363,7 +361,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
           ts: Date.now(),
           message: `Waiting for profile fields: ${missing.join(", ")}`,
         };
-        await storageService.setStorageCached({ userInfoPublishStatus: pendingStatus });
+        await setStorageCached({ userInfoPublishStatus: pendingStatus });
         return {
           ok: false,
           error: pendingStatus.message,
@@ -385,7 +383,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
 
   bgState.cachedFacebookUserInfoToPublish = null;
 
-  await storageService.setStorageCached({ userInfoPublishStatus: failStatus });
+  await setStorageCached({ userInfoPublishStatus: failStatus });
   return {
     ok: false,
     error: failStatus.message,
