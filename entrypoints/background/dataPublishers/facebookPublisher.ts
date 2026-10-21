@@ -1,9 +1,9 @@
 import * as services from "../services";
+import * as helpers from "../utils/helpers";
 import { bgState } from "../state";
 import { _runKafkaPublish } from "./kafkaPublisher";
 import { FacebookPostData } from "@/entrypoints/background/utils/parsers/types";
 import { PendingUserInfo, UserInfoPublishStatus } from "../types/types";
-import { filterUserProfilePayload, getMissingUserProfileCollectFields, hasUserDescription, isUserProfileCollectReady, removePendingUserInfo, waitForUserInfoCollectReady, waitForUserInfoDescription } from "../utils/helpers/userInfo";
 import { PublishFacebookUserInfoOptions } from "../types/handle";
 import { Constants } from "../utils/constants";
 
@@ -230,7 +230,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
     }
   }
 
-  const filtered = filterUserProfilePayload(candidateParsed);
+  const filtered = helpers.userInfo.filterUserProfilePayload(candidateParsed);
   if (!filtered) {
     const failStatus: UserInfoPublishStatus = {
       status: "failed",
@@ -243,7 +243,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
 
   let profileToPublish = filtered;
 
-  const shouldWaitForDescription = waitForDescription && !hasUserDescription(profileToPublish);
+  const shouldWaitForDescription = waitForDescription && !helpers.userInfo.hasUserDescription(profileToPublish);
   if (shouldWaitForDescription) {
     await services.storageServices.setStorageCached({
       userInfoPublishStatus: {
@@ -253,7 +253,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
       },
     });
 
-    await waitForUserInfoDescription(Constants.USERINFO_DESCRIPTION_WAIT_MS);
+    await helpers.userInfo.waitForUserInfoDescription(Constants.USERINFO_DESCRIPTION_WAIT_MS);
     const refreshed = (await services.storageServices.getStorageCachedByKeys(["pendingUserInfo"])) || {};
     pendingUserInfo = refreshed.pendingUserInfo || pendingUserInfo;
     const refreshedParsed =
@@ -265,11 +265,11 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
           return undefined;
         }
       })();
-    profileToPublish = filterUserProfilePayload(refreshedParsed) || profileToPublish;
+    profileToPublish = helpers.userInfo.filterUserProfilePayload(refreshedParsed) || profileToPublish;
   }
 
-  if (!isUserProfileCollectReady(profileToPublish)) {
-    const missingBeforeWait = getMissingUserProfileCollectFields(profileToPublish);
+  if (!helpers.userInfo.isUserProfileCollectReady(profileToPublish)) {
+    const missingBeforeWait = helpers.userInfo.getMissingUserProfileCollectFields(profileToPublish);
     await services.storageServices.setStorageCached({
       userInfoPublishStatus: {
         status: "pending",
@@ -278,16 +278,16 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
       },
     });
 
-    const afterWait = await waitForUserInfoCollectReady(Constants.USERINFO_COLLECT_WAIT_MS);
-    if (afterWait && isUserProfileCollectReady(afterWait)) {
+    const afterWait = await helpers.userInfo.waitForUserInfoCollectReady(Constants.USERINFO_COLLECT_WAIT_MS);
+    if (afterWait && helpers.userInfo.isUserProfileCollectReady(afterWait)) {
       profileToPublish = afterWait;
       const refreshed = (await services.storageServices.getStorageCachedByKeys(["pendingUserInfo"])) || {};
       pendingUserInfo = refreshed.pendingUserInfo || pendingUserInfo;
     }
   }
 
-  if (!isUserProfileCollectReady(profileToPublish)) {
-    const missing = getMissingUserProfileCollectFields(profileToPublish);
+  if (!helpers.userInfo.isUserProfileCollectReady(profileToPublish)) {
+    const missing = helpers.userInfo.getMissingUserProfileCollectFields(profileToPublish);
     const pendingStatus: UserInfoPublishStatus = {
       status: "pending",
       ts: Date.now(),
@@ -329,7 +329,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
       typeof overrideTs === "number"
         ? overrideTs
         : pendingUserInfo?.ts;
-    const nextList = removePendingUserInfo(list, {
+    const nextList = helpers.userInfo.removePendingUserInfo(list, {
       id: removeId,
       ts: typeof removeTs === "number" ? removeTs : undefined,
     });
@@ -352,9 +352,9 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
   if (bgState.cachedFacebookUserInfoToPublish) {
     try {
       const parsed = JSON.parse(bgState.cachedFacebookUserInfoToPublish);
-      const filtered = filterUserProfilePayload(parsed);
-      if (filtered && !isUserProfileCollectReady(filtered)) {
-        const missing = getMissingUserProfileCollectFields(filtered);
+      const filtered = helpers.userInfo.filterUserProfilePayload(parsed);
+      if (filtered && !helpers.userInfo.isUserProfileCollectReady(filtered)) {
+        const missing = helpers.userInfo.getMissingUserProfileCollectFields(filtered);
         bgState.cachedFacebookUserInfoToPublish = null;
         const pendingStatus: UserInfoPublishStatus = {
           status: "pending",

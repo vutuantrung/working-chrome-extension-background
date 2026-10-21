@@ -1,20 +1,11 @@
 import * as services from "../services";
-import {
-  findExtensionAccountProxyByPlatform,
-  findPersonaSocialAccountProxy,
-  getProxyEndpoints,
-  hasExtensionConfigId,
-  isActiveProxy,
-  resolveEffectiveProxy,
-} from "@/entrypoints/background/utils/helpers/proxy";
-import { extractIsTabSpecific } from "../utils/helpers/tabControl";
+import * as helpers from "../utils/helpers";
 import { DefaultValues } from "../utils/constants";
 import {
   getSocialAccountsByPersona,
   getProxyInfo,
   getExtensionConfigInfo
 } from "../infrastructure/api/user.api";
-import * as helpers from "../utils/helpers";
 import { bgState } from "../state";
 import { Constants } from "../utils/constants";
 import { FacebookGroupJoinedData } from "@/entrypoints/background/utils/parsers/types";
@@ -30,7 +21,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
 
     const { settings, user, activities, fbLoginMode } = await services.storageServices.getStorageCachedByKeys(["settings", "user", "activities", "fbLoginMode"]);
     const extensionConfigId = user?.extension_session?.extension_config_id;
-    const useExtensionConfig = hasExtensionConfigId(extensionConfigId);
+    const useExtensionConfig = helpers.proxy.hasExtensionConfigId(extensionConfigId);
 
     if (!settings || !user) {
       console.warn("[handleSyncExtensionInfo] Missing settings or user data");
@@ -95,21 +86,21 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
         const { allSocialAccounts } = await services.storageServices.getStorageCachedByKeys(["allSocialAccounts"]);
         const accountList = freshAccounts ?? allSocialAccounts ?? personaFacebookAccounts ?? [];
 
-        personaAccountProxy = findPersonaSocialAccountProxy(
+        personaAccountProxy = helpers.proxy.findPersonaSocialAccountProxy(
           accountList,
           fbLoginMode.account_id,
         );
         console.log("[handleSyncExtensionInfo] personaAccountProxy:", personaAccountProxy);
       }
 
-      const { effective: proxyInfo } = resolveEffectiveProxy({
+      const { effective: proxyInfo } = helpers.proxy.resolveEffectiveProxy({
         hasExtensionConfig: false,
         personaProxy,
         personaAccountProxy,
       });
-      const hasEffectiveProxy = isActiveProxy(proxyInfo);
+      const hasEffectiveProxy = helpers.proxy.isActiveProxy(proxyInfo);
       if (hasEffectiveProxy) {
-        const { httpProxy, httpsProxy } = getProxyEndpoints(proxyInfo);
+        const { httpProxy, httpsProxy } = helpers.proxy.getProxyEndpoints(proxyInfo);
         if (httpProxy || httpsProxy) {
           services.proxyServices.setProxy(
             httpProxy ?? undefined,
@@ -163,13 +154,13 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
     let extensionAccountProxy: Record<string, unknown> | null = null;
     if (fbLoginMode?.mode === "auto") {
       const savedPlatform = (fbLoginMode as any)?.platform ?? "facebook";
-      extensionAccountProxy = findExtensionAccountProxyByPlatform(
+      extensionAccountProxy = helpers.proxy.findExtensionAccountProxyByPlatform(
         extensionConfigInfo?.social_accounts ?? [],
         savedPlatform,
         fbLoginMode.account_id,
       );
     }
-    const { effective: proxyInfo } = resolveEffectiveProxy({
+    const { effective: proxyInfo } = helpers.proxy.resolveEffectiveProxy({
       hasExtensionConfig: true,
       extensionProxy: extensionConfigProxy,
       extensionAccountProxy,
@@ -193,8 +184,8 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
     const scheduleEndTime = schedule_end_time
       ? schedule_end_time
       : settings.scheduleEndTime || "23:59:59";
-    const hasEffectiveProxy = isActiveProxy(proxyInfo);
-    const configIsTabSpecific = extractIsTabSpecific(extensionConfigInfo);
+    const hasEffectiveProxy = helpers.proxy.isActiveProxy(proxyInfo);
+    const configIsTabSpecific = helpers.tabControl.extractIsTabSpecific(extensionConfigInfo);
 
     const updatedSettings = {
       ...DefaultValues.SETTINGS_DATA,
@@ -221,7 +212,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
     };
 
     if (hasEffectiveProxy) {
-      const { httpProxy, httpsProxy } = getProxyEndpoints(proxyInfo);
+      const { httpProxy, httpsProxy } = helpers.proxy.getProxyEndpoints(proxyInfo);
       if (httpProxy || httpsProxy) {
         services.proxyServices.setProxy(
           httpProxy ?? undefined,

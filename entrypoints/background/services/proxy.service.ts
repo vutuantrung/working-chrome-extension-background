@@ -1,7 +1,7 @@
-import * as services from "../services"
+import * as services from "../services";
+import * as helpers from "../utils/helpers";
 import { readTrimmedString } from "../utils/tools";
 import { Message, ProxyAuthCredentials, ProxyHealth, Settings } from "../types/types";
-import { isActiveProxy } from "@/entrypoints/background/utils/helpers/proxy";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { DefaultValues, Constants } from "../utils/constants";
 
@@ -268,7 +268,7 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
         const { extension_proxy: proxyConfig } = message.inputs;
         const settingsFromProxy: Partial<Settings> = {};
         console.log("[handleProxy] proxyConfig:", proxyConfig);
-        if (isActiveProxy(proxyConfig)) {
+        if (helpers.proxy.isActiveProxy(proxyConfig)) {
             settingsFromProxy.proxy = "manual";
             settingsFromProxy.proxyOption = "manual";
 
@@ -288,7 +288,7 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
 
         // Persist effective proxy so popup can reflect changes (Restart button logic depends on it).
         try {
-            const proxyActive = isActiveProxy(proxyConfig);
+            const proxyActive = helpers.proxy.isActiveProxy(proxyConfig);
             await chromeApi.storage.local.set({ activeProxy: proxyActive ? proxyConfig : {} });
         } catch { }
 

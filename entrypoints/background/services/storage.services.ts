@@ -1,5 +1,5 @@
 import * as services from "../services";
-import { normalizeTabSpecificSetting } from "../utils/helpers/tabControl";
+import * as helpers from "../utils/helpers";
 import { isValidArrayAct } from "../utils/tools";
 import { Archive, Settings, StorageData } from "../types/types";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
@@ -135,7 +135,7 @@ export async function handleUpdateArchive(message: any, sendResponse?: (resp: an
 
 export async function handleUpdateSettings(message: any, sendResponse?: (resp: any) => void) {
     const { settings: storageSettings } = await getStorageCachedByKeys(["settings"]);
-    const updatedSettingsInputs = normalizeTabSpecificSetting(
+    const updatedSettingsInputs = helpers.tabControl.normalizeTabSpecificSetting(
         message.inputs?.updateSetting || {},
     );
 
@@ -161,7 +161,7 @@ export async function handleSetSettings(message: any, sendResponse?: (resp: any)
         const { settings: storageSettings } = await getStorageCachedByKeys(["settings"]);
 
         const currentSettingsInputs = message.inputs;
-        const normalizedSettingsData = normalizeTabSpecificSetting(
+        const normalizedSettingsData = helpers.tabControl.normalizeTabSpecificSetting(
             currentSettingsInputs?.data || {},
         );
         const [sendFacebookPostData] = normalizedSettingsData.apikey

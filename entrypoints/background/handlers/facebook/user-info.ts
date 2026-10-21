@@ -1,8 +1,4 @@
 import { FacebookUserProfileData, ParseType } from "@/entrypoints/background/utils/parsers/types";
-import {
-    buildPendingUserInfoItem,
-    filterUserProfilePayload,
-} from "../../utils/helpers/userInfo";
 import { HandlerContext } from "../../types/handle";
 import {
     buildFacebookUserInfoMapEntry,
@@ -12,7 +8,8 @@ import { refreshPendingFollowsFromUserInfoMap } from "./follow-info";
 import { refreshPendingFriendsFromUserInfoMap } from "./friend-info";
 import { seedCollectionMapsFromProfile } from "./register-profile-collections";
 import { parseDataUserProfile } from "@/entrypoints/background/utils/parsers/facebook-parser/parse-data-user-profile";
-import * as services from "../../services"; 
+import * as services from "../../services";
+import * as helpers from "../../utils/helpers";
 
 export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const { debounce, publishFacebookUserInfo, USERINFO_PUBLISH_DEBOUNCE_MS } =
@@ -63,7 +60,7 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
         );
         return;
     }
-    const filteredIncoming = filterUserProfilePayload(parsedUserObj);
+    const filteredIncoming = helpers.userInfo.filterUserProfilePayload(parsedUserObj);
     if (!filteredIncoming) {
         console.log(
             "[FB Follow Trace][handleFbUserInfo] skip: invalid id/name after filter",
@@ -93,7 +90,7 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
         switchedProfile ? "(replaced previous user)" : "",
     );
 
-    const nextItem = buildPendingUserInfoItem(
+    const nextItem = helpers.userInfo.buildPendingUserInfoItem(
         JSON.stringify(filteredIncoming),
         filteredIncoming,
     );

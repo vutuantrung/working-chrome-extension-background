@@ -1,24 +1,15 @@
 import { bgState } from "../../state";
 import { Message, Settings, Archive } from "../../types/types";
-import { hasUserDescription, removePendingUserInfo } from "../../utils/helpers/userInfo";
 import { UserInfoPublishStatus } from "../../types/types";
 import { Constants, DefaultValues, State } from "../../utils/constants";
 import { delayMs } from "../../utils/tools";
-import {
-  findExtensionAccountProxyByPlatform,
-  findPersonaSocialAccountProxy,
-  getProxyEndpoints,
-  hasExtensionConfigId,
-  isActiveProxy,
-  resolveEffectiveProxy,
-} from "@/entrypoints/background/utils/helpers/proxy";
 import { sendFacebookUserData } from "../../dataPublishers/facebookPublisher";
 import {
   bootstrapExistingFacebookTabs,
   cleanupFacebookTabs,
 } from "../../scriptInjection";
-import { clearSocialPlatformCookies } from "../../utils/helpers/cookie";
 import * as services from "../../services";
+import * as helpers from "../../utils/helpers";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 // ========================================
@@ -34,7 +25,7 @@ async function waitForUserInfoDescription(
     const { pendingUserInfo } = (await services.storageServices.getStorageCachedByKeys(["pendingUserInfo"])) || {};
     const parsed = pendingUserInfo?.parsed;
     if (parsed) lastParsed = parsed;
-    if (hasUserDescription(parsed)) return { found: true, info: parsed };
+    if (helpers.userInfo.hasUserDescription(parsed)) return { found: true, info: parsed };
     await delayMs(Constants.USERINFO_DESCRIPTION_POLL_MS);
   }
 
@@ -104,7 +95,7 @@ export async function handleConfirmGatherUserInfo(
     }
 
     const shouldWaitForDescription =
-      !overrideRaw && !overrideParsed && !hasUserDescription(candidateParsed);
+      !overrideRaw && !overrideParsed && !helpers.userInfo.hasUserDescription(candidateParsed);
     if (shouldWaitForDescription) {
       await services.storageServices.setStorageCached({
         userInfoPublishStatus: {
@@ -151,7 +142,7 @@ export async function handleConfirmGatherUserInfo(
         typeof overrideTs === "number"
           ? overrideTs
           : (pendingUserInfo as any)?.ts;
-      const nextList = removePendingUserInfo(list, {
+      const nextList = helpers.userInfo.removePendingUserInfo(list, {
         id: removeId,
         ts: typeof removeTs === "number" ? removeTs : undefined,
       });
@@ -224,7 +215,7 @@ export async function handleRemovePendingUserInfo(
         "pendingUserInfoList",
       ]);
     const list = Array.isArray(pendingUserInfoList) ? pendingUserInfoList : [];
-    const nextList = removePendingUserInfo(list, {
+    const nextList = helpers.userInfo.removePendingUserInfo(list, {
       id: typeof inputs?.id === "string" ? inputs.id : undefined,
       ts: typeof inputs?.ts === "number" ? inputs.ts : undefined,
       index: typeof inputs?.index === "number" ? inputs.index : undefined,
@@ -321,7 +312,7 @@ export async function handleInitializeAfterLogin(
 
     const extensionConfigId =
       extensionSession?.extension_config_id ?? extensionConfig?.id;
-    const useExtensionConfig = hasExtensionConfigId(extensionConfigId);
+    const useExtensionConfig = helpers.proxy.hasExtensionConfigId(extensionConfigId);
     const { personaProxy, personaFacebookAccounts, fbLoginMode } =
       await services.storageServices.getStorageCachedByKeys([
         "personaProxy",
@@ -335,7 +326,7 @@ export async function handleInitializeAfterLogin(
       if (useExtensionConfig) {
         const { allSocialAccounts: storedSocialAccounts } = await services.storageServices.getStorageCachedByKeys(["allSocialAccounts"]);
         const savedPlatform = (fbLoginMode as any)?.platform ?? "facebook";
-        extensionAccountProxy = findExtensionAccountProxyByPlatform(
+        extensionAccountProxy = helpers.proxy.findExtensionAccountProxyByPlatform(
           extensionConfig?.social_accounts ?? storedSocialAccounts ?? [],
           savedPlatform,
           fbLoginMode.account_id,
@@ -368,7 +359,7 @@ export async function handleInitializeAfterLogin(
           })),
         );
 
-        personaAccountProxy = findPersonaSocialAccountProxy(
+        personaAccountProxy = helpers.proxy.findPersonaSocialAccountProxy(
           accountList,
           fbLoginMode.account_id,
         );
@@ -384,7 +375,7 @@ export async function handleInitializeAfterLogin(
       }
     }
 
-    const { effective: effectiveProxy } = resolveEffectiveProxy({
+    const { effective: effectiveProxy } = helpers.proxy.resolveEffectiveProxy({
       hasExtensionConfig: useExtensionConfig,
       extensionProxy: extensionConfigProxy,
       extensionAccountProxy,
@@ -392,10 +383,10 @@ export async function handleInitializeAfterLogin(
       personaAccountProxy,
     });
 
-    if (isActiveProxy(effectiveProxy)) {
+    if (helpers.proxy.isActiveProxy(effectiveProxy)) {
       settingsFromAPI.proxy = "manual";
       settingsFromAPI.proxyOption = "manual";
-      const { httpProxy, httpsProxy } = getProxyEndpoints(effectiveProxy);
+      const { httpProxy, httpsProxy } = helpers.proxy.getProxyEndpoints(effectiveProxy);
       if (httpProxy || httpsProxy) {
         services.proxyServices.setProxy(
           httpProxy ?? undefined,
@@ -534,7 +525,7 @@ export async function handleClearDataAfterLogout(
     chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
 
     if (!skipCookies) {
-      await clearSocialPlatformCookies();
+      await helpers.cookie.clearSocialPlatformCookies();
     }
 
     await chromeApi.storage.local.remove([

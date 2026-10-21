@@ -34,7 +34,6 @@ import {
 } from "../facebook/facebookMessageHandlers";
 import * as services from "../../services";
 import * as helpers from "../../utils/helpers";
-import { isLikelyProfilePageUrl } from "../../utils/helpers/userInfo";
 import { HandlerContext } from "../../types/handle";
 
 import {
@@ -94,7 +93,7 @@ async function handleBodyDataIntercepted(
       isProfileTab = false;
     try {
       const tab = await chromeApi.tabs.get(senderTabId);
-      isProfileTab = isLikelyProfilePageUrl(tab?.url || "");
+      isProfileTab = helpers.userInfo.isLikelyProfilePageUrl(tab?.url || "");
       tabUrl = tab?.url || "";
     } catch {
       isProfileTab = false;

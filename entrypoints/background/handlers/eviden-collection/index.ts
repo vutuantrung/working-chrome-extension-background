@@ -1,5 +1,5 @@
+import * as helpers from "../../utils/helpers";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
-import { getCaseStorageKey } from "../../utils/helpers/evidentStudio";
 import { Message, Screenshot } from "../../types/types";
 
 export function handleCaptureScreenshot(sendResponse: (resp: any) => void) {
@@ -23,7 +23,7 @@ export async function handleScreenshotCropped(
 
   chromeApi.sidePanel.open({ windowId }).catch(console.error)
 
-  const storageKey = getCaseStorageKey(caseId);
+  const storageKey = helpers.evidenStudio.getCaseStorageKey(caseId);
   const timestamp = Date.now();
   const entry: Screenshot = { dataUrl, timestamp };
 
