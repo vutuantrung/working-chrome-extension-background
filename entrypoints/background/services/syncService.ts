@@ -7,12 +7,9 @@ import {
   hasExtensionConfigId,
   isActiveProxy,
   resolveEffectiveProxy,
-} from "@/utils/resolveEffectiveProxy";
-import { extractIsTabSpecific } from "../helpers/specific-tab";
-import {
-  DEFAULT_SCHEDULED_DATA,
-  DEFAULT_SETTINGS_JSON,
-} from "../helpers/constants";
+} from "@/entrypoints/background/utils/helpers/proxy";
+import { extractIsTabSpecific } from "../utils/helpers/tabControl";
+import { DefaultValues } from "../utils/constants";
 import { handleUpdateScheduleActivities } from "./scheduleService";
 import { ensureJoinedGroupsAlarmSchedule } from "./fbGroupSyncService";
 import {
@@ -203,23 +200,23 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
     const configIsTabSpecific = extractIsTabSpecific(extensionConfigInfo);
 
     const updatedSettings = {
-      ...DEFAULT_SETTINGS_JSON,
+      ...DefaultValues.DEFAULT_SETTINGS_JSON,
       ...settings,
       activatingAutomation: automation === true,
       scheduleStartTime,
       scheduleEndTime,
       facebookTopic: extensionConfigInfo?.facebookTopic
         ? extensionConfigInfo.facebookTopic
-        : settings.facebookTopic || DEFAULT_SETTINGS_JSON.facebookTopic,
+        : settings.facebookTopic || DefaultValues.DEFAULT_SETTINGS_JSON.facebookTopic,
       tiktokTopic: extensionConfigInfo?.tiktokTopic
         ? extensionConfigInfo.tiktokTopic
-        : settings.tiktokTopic || DEFAULT_SETTINGS_JSON.tiktokTopic,
+        : settings.tiktokTopic || DefaultValues.DEFAULT_SETTINGS_JSON.tiktokTopic,
       xTopic: extensionConfigInfo?.xTopic
         ? extensionConfigInfo.xTopic
-        : settings.xTopic || DEFAULT_SETTINGS_JSON.xTopic,
+        : settings.xTopic || DefaultValues.DEFAULT_SETTINGS_JSON.xTopic,
       threadsTopic: extensionConfigInfo?.threadsTopic
         ? extensionConfigInfo.threadsTopic
-        : settings.threadsTopic || DEFAULT_SETTINGS_JSON.threadsTopic,
+        : settings.threadsTopic || DefaultValues.DEFAULT_SETTINGS_JSON.threadsTopic,
       domain: extensionConfigInfo?.server_domain,
       proxy: hasEffectiveProxy ? "manual" : "system",
       proxyOption: hasEffectiveProxy ? "manual" : "system",
@@ -260,7 +257,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
         if (isValidArrayActLocal(activities)) {
           scheduledActivities = activities;
         } else {
-          scheduledActivities = DEFAULT_SCHEDULED_DATA;
+          scheduledActivities = DefaultValues.DEFAULT_SCHEDULED_DATA;
         }
       }
       if (scheduledActivities) {

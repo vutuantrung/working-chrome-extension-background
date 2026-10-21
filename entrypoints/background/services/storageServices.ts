@@ -1,9 +1,9 @@
-import { normalizeTabSpecificSetting } from "../helpers/specific-tab";
-import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
-import { isValidArrayAct } from "../helpers/tools";
+import { normalizeTabSpecificSetting } from "../utils/helpers/tabControl";
+import { isValidArrayAct } from "../utils/tools";
 import { Archive, Settings, StorageData } from "../types/types";
 import { setProxy, clearProxy } from "./proxyServices";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
+import { DefaultValues } from "../utils/constants";
 
 export type LocalStorageAdapter = Pick<typeof chrome.storage.local, "get" | "set">;
 
@@ -84,7 +84,7 @@ export function clearStorageCache() {
 export async function handleUpdateArchive(message: any, sendResponse?: (resp: any) => void) {
     try {
         const storageData = await storage().get(["settings"]);
-        const currentSettings: any = storageData.settings || DEFAULT_SETTINGS_JSON;
+        const currentSettings: any = storageData.settings || DefaultValues.DEFAULT_SETTINGS_JSON;
 
         const updatedArchive: Archive = {
             ...(currentSettings.archive || {}),
@@ -150,7 +150,7 @@ export async function handleUpdateSettings(message: any, sendResponse?: (resp: a
 }
 
 export async function handleGetSettings(message: any, sendResponse: (resp: any) => void) {
-    const { settings } = (await getStorageCachedByKeys(["settings"])) ?? DEFAULT_SETTINGS_JSON;
+    const { settings } = (await getStorageCachedByKeys(["settings"])) ?? DefaultValues.DEFAULT_SETTINGS_JSON;
     if (sendResponse) {
         sendResponse({ data: settings });
     }

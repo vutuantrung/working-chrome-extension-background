@@ -1,13 +1,13 @@
-import { bgState, SEND_X_DATA_ALARM } from "../state";
+import { bgState } from "../state";
 import { _runKafkaPublish } from "./kafkaPublisher";
 import { handleSyncExtensionInfo } from "../services/syncService";
-import { XPostData } from "@/utils/parsers/types";
-import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
+import { XPostData } from "@/entrypoints/background/utils/parsers/types";
+import { Constants, DefaultValues } from "../utils/constants";
 
 export async function sendXCachedData(): Promise<void> {
   return _runKafkaPublish({
     platform: "x",
-    retryAlarm: SEND_X_DATA_ALARM,
+    retryAlarm: Constants.SEND_X_DATA_ALARM,
     logTag: "[sendXCachedData]",
 
     resolveTopics(_settings) {
@@ -18,7 +18,7 @@ export async function sendXCachedData(): Promise<void> {
       const { settings, tenantObjs, publish, incrementBadge } = ctx;
       const { xTopic: topicSetting } = settings;
 
-      const xTopic = topicSetting || DEFAULT_SETTINGS_JSON.xTopic;
+      const xTopic = topicSetting || DefaultValues.DEFAULT_SETTINGS_JSON.xTopic;
       if (!xTopic) {
         console.warn(this.logTag, "topics missing or invalid — skip publish", xTopic);
         return;

@@ -1,1 +1,0 @@
-export const getCaseStorageKey = (caseId: string) => `screenshots_${caseId}`

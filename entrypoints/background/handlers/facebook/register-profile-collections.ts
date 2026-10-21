@@ -1,4 +1,4 @@
-import { extractProfileTabCollections } from "@/utils/parsers/facebook-parser/collection-list-utils";
+import { extractProfileTabCollections } from "@/entrypoints/background/utils/parsers/facebook-parser/collection-list-utils";
 import type { FacebookCollectionOwnerEntry } from "./follow-info";
 import type { FacebookFriendCollectionOwnerEntry } from "./friend-info";
 

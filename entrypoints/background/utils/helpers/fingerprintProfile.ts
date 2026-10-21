@@ -1,4 +1,4 @@
-import { hasExtensionConfigId } from "@/utils/resolveEffectiveProxy";
+import { hasExtensionConfigId } from "./proxy";
 
 export function resolveFingerprintOwnerId(input: {
   extensionConfigId: unknown;

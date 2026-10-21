@@ -5,7 +5,7 @@ import {
   parseFacebookNameFromHtml,
   readTrimmedString,
   isSupportedPlatformUrl,
-} from "../../entrypoints/background/helpers/tools";
+} from "../../entrypoints/background/utils/tools";
 
 describe("existing background helpers", () => {
   it("normalizes strings and finite numbers", () => {

@@ -1,4 +1,8 @@
-import { getLastProxyErrorWriteAt, setLastProxyErrorWriteAt, setProxyHealth } from "../../services/proxyServices";
+import {
+    getLastProxyErrorWriteAt,
+    setLastProxyErrorWriteAt,
+    setProxyHealth
+} from "../../services/proxyServices";
 
 export function onProxyErrorHandler(details: any) {
     const now = Date.now();

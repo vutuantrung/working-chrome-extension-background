@@ -1,13 +1,13 @@
-import { bgState, SEND_YOUTUBE_DATA_ALARM } from "../state";
+import { bgState } from "../state";
 import { _runKafkaPublish } from "./kafkaPublisher";
 import { handleSyncExtensionInfo } from "../services/syncService";
-import { YoutubeImageData, YoutubePostData } from "@/utils/parsers/types";
-import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
+import { YoutubeImageData, YoutubePostData } from "@/entrypoints/background/utils/parsers/types";
+import { Constants, DefaultValues } from "../utils/constants";
 
 export async function sendYoutubeCachedData(): Promise<void> {
   return _runKafkaPublish({
     platform: "youtube",
-    retryAlarm: SEND_YOUTUBE_DATA_ALARM,
+    retryAlarm: Constants.SEND_YOUTUBE_DATA_ALARM,
     logTag: "[sendYoutubeCachedData]",
 
     resolveTopics(_settings) {
@@ -18,7 +18,7 @@ export async function sendYoutubeCachedData(): Promise<void> {
       const { settings, tenantObjs, publish, incrementBadge } = ctx;
       const { youtubeTopic: topicSetting } = settings;
 
-      const youtubeTopic = topicSetting || DEFAULT_SETTINGS_JSON.youtubeTopic;
+      const youtubeTopic = topicSetting || DefaultValues.DEFAULT_SETTINGS_JSON.youtubeTopic;
       if (!youtubeTopic) {
         console.warn(this.logTag, "topics missing or invalid — skip publish", youtubeTopic);
         return;

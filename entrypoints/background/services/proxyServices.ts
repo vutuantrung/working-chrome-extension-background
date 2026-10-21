@@ -1,9 +1,9 @@
-import { DEFAULT_SETTINGS_JSON, FB_WEB_FAVICON } from "../helpers/constants";
-import { readTrimmedString } from "../helpers/tools";
+import { readTrimmedString } from "../utils/tools";
 import { Message, ProxyAuthCredentials, ProxyHealth, Settings } from "../types/types";
 import { getStorageCachedByKeys, getStorageCache } from "./storageServices";
-import { isActiveProxy } from "@/utils/resolveEffectiveProxy";
+import { isActiveProxy } from "@/entrypoints/background/utils/helpers/proxy";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
+import { DefaultValues, Constants } from "../utils/constants";
 
 interface Proxy {
     host: string;
@@ -139,7 +139,7 @@ export async function handleProxyHealthCheck() {
     // Must be allowed by extension_pages CSP (connect-src) and host_permissions.
 
     try {
-        const resp = await fetch(FB_WEB_FAVICON, {
+        const resp = await fetch(Constants.FB_WEB_FAVICON, {
             method: "GET",
             cache: "no-store",
             signal: controller.signal,
@@ -155,7 +155,7 @@ export async function handleProxyHealthCheck() {
                 lastOkAt: Date.now(),
                 consecutiveFailures: 0,
                 reason: "alarm_check_ok",
-                details: { url: FB_WEB_FAVICON, status: resp.status, durationMs },
+                details: { url: Constants.FB_WEB_FAVICON, status: resp.status, durationMs },
                 error: undefined,
                 lastErrorAt: undefined,
             });
@@ -166,7 +166,7 @@ export async function handleProxyHealthCheck() {
                 lastErrorAt: Date.now(),
                 consecutiveFailures,
                 reason: "alarm_check_bad_status",
-                details: { url: FB_WEB_FAVICON, status: resp?.status, durationMs },
+                details: { url: Constants.FB_WEB_FAVICON, status: resp?.status, durationMs },
                 error: `HTTP ${resp?.status}`,
             } satisfies Partial<ProxyHealth>;
 
@@ -198,7 +198,7 @@ export async function handleProxyHealthCheck() {
             lastErrorAt: Date.now(),
             consecutiveFailures,
             reason: "alarm_check_failed",
-            details: { url: FB_WEB_FAVICON, durationMs },
+            details: { url: Constants.FB_WEB_FAVICON, durationMs },
             error: err instanceof Error ? err.message : String(err),
         } satisfies Partial<ProxyHealth>;
 
@@ -300,7 +300,7 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
                 archive: settings.archive || {},
             }
             : {
-                ...DEFAULT_SETTINGS_JSON,
+                ...DefaultValues.DEFAULT_SETTINGS_JSON,
                 ...settingsFromProxy,
             };
 

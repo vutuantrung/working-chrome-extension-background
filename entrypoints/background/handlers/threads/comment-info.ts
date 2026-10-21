@@ -1,4 +1,4 @@
-import { ParseType, ThreadsCommentData } from "@/utils/parsers/types";
+import { ParseType, ThreadsCommentData } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 

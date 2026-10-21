@@ -1,5 +1,5 @@
-import { isSupportedPlatformUrl } from "./helpers/tools";
-import { PLATFORM_TAB_FB_GLOBS, State } from "./helpers/constants";
+import { isSupportedPlatformUrl } from "./utils/tools";
+import { Constants, State } from "./utils/constants";
 import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 
 export async function ensureFacebookProfileIdBootstrapInstalled(tabId: number, options?: { force?: boolean }): Promise<{ injected: boolean }> {
@@ -253,7 +253,7 @@ export async function ensureFacebookGraphInterceptorInstalled(tabId: number): Pr
 }
 
 export async function bootstrapExistingFacebookTabs(options?: { forceProfileIdBootstrap?: boolean }): Promise<void> {
-  const tabs = await chromeApi.tabs.query({ url: PLATFORM_TAB_FB_GLOBS });
+  const tabs = await chromeApi.tabs.query({ url: Constants.PLATFORM_TAB_FB_GLOBS });
   const targetTabs = (tabs || []).filter((t) => isSupportedPlatformUrl(t.url));
   if (targetTabs.length === 0) {
     console.log("[SETUP] No existing Facebook tabs to bootstrap");
@@ -264,7 +264,7 @@ export async function bootstrapExistingFacebookTabs(options?: { forceProfileIdBo
     if (!tab.id) continue;
 
     // Check if tab is ready (not loading) to avoid disrupting UI
-    if (tab.status !== State.COMPLETE) {
+    if (tab.status !== State.TaskState.COMPLETE) {
       console.log("[SETUP] Skipping tab", tab.id, "- still loading");
       continue;
     }

@@ -1,9 +1,45 @@
-import { FacebookUserFollowData, FacebookUserFriendData } from "@/utils/parsers/types";
+import { FacebookUserFollowData, FacebookUserFriendData } from "@/entrypoints/background/utils/parsers/types";
 import { User } from "@/entrypoints/sidepanel/types/types";
 
+export type EffectiveProxySource = "extension" | "persona" | "account" | "none";
+
+export type ProxyEndpoint = {
+  host: string;
+  port: string
+};
+
+export type PersonaFacebookAccount = {
+  account_id: string;
+  account_status?: any[];
+  allow_persona_feature?: boolean;
+  categories?: string[];
+  cookies?: string;
+  extension_config_id?: string;
+  gender?: string;
+  group_limit?: number;
+  max_group_joins_per_day?: number;
+  name?: string;
+  persona_topic_ids?: string[];
+  platform: string;
+  proxy?: Record<string, unknown>;
+  proxy_id?: string;
+  status?: string;
+  tenant_id?: string;
+  ttl?: number;
+  uid?: string;
+  updated_time?: number;
+  user_id?: string;
+};
+
 export type Platform = "facebook" | "tiktok" | "x" | "threads" | "youtube";
+
 export type ProxyHealthState = "ok" | "error";
-export type ProxyAuthCredentials = { username: string; password: string };
+
+export type ProxyAuthCredentials = {
+  username: string;
+  password: string;
+};
+
 export type ProxyHealth = {
   state: ProxyHealthState;
   updatedAt: number;

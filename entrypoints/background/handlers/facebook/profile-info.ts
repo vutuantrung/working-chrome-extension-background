@@ -1,4 +1,4 @@
-import { FacebookProfileData, ParseType } from "@/utils/parsers/types";
+import { FacebookProfileData, ParseType } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 

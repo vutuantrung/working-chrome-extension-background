@@ -1,18 +1,15 @@
-import { distinctPlatformByRequestUrl } from "@/entrypoints/background/helpers/tools";
-import { parseFacebookData } from "./parsers/facebook-parser";
-import { parseThreadsData } from "./parsers/threads-parser";
-import { parseTiktokData } from "./parsers/tiktok-parser";
-import { parseXData } from "./parsers/x-parser";
-import { ParseType } from "./parsers/types";
-import { parseYoutubeData } from "./parsers/youtube-parser";
+import * as helpers from "../helpers";
+import { parseFacebookData } from "./facebook-parser";
+import { parseThreadsData } from "./threads-parser";
+import { parseTiktokData } from "./tiktok-parser";
+import { parseXData } from "./x-parser";
+import { ParseType } from "./types";
+import { parseYoutubeData } from "./youtube-parser";
 
-export async function parseData(
-  dataString: string,
-  requestInfo: any,
-): Promise<ParseType[]> {
+export async function parseData(dataString: string, requestInfo: any): Promise<ParseType[]> {
   const dataReturn: ParseType[] = [];
 
-  const platform = distinctPlatformByRequestUrl(
+  const platform = helpers.tabControl.distinctPlatformByRequestUrl(
     requestInfo.requestUrl,
     requestInfo.tabUrl,
   );
@@ -67,7 +64,7 @@ export async function parseData(
     if (parsingResult?.commentData?.length) { dataReturn.push({ typeName: "ThreadsCommentData", data: parsingResult.commentData }); }
   }
 
-  if(platform === "youtube") {
+  if (platform === "youtube") {
     const parsingResult = await parseYoutubeData(dataString, requestInfo);
     if (parsingResult?.postData?.length) { dataReturn.push({ typeName: "YoutubePostData", data: parsingResult.postData }) }
     if (parsingResult?.commentData?.length) { dataReturn.push({ typeName: "YoutubeCommentData", data: parsingResult.commentData }) }

@@ -1,4 +1,4 @@
-import { ParseType, XAttachment } from "@/utils/parsers/types";
+import { ParseType, XAttachment } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 export const handleXImageInfo = async (dt: ParseType, ctx: HandlerContext) => {

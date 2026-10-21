@@ -2,11 +2,10 @@ import {
   Activity,
   AlarmTime,
   Platform,
-  Priority,
-  State,
   Task,
   TimeLeft,
 } from "../types/types";
+import { Constants, State } from "./constants";
 
 export function delayMs(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -87,17 +86,9 @@ export function makeid(length: number): string {
   return result;
 }
 
-export const PLATFORM_URL_PATTERNS: Record<Platform, RegExp> = {
-  facebook: /^https?:\/\/(www\.|web\.)?facebook\.com\//i,
-  tiktok: /^https?:\/\/(www\.)?(m\.)?(vt\.)?(vm\.)?tiktok\.com\/*.*$/i,
-  threads: /^https?:\/\/(www\.)?threads\.com\/*.*$/i,
-  x: /^https?:\/\/x\.com\/*.*$/i,
-  youtube: /^https?:\/\/(www\.)?youtube\.com\/*.*$/i,
-};
-
 function detectPlatform(url: string | undefined | null): Platform | null {
   if (!url) return null;
-  const platformParterns = Object.entries(PLATFORM_URL_PATTERNS) as [Platform, RegExp][];
+  const platformParterns = Object.entries(Constants.PLATFORM_URL_PATTERNS) as [Platform, RegExp][];
   for (const [platform, re] of platformParterns) {
     // console.log(`>>>>>> detectPlatform - testing platform: ${platform}, url: ${url}`);
     if (re.test(url)) return platform;
@@ -225,11 +216,11 @@ export function generateTaskFromActivity(activity: Activity, assignedTabId: numb
     activityId: activity.id,
     activityName: activity.name,
     platform: activity.platform,
-    priority: activity.priority != null ? activity.priority : Priority.Medium,
+    priority: activity.priority != null ? activity.priority : State.Priority.Medium,
     tabId: parseInt(String(assignedTabId)),
     inputs: { tabId: parseInt(String(assignedTabId)), ...treatedInputs },
     nextTask: "start",
-    state: State.PENDING,
+    state: State.TaskState.PENDING,
     createdTime: Date.now(),
   };
 }
@@ -284,25 +275,117 @@ export function isTimePassed(inputTimeStr: string): boolean {
   return inputTime < currentTime;
 }
 
-export function distinctPlatformByRequestUrl(
-  requestUrl?: string,
-  tabUrl?: string,
-): Platform | null {
-  // console.log(">>>>>> distinctPlatformByRequestUrl - requestUrl:", requestUrl, "tabUrl:", tabUrl);
-  if (!requestUrl || !tabUrl) return null;
-
-  if (tabUrl.includes("facebook.com") && requestUrl.includes("/api/graphql")) return "facebook";
-  if (tabUrl.includes("tiktok.com")) return "tiktok";
-  if (tabUrl.includes("x.com") && requestUrl.includes("/api/graphql")) return "x";
-  if (tabUrl.includes("threads.com") && requestUrl.includes("/graphql/query")) return "threads";
-  if (tabUrl.includes("youtube.com")) return "youtube";
-
-  return null;
-}
-
 export function getStartDayTimestamp() {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const timestampMs = startOfDay.getTime();
   return timestampMs;
+}
+
+
+interface DebouncerObj { t: ReturnType<typeof setTimeout> }
+export const __debouncers: Map<any, DebouncerObj> = new Map();
+export function debounce(fn: Function, delay: any, key: any = fn): void {
+  let o: DebouncerObj | undefined | any = __debouncers.get(key);
+  if (o) clearTimeout(o.t);
+  o = { t: setTimeout(fn, delay) };
+  __debouncers.set(key, o);
+}
+
+export function formatTimeFromISO(isoString: string): string {
+  const date = new Date(isoString);
+
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  const seconds = date.getUTCSeconds();
+
+  const pad = (n: number) => n.toString().padStart(2, "0");
+
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+export function toISOTimeToday(time: string): string {
+  const [h, m, s] = time.split(":").map(Number);
+
+  const d = new Date();
+  d.setUTCHours(h, m, s, 0); // NO timezone shift
+
+  return d.toISOString();
+}
+
+export function isTimeValid(time: string): boolean {
+  // matches 00:00:00 to 23:59:59
+  const regex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/;
+  return regex.test(time);
+}
+
+export function randomInterval(
+  persist: number,
+  interval: number,
+  direction: string,
+) {
+  const shouldOffset = Math.random() < 0.5;
+  if (!shouldOffset) return persist;
+
+  if (direction === "increase") return persist + interval;
+  if (direction === "decrease") return persist - interval;
+}
+
+export function randomFromPair(input: string | number | undefined | null | any): number | undefined {
+  if (input == null) return undefined;
+  if (typeof input === "number") return isNaN(input) ? undefined : input;
+  if (typeof input === "string") {
+    const numbers = input
+      .split(",")
+      .map((s) => Number(s.trim()))
+      .filter((n) => !isNaN(n));
+    if (numbers.length === 0) return undefined;
+    return numbers[Math.floor(Math.random() * numbers.length)];
+  }
+  if (Array.isArray(input)) {
+    const numbers = input.map(Number).filter((n) => !isNaN(n));
+    if (numbers.length === 0) return undefined;
+    return numbers[Math.floor(Math.random() * numbers.length)];
+  }
+  return undefined;
+}
+
+export async function hashStringArr(stringArr: string[]): Promise<string | null> {
+  if (Array.isArray(stringArr) && stringArr.length > 0) {
+    const s = stringArr.join("_");
+    // Create SHA-256 hash of the uniqueString
+    const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+
+    // Convert the hash buffer to a hexadecimal string
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const sha256HexString = hashArray
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+
+    // Use BigInt to safely handle large numbers and take the first 14 digits of the hexadecimal string
+    const sha256IntBigInt = BigInt("0x" + sha256HexString);
+    const sha256IntString = sha256IntBigInt.toString().slice(0, 14);
+
+    return sha256IntString;
+  }
+  return null;
+}
+
+export function deletePropertiesByNames(obj: any, propNames: string[]): void {
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      deletePropertiesByNames(item, propNames);
+    }
+  } else if (typeof obj === "object" && obj !== null) {
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        if (propNames.includes(key)) {
+          delete obj[key];
+        } else {
+          // Recurse into nested objects or arrays
+          deletePropertiesByNames(obj[key], propNames);
+        }
+      }
+    }
+  }
 }

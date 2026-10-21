@@ -1,3 +1,4 @@
+// THREADS
 export type ThreadsUserFollowData = {
   follow_id: string;
   follow_rowkey: string;
@@ -121,6 +122,7 @@ export type ThreadsDataType =
   | ThreadsUserProfileData
   | ThreadsUserFollowData;
 
+// X Twitter
 export type XUserLocalStorageInfo = {
   profile_id: string;
   user_name: string;
@@ -225,6 +227,7 @@ export type XDataType =
   | XUserProfileData
   | XUserFollowData;
 
+// Facebook
 export type FacebookReactionData = {
   source_type: string;
   article_id: string;
@@ -420,6 +423,7 @@ export type FacebookDataType =
   | FacebookUserFollowData
   | FacebookUserFriendData;
 
+// Tiktok
 export type TiktokPostLocalStorageInfo = {
   entry_rowkey: string;
   post_id: string;
@@ -571,6 +575,8 @@ export type TiktokDataType =
   | TiktokUserProfileData
   | TiktokUserFollowData;
 
+
+// Youtube
 export type YoutubePostLocalStorageInfo = {
   entry_rowkey: string;
   post_id: string;
@@ -679,7 +685,7 @@ export type YoutubeUserProfileData = {
   subscriber_count: string;
   video_count: string;
   view_count: string;
-  links: {link: string, title: string}[];
+  links: { link: string, title: string }[];
   joined_date: string;
   "@timestamp": string;
   created_at: number;
@@ -689,7 +695,10 @@ export type YoutubeUserProfileData = {
   tenant_ids: string[];
 };
 
-export type YoutubeDataType = YoutubePostData | YoutubeCommentData | YoutubeUserProfileData | YoutubeImageData;
+export type YoutubeDataType = YoutubePostData
+  | YoutubeCommentData
+  | YoutubeUserProfileData
+  | YoutubeImageData;
 
 export type Result<T, E = Error> =
   | { ok: true; data: T }

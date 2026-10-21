@@ -4,56 +4,18 @@ declare global {
   const ContentScriptContext: typeof import('wxt/utils/content-script-context').ContentScriptContext
   const InvalidMatchPattern: typeof import('wxt/utils/match-patterns').InvalidMatchPattern
   const MatchPattern: typeof import('wxt/utils/match-patterns').MatchPattern
-  const PLATFORM_CHANGED_EVENT: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/platformDisplay').PLATFORM_CHANGED_EVENT
-  const PLATFORM_COOKIE_DOMAINS: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/social-cookie-domains').PLATFORM_COOKIE_DOMAINS
-  const PLATFORM_LABELS: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/platformDisplay').PLATFORM_LABELS
-  const SELECTED_PLATFORM_KEY: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/platformDisplay').SELECTED_PLATFORM_KEY
-  const SOCIAL_COOKIE_DOMAINS: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/social-cookie-domains').SOCIAL_COOKIE_DOMAINS
   const browser: typeof import('wxt/browser').browser
   const createIframeUi: typeof import('wxt/utils/content-script-ui/iframe').createIframeUi
   const createIntegratedUi: typeof import('wxt/utils/content-script-ui/integrated').createIntegratedUi
   const createShadowRootUi: typeof import('wxt/utils/content-script-ui/shadow-root').createShadowRootUi
-  const decryptCookieString: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/cookieCipher').decryptCookieString
   const defineAppConfig: typeof import('wxt/utils/define-app-config').defineAppConfig
   const defineBackground: typeof import('wxt/utils/define-background').defineBackground
   const defineContentScript: typeof import('wxt/utils/define-content-script').defineContentScript
   const defineUnlistedScript: typeof import('wxt/utils/define-unlisted-script').defineUnlistedScript
   const defineWxtPlugin: typeof import('wxt/utils/define-wxt-plugin').defineWxtPlugin
-  const deletePropertiesByNames: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/index').deletePropertiesByNames
-  const encryptCookieString: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/cookieCipher').encryptCookieString
-  const encryptWithPrivateKey: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/crypto').encryptWithPrivateKey
-  const extractPersonaFacebookAccounts: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').extractPersonaFacebookAccounts
-  const extractPersonaProxy: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').extractPersonaProxy
-  const extractPersonaSocialAccounts: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').extractPersonaSocialAccounts
   const fakeBrowser: typeof import('wxt/testing').fakeBrowser
-  const findExtensionAccountProxyByPlatform: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').findExtensionAccountProxyByPlatform
-  const findExtensionFacebookAccountProxy: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').findExtensionFacebookAccountProxy
-  const findPersonaFacebookAccountProxy: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').findPersonaFacebookAccountProxy
-  const findPersonaSocialAccountProxy: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').findPersonaSocialAccountProxy
-  const formatTimeFromISO: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/time-format').formatTimeFromISO
-  const getPlatformCookieDomains: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/social-cookie-domains').getPlatformCookieDomains
-  const getPlatformLabel: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/platformDisplay').getPlatformLabel
-  const getProxyEndpoints: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').getProxyEndpoints
-  const getSelectedPlatformId: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/platformDisplay').getSelectedPlatformId
-  const getSelectedPlatformLabel: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/platformDisplay').getSelectedPlatformLabel
-  const hasExtensionConfigId: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').hasExtensionConfigId
-  const hashStringArr: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/index').hashStringArr
   const injectScript: typeof import('wxt/utils/inject-script').injectScript
-  const isActiveProxy: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').isActiveProxy
-  const isPlatformId: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/platformDisplay').isPlatformId
-  const isTimeValid: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/time-format').isTimeValid
-  const makeid: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/index').makeid
-  const normalizePersonaSocialAccount: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').normalizePersonaSocialAccount
-  const parseDER: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/crypto').parseDER
-  const parseData: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/parser-data').parseData
-  const parsePEM: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/crypto').parsePEM
-  const randomFromPair: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/random-interval').randomFromPair
-  const randomInterval: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/random-interval').randomInterval
-  const resolveEffectiveProxy: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy').resolveEffectiveProxy
-  const resolveFingerprintOwnerId: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/fingerprintProfile').resolveFingerprintOwnerId
-  const setSelectedPlatformId: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/platformDisplay').setSelectedPlatformId
   const storage: typeof import('wxt/utils/storage').storage
-  const toISOTimeToday: typeof import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/time-format').toISOTimeToday
   const useAppConfig: typeof import('wxt/utils/app-config').useAppConfig
   const useCallback: typeof import('react').useCallback
   const useContext: typeof import('react').useContext
@@ -92,13 +54,4 @@ declare global {
   // @ts-ignore
   export type { ScriptPublicPath, InjectScriptOptions } from 'wxt/utils/inject-script'
   import('wxt/utils/inject-script')
-  // @ts-ignore
-  export type { PlatformId } from '/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/platformDisplay'
-  import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/platformDisplay')
-  // @ts-ignore
-  export type { EffectiveProxySource, ProxyEndpoint, PersonaFacebookAccount } from '/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy'
-  import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/resolveEffectiveProxy')
-  // @ts-ignore
-  export type { SocialCookieDomain } from '/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/social-cookie-domains'
-  import('/home/parker/Working/Local_localProjects/external-git/working-chrome-extension-background/utils/social-cookie-domains')
 }

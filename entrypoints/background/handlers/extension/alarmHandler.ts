@@ -1,10 +1,14 @@
-import { bgState, PROXY_HEALTH_CHECK_ALARM, SEND_FACEBOOK_DATA_ALARM, SEND_TIKTOK_DATA_ALARM, SETTINGS_SYNC_ALARM, MAX_TASK_LIST_LENGTH, SYNC_FB_JOINED_GROUPS_ALARM, SEND_FB_JOINED_GROUPS_ALARM, SEND_FB_PENDING_GROUPS_ALARM } from "../../state";
+import { bgState } from "../../state";
 import { Task } from "../../types/types";
-import { DEFAULT_SCHEDULED_DATA, DEFAULT_SETTINGS_JSON, State } from "../../helpers/constants";
-import { generateTaskFromActivity, isTimePassed, isValidArrayAct } from "../../helpers/tools";
-import { safeTabsSendMessage } from "../../helpers/tabUtils";
-import { getActiveFacebookTabId } from "../../helpers/tabUtils";
-import { sendFacebookCachedData, sendFacebookUserData, sendFacebookJoinedGroupsCachedData, sendFacebookPendingGroupsCachedData } from "../../dataPublishers/facebookPublisher";
+import { Constants, DefaultValues, State } from "../../utils/constants";
+import { generateTaskFromActivity, isTimePassed, isValidArrayAct } from "../../utils/tools";
+import * as helpers from "../../utils/helpers";
+import {
+  sendFacebookCachedData,
+  sendFacebookUserData,
+  sendFacebookJoinedGroupsCachedData,
+  sendFacebookPendingGroupsCachedData
+} from "../../dataPublishers/facebookPublisher";
 import { sendTiktokCachedData } from "../../dataPublishers/tiktokPublisher";
 import { checkExtensionUpdateAndNotify } from "../../updateChecker";
 import { handleSyncExtensionInfo } from "../../services/syncService";
@@ -16,34 +20,34 @@ import { getStorageCachedByKeys, setStorageCached, clearStorageCache } from "../
 
 export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
   try {
-    if (alarm.name === PROXY_HEALTH_CHECK_ALARM) {
+    if (alarm.name === Constants.PROXY_HEALTH_CHECK_ALARM) {
       await handleProxyHealthCheck();
       return;
     }
 
-    if (alarm.name === SEND_FACEBOOK_DATA_ALARM) {
+    if (alarm.name === Constants.SEND_FACEBOOK_DATA_ALARM) {
       await sendFacebookCachedData();
       await sendFacebookUserData();
       return;
     }
 
-    if (alarm.name === SEND_TIKTOK_DATA_ALARM) {
+    if (alarm.name === Constants.SEND_TIKTOK_DATA_ALARM) {
       await sendTiktokCachedData();
       return;
     }
 
-    if (alarm.name === SYNC_FB_JOINED_GROUPS_ALARM) {
+    if (alarm.name === Constants.SYNC_FB_JOINED_GROUPS_ALARM) {
       await syncFacebookJoinedGroups();
       await syncFacebookPendingGroups();
       return;
     }
 
-    if (alarm.name === SEND_FB_JOINED_GROUPS_ALARM) {
+    if (alarm.name === Constants.SEND_FB_JOINED_GROUPS_ALARM) {
       await sendFacebookJoinedGroupsCachedData();
       return;
     }
 
-    if (alarm.name === SEND_FB_PENDING_GROUPS_ALARM) {
+    if (alarm.name === Constants.SEND_FB_PENDING_GROUPS_ALARM) {
       await sendFacebookPendingGroupsCachedData();
       return;
     }
@@ -81,7 +85,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       // [LOCAL] API reporter
       let scheduledActivities = null;
       const actArr = await fetchScheduledActivities(
-        storageUser || DEFAULT_SETTINGS_JSON,
+        storageUser || DefaultValues.DEFAULT_SETTINGS_JSON,
       );
       // Priority: EXTERNAL > LOCAL > CACHED > DEFAULT
       if (isValidArrayAct(actArr)) {
@@ -89,7 +93,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       } else if (isValidArrayAct(storageActivities)) {
         scheduledActivities = storageActivities;
       } else {
-        scheduledActivities = DEFAULT_SCHEDULED_DATA;
+        scheduledActivities = DefaultValues.DEFAULT_SCHEDULED_DATA;
         console.log("Using DEFAULT_SCHEDULED_DATA (no cached data available)");
       }
 
@@ -151,7 +155,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
         `Task time is valid - creating task for ${activity.name}`,
       );
 
-      const activeTabId = await getActiveFacebookTabId();
+      const activeTabId = await helpers.tabControl.getActiveFacebookTabId();
       if (!activeTabId) {
         console.warn(
           "[SCHEDULE CHECK] Active tab is not a Facebook page — skipping activity:",
@@ -180,12 +184,12 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
 
           // Check for an existing running/pending task on THIS specific tab.
           const lastTask: Task | null = [...taskList].reverse().find((t: Task) => t.tabId === tabId) ?? null;
-          if (lastTask && [State.RUNNING, State.PENDING].includes(lastTask.state)) {
+          if (lastTask && [State.TaskState.RUNNING, State.TaskState.PENDING].includes(lastTask.state)) {
             if (lastTask.priority > task.priority) {
               continue;
             }
 
-            lastTask.state = State.CANCELED;
+            lastTask.state = State.TaskState.CANCELED;
             lastTask.result = "Canceled. Reason: Higher or equal priority task replaced."
             chromeApi.tabs.sendMessage(
               lastTask.tabId,
@@ -196,10 +200,10 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
 
           // Remove the last task if the task list exceeds the maximum length
           taskList.push(task);
-          if (taskList.length > MAX_TASK_LIST_LENGTH) taskList.shift();
+          if (taskList.length > Constants.MAX_TASK_LIST_LENGTH) taskList.shift();
 
           bgState.injectedTabs.delete(tabId);
-          await safeTabsSendMessage(tabId, task);
+          await helpers.tabControl.safeTabsSendMessage(tabId, task);
         }
 
         // Invalidate cache before writing so subsequent reads get fresh data.
@@ -210,7 +214,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       }
     }
 
-    if (alarm.name === SETTINGS_SYNC_ALARM) {
+    if (alarm.name === Constants.SETTINGS_SYNC_ALARM) {
       await handleSyncExtensionInfo();
       return;
     }

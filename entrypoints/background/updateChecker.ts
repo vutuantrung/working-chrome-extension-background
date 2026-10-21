@@ -1,14 +1,15 @@
-import { bgState, EXTENSION_UPDATE_CHECK_URL, EXTENSION_UPDATE_COOKIE_NAME } from "./state";
-import { safeTabsSendMessage } from "./helpers/tabUtils";
+import { bgState } from "./state";
+import * as helpers from "./utils/helpers";
 import { ExtensionVersionInfo } from "./types/types";
 import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 import { getStorageCachedByKeys, setStorageCached } from "./services/storageServices";
+import { Constants } from "./utils/constants";
 
 async function getUpdateCookieValue(): Promise<string | undefined> {
   try {
     const cookie = await chromeApi.cookies.get({
       url: import.meta.env.VITE_AXIOS_BASE_URL,
-      name: EXTENSION_UPDATE_COOKIE_NAME,
+      name: Constants.EXTENSION_UPDATE_COOKIE_NAME,
     });
     if (cookie?.value) return cookie.value;
   } catch (error) {
@@ -25,10 +26,10 @@ async function fetchLatestExtensionVersion(): Promise<ExtensionVersionInfo | nul
 
     const cookieValue = await getUpdateCookieValue();
     if (cookieValue) {
-      headers.Cookie = `${EXTENSION_UPDATE_COOKIE_NAME}=${cookieValue}`;
+      headers.Cookie = `${Constants.EXTENSION_UPDATE_COOKIE_NAME}=${cookieValue}`;
     }
 
-    const response = await fetch(EXTENSION_UPDATE_CHECK_URL, {
+    const response = await fetch(Constants.EXTENSION_UPDATE_CHECK_URL, {
       method: "GET",
       headers,
       credentials: "include",
@@ -56,7 +57,7 @@ export async function showExtensionUpdateInActiveTab(currentVersion: string, lat
     });
     if (!tab?.id) return;
 
-    await safeTabsSendMessage(
+    await helpers.tabControl.safeTabsSendMessage(
       tab.id,
       {
         type: "SHOW_EXTENSION_UPDATE",

@@ -5,7 +5,7 @@ import {
     TiktokDataType,
     XDataType,
     YoutubeDataType,
-} from "@/utils/parsers/types";
+} from "@/entrypoints/background/utils/parsers/types";
 
 
 type SetStorageCachedFn = (data: Record<string, any>) => Promise<void>;

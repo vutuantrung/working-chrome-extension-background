@@ -2,7 +2,7 @@ import {
   ParseType,
   FacebookUserFriendData,
   FacebookDataType,
-} from "@/utils/parsers/types";
+} from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
 import {
   decodeUnicodeEscapes,

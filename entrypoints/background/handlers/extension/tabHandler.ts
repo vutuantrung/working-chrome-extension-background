@@ -1,10 +1,7 @@
 import { bgState } from "../../state";
-import { isSupportedPlatformUrl } from "../../helpers/tools";
-import { DEFAULT_SETTINGS_JSON, State } from "../../helpers/constants";
-import {
-  safeTabsSendMessage,
-  findDeterministicFacebookTabId,
-} from "../../helpers/tabUtils";
+import { isSupportedPlatformUrl } from "../../utils/tools";
+import { DefaultValues, State } from "../../utils/constants";
+import * as helpers from "../../utils/helpers";
 import {
   ensureFacebookGraphInterceptorInstalled,
   ensureFacebookGraphForwarderInstalled,
@@ -41,8 +38,8 @@ export async function tabsOnUpdatedHandler(
 
   // Ensure FB interceptor as early as possible (independent of tasks/settings).
   if (
-    (changeInfo.status === State.LOADING ||
-      changeInfo.status === State.COMPLETE) &&
+    (changeInfo.status === State.TaskState.LOADING ||
+      changeInfo.status === State.TaskState.COMPLETE) &&
     isSupportedPlatformUrl(tab.url || "")
   ) {
     ensureFacebookGraphInterceptorInstalled(tabId).catch(() => { });
@@ -54,7 +51,7 @@ export async function tabsOnUpdatedHandler(
   }
 
   if (
-    changeInfo.status === State.COMPLETE &&
+    changeInfo.status === State.TaskState.COMPLETE &&
     tabId === storageSettings?.openingDevtoolsTabId &&
     isSupportedPlatformUrl(tab?.url || "")
   ) {
@@ -145,7 +142,7 @@ export async function tabsOnUpdatedHandler(
   }
 
   if (
-    changeInfo.status === State.COMPLETE &&
+    changeInfo.status === State.TaskState.COMPLETE &&
     isSupportedPlatformUrl(tab?.url || "")
   ) {
     const currentProfileId = storageSettings?.archive?.profileId;
@@ -158,7 +155,7 @@ export async function tabsOnUpdatedHandler(
           tabId: tabId,
         };
 
-        const response = await safeTabsSendMessage(tabId, msgData);
+        const response = await helpers.tabControl.safeTabsSendMessage(tabId, msgData);
         if (response) {
           console.log("[tabsOnUpdatedHandler] Auto-fetch response:", response);
         } else {
@@ -192,8 +189,8 @@ export async function tabsOnUpdatedHandler(
     return;
   }
   if (
-    runningTaskInfo.state === State.CANCELED ||
-    runningTaskInfo.state === State.FINISHED
+    runningTaskInfo.state === State.TaskState.CANCELED ||
+    runningTaskInfo.state === State.TaskState.FINISHED
   ) {
     console.log("Task is canceled or finished");
     return;
@@ -202,7 +199,7 @@ export async function tabsOnUpdatedHandler(
   try {
     await chromeApi.tabs.get(runningTaskInfo.tabId);
   } catch (error) {
-    runningTaskInfo.state = State.CANCELED;
+    runningTaskInfo.state = State.TaskState.CANCELED;
     runningTaskInfo.result = `Canceled. Reason: Tab with id ${runningTaskInfo.tabId} not found`;
     runningTaskInfo.endTime = Date.now();
     await setStorageCached({
@@ -213,7 +210,7 @@ export async function tabsOnUpdatedHandler(
 
   // Execute scripts of task (Automation script)
   if (
-    changeInfo.status === State.COMPLETE &&
+    changeInfo.status === State.TaskState.COMPLETE &&
     isSupportedPlatformUrl(tab?.url || "")
   ) {
     const lastUrl = bgState.injectedTabs.get(tabId);
@@ -269,7 +266,7 @@ export async function tabsOnRemovedHandler(tabId: number) {
 
       // In first-tab mode, only when the default tab is closed, pick a new one (if any exist)
       if ((settings?.isTabSpecific ?? false) === false) {
-        const replacementTabId = await findDeterministicFacebookTabId();
+        const replacementTabId = await helpers.tabControl.findDeterministicFacebookTabId();
         if (replacementTabId) {
           bgState.firstFacebookTabId = replacementTabId;
           await setStorageCached({
@@ -363,7 +360,7 @@ export async function handleMaybeFacebookTab(tabId: any) {
       if (!settings?.openingDevtoolsTabId) {
         console.log(`[Auto-bind] Setting first Facebook tab: ${tabId}`);
         const updatedSettings = {
-          ...(settings || DEFAULT_SETTINGS_JSON),
+          ...(settings || DefaultValues.DEFAULT_SETTINGS_JSON),
           openingDevtoolsTabId: tabId,
         };
         await setStorageCached({ settings: updatedSettings });

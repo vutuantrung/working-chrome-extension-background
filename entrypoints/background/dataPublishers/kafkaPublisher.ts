@@ -1,8 +1,8 @@
 import { bgState } from "../state";
 import { KafkaPublishConfig, Settings } from "../types/types";
-import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { getStorageCachedByKeys, setStorageCached } from "../services/storageServices";
+import { DefaultValues } from "../utils/constants";
 
 export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<void> {
 
@@ -31,7 +31,7 @@ export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<voi
     if (!topics) return;
 
     // 3. Build publish URL
-    const keySendData = runtimeReq?.user?.apikey || (DEFAULT_SETTINGS_JSON as any)?.apikey;
+    const keySendData = runtimeReq?.user?.apikey || (DefaultValues.DEFAULT_SETTINGS_JSON as any)?.apikey;
     if (!keySendData) {
       console.warn(`${kConfig.logTag} Invalid apikey — skip publish`);
       return;
@@ -39,7 +39,7 @@ export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<voi
     const url = `${BASE_URL}/kafka/publish-message/extension?apikey=${keySendData}`;
 
     // 4. Build tenant list
-    const tenants = runtimeReq?.user?.tenants || DEFAULT_SETTINGS_JSON.tenants;
+    const tenants = runtimeReq?.user?.tenants || DefaultValues.DEFAULT_SETTINGS_JSON.tenants;
     const tenantObjs: any[] = [];
     if (Array.isArray(tenants) && tenants.length) {
       for (const t of tenants) tenantObjs.push(t);

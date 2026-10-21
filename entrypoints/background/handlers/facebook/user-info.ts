@@ -1,8 +1,8 @@
-import { FacebookUserProfileData, ParseType } from "@/utils/parsers/types";
+import { FacebookUserProfileData, ParseType } from "@/entrypoints/background/utils/parsers/types";
 import {
     buildPendingUserInfoItem,
     filterUserProfilePayload,
-} from "../../helpers/user-info";
+} from "../../utils/helpers/userInfo";
 import { HandlerContext } from "../../types/handle";
 import {
     buildFacebookUserInfoMapEntry,
@@ -11,7 +11,7 @@ import {
 import { refreshPendingFollowsFromUserInfoMap } from "./follow-info";
 import { refreshPendingFriendsFromUserInfoMap } from "./friend-info";
 import { seedCollectionMapsFromProfile } from "./register-profile-collections";
-import { parseDataUserProfile } from "@/utils/parsers/facebook-parser/parse-data-user-profile";
+import { parseDataUserProfile } from "@/entrypoints/background/utils/parsers/facebook-parser/parse-data-user-profile";
 import { getStorageCachedByKeys, setStorageCached } from "../../services/storageServices";
 
 export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {

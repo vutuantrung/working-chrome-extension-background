@@ -1,4 +1,4 @@
-import { ParseType, YoutubeDataType, YoutubePostData } from '@/utils/parsers/types';
+import { ParseType, YoutubeDataType, YoutubePostData } from '@/entrypoints/background/utils/parsers/types';
 import { HandlerContext } from '../../types/handle';
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 export const handleYoutubeDataInfo = async (dt: ParseType, ctx: HandlerContext) => {

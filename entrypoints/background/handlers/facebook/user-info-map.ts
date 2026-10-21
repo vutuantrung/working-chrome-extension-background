@@ -5,4 +5,4 @@ export {
   isProfileCometHeaderPayload,
   normalizeFacebookUserInfoMap,
   resolveFacebookUserNameFromMapValue,
-} from "@/utils/parsers/facebook-parser/user-info-map";
+} from "@/entrypoints/background/utils/parsers/facebook-parser/user-info-map";

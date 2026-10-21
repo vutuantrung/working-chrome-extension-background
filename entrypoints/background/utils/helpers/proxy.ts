@@ -1,31 +1,5 @@
-import { encryptCookieString } from "./cookieCipher";
-
-export type EffectiveProxySource = "extension" | "persona" | "account" | "none";
-
-export type ProxyEndpoint = { host: string; port: string };
-
-export type PersonaFacebookAccount = {
-  account_id: string;
-  account_status?: any[];
-  allow_persona_feature?: boolean;
-  categories?: string[];
-  cookies?: string;
-  extension_config_id?: string;
-  gender?: string;
-  group_limit?: number;
-  max_group_joins_per_day?: number;
-  name?: string;
-  persona_topic_ids?: string[];
-  platform: string;
-  proxy?: Record<string, unknown>;
-  proxy_id?: string;
-  status?: string;
-  tenant_id?: string;
-  ttl?: number;
-  uid?: string;
-  updated_time?: number;
-  user_id?: string;
-};
+import { EffectiveProxySource, PersonaFacebookAccount, ProxyEndpoint } from "../../types/types";
+import { encryptCookieString } from "./cookie";
 
 export function isActiveProxy(proxy: unknown): boolean {
   if (!proxy || typeof proxy !== "object") return false;
@@ -125,9 +99,7 @@ export function normalizePersonaSocialAccount(raw: unknown): PersonaFacebookAcco
   };
 }
 
-export function extractPersonaSocialAccounts(
-  persona: unknown,
-): PersonaFacebookAccount[] {
+export function extractPersonaSocialAccounts(persona: unknown): PersonaFacebookAccount[] {
   if (!persona || typeof persona !== "object") return [];
   const p = persona as Record<string, unknown>;
 

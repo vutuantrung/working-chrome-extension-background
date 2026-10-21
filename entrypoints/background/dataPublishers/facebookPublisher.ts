@@ -1,16 +1,17 @@
-import { bgState, SEND_FACEBOOK_DATA_ALARM, USERINFO_COLLECT_WAIT_MS, USERINFO_DESCRIPTION_WAIT_MS, SEND_FB_JOINED_GROUPS_ALARM, SEND_FB_PENDING_GROUPS_ALARM } from "../state";
+import { bgState } from "../state";
 import { _runKafkaPublish } from "./kafkaPublisher";
 import { handleSyncExtensionInfo } from "../services/syncService";
-import { FacebookPostData } from "@/utils/parsers/types";
+import { FacebookPostData } from "@/entrypoints/background/utils/parsers/types";
 import { getStorageCachedByKeys, handleUpdateArchive, setStorageCached } from "../services/storageServices";
 import { PendingUserInfo, UserInfoPublishStatus } from "../types/types";
-import { filterUserProfilePayload, getMissingUserProfileCollectFields, hasUserDescription, isUserProfileCollectReady, removePendingUserInfo, waitForUserInfoCollectReady, waitForUserInfoDescription } from "../helpers/user-info";
+import { filterUserProfilePayload, getMissingUserProfileCollectFields, hasUserDescription, isUserProfileCollectReady, removePendingUserInfo, waitForUserInfoCollectReady, waitForUserInfoDescription } from "../utils/helpers/userInfo";
 import { PublishFacebookUserInfoOptions } from "../types/handle";
+import { Constants } from "../utils/constants";
 
 export async function sendFacebookCachedData(): Promise<void> {
   return _runKafkaPublish({
     platform: "facebook",
-    retryAlarm: SEND_FACEBOOK_DATA_ALARM,
+    retryAlarm: Constants.SEND_FACEBOOK_DATA_ALARM,
     logTag: "[sendFacebookCachedData]",
 
     resolveTopics(settings) {
@@ -101,7 +102,7 @@ export async function sendFacebookCachedData(): Promise<void> {
 export async function sendFacebookUserData(): Promise<void> {
   return _runKafkaPublish({
     platform: "facebook",
-    retryAlarm: SEND_FACEBOOK_DATA_ALARM,
+    retryAlarm: Constants.SEND_FACEBOOK_DATA_ALARM,
     logTag: "[sendFacebookUserData]",
 
     resolveTopics(settings) {
@@ -253,7 +254,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
       },
     });
 
-    await waitForUserInfoDescription(USERINFO_DESCRIPTION_WAIT_MS);
+    await waitForUserInfoDescription(Constants.USERINFO_DESCRIPTION_WAIT_MS);
     const refreshed = (await getStorageCachedByKeys(["pendingUserInfo"])) || {};
     pendingUserInfo = refreshed.pendingUserInfo || pendingUserInfo;
     const refreshedParsed =
@@ -278,7 +279,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
       },
     });
 
-    const afterWait = await waitForUserInfoCollectReady(USERINFO_COLLECT_WAIT_MS);
+    const afterWait = await waitForUserInfoCollectReady(Constants.USERINFO_COLLECT_WAIT_MS);
     if (afterWait && isUserProfileCollectReady(afterWait)) {
       profileToPublish = afterWait;
       const refreshed = (await getStorageCachedByKeys(["pendingUserInfo"])) || {};
@@ -394,7 +395,7 @@ export async function publishFacebookUserInfo(options: PublishFacebookUserInfoOp
 export async function sendFacebookJoinedGroupsCachedData(): Promise<void> {
   return _runKafkaPublish({
     platform: "facebook",
-    retryAlarm: SEND_FB_JOINED_GROUPS_ALARM,
+    retryAlarm: Constants.SEND_FB_JOINED_GROUPS_ALARM,
     logTag: "[sendFacebookJoinedGroupsCachedData]",
 
     resolveTopics(settings) {
@@ -440,7 +441,7 @@ export async function sendFacebookJoinedGroupsCachedData(): Promise<void> {
 export async function sendFacebookPendingGroupsCachedData(): Promise<void> {
   return _runKafkaPublish({
     platform: "facebook",
-    retryAlarm: SEND_FB_PENDING_GROUPS_ALARM,
+    retryAlarm: Constants.SEND_FB_PENDING_GROUPS_ALARM,
     logTag: "[sendFacebookPendingGroupsCachedData]",
 
     resolveTopics(settings) {

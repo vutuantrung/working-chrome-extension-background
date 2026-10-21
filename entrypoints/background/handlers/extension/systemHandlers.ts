@@ -1,14 +1,9 @@
-import {
-  bgState,
-  USERINFO_DESCRIPTION_WAIT_MS,
-  USERINFO_DESCRIPTION_POLL_MS,
-  SETTINGS_SYNC_ALARM
-} from "../../state";
+import { bgState } from "../../state";
 import { Message, Settings, Archive } from "../../types/types";
-import { hasUserDescription, removePendingUserInfo } from "../../helpers/user-info";
+import { hasUserDescription, removePendingUserInfo } from "../../utils/helpers/userInfo";
 import { UserInfoPublishStatus } from "../../types/types";
-import { DEFAULT_SETTINGS_JSON, State } from "../../helpers/constants";
-import { delayMs } from "../../helpers/tools";
+import { Constants, DefaultValues, State } from "../../utils/constants";
+import { delayMs } from "../../utils/tools";
 import {
   findExtensionAccountProxyByPlatform,
   findPersonaSocialAccountProxy,
@@ -16,13 +11,13 @@ import {
   hasExtensionConfigId,
   isActiveProxy,
   resolveEffectiveProxy,
-} from "@/utils/resolveEffectiveProxy";
+} from "@/entrypoints/background/utils/helpers/proxy";
 import { sendFacebookUserData } from "../../dataPublishers/facebookPublisher";
 import {
   bootstrapExistingFacebookTabs,
   cleanupFacebookTabs,
 } from "../../scriptInjection";
-import { clearSocialPlatformCookies } from "../../helpers/cookieUtils";
+import { clearSocialPlatformCookies } from "../../utils/helpers/cookie";
 import { getStorageCachedByKeys, setStorageCached, clearStorageCache, getStorageCache, setStorageCache } from "../../services/storageServices";
 import { setProxy, clearProxy } from "../../services/proxyServices";
 import { ensureJoinedGroupsAlarmSchedule } from "../../services/fbGroupSyncService";
@@ -42,7 +37,7 @@ async function waitForUserInfoDescription(
     const parsed = pendingUserInfo?.parsed;
     if (parsed) lastParsed = parsed;
     if (hasUserDescription(parsed)) return { found: true, info: parsed };
-    await delayMs(USERINFO_DESCRIPTION_POLL_MS);
+    await delayMs(Constants.USERINFO_DESCRIPTION_POLL_MS);
   }
 
   return { found: false, info: lastParsed };
@@ -121,7 +116,7 @@ export async function handleConfirmGatherUserInfo(
         },
       });
 
-      await waitForUserInfoDescription(USERINFO_DESCRIPTION_WAIT_MS);
+      await waitForUserInfoDescription(Constants.USERINFO_DESCRIPTION_WAIT_MS);
       const refreshed =
         (await getStorageCachedByKeys([
           "pendingUserInfo",
@@ -298,19 +293,19 @@ export async function handleInitializeAfterLogin(
 
       settingsFromAPI.facebookTopic = extensionConfig.facebookTopic
         ? extensionConfig.facebookTopic
-        : DEFAULT_SETTINGS_JSON.facebookTopic;
+        : DefaultValues.DEFAULT_SETTINGS_JSON.facebookTopic;
       settingsFromAPI.tiktokTopic = extensionConfig.tiktokTopic
         ? extensionConfig.tiktokTopic
-        : DEFAULT_SETTINGS_JSON.tiktokTopic;
+        : DefaultValues.DEFAULT_SETTINGS_JSON.tiktokTopic;
       settingsFromAPI.xTopic = extensionConfig.xTopic
         ? extensionConfig.xTopic
-        : DEFAULT_SETTINGS_JSON.xTopic;
+        : DefaultValues.DEFAULT_SETTINGS_JSON.xTopic;
       settingsFromAPI.threadsTopic = extensionConfig.threadsTopic
         ? extensionConfig.threadsTopic
-        : DEFAULT_SETTINGS_JSON.threadsTopic;
+        : DefaultValues.DEFAULT_SETTINGS_JSON.threadsTopic;
       settingsFromAPI.youtubeTopic = extensionConfig.youtubeTopic
         ? extensionConfig.youtubeTopic
-        : DEFAULT_SETTINGS_JSON.youtubeTopic;
+        : DefaultValues.DEFAULT_SETTINGS_JSON.youtubeTopic;
 
       if (extensionConfig.permissions && extensionConfig.permissions.length) {
         settingsFromAPI.permissions = extensionConfig.permissions;
@@ -438,7 +433,7 @@ export async function handleInitializeAfterLogin(
         archive: settings.archive || {},
       }
       : {
-        ...DEFAULT_SETTINGS_JSON,
+        ...DefaultValues.DEFAULT_SETTINGS_JSON,
         ...settingsFromAPI,
       };
 
@@ -451,8 +446,8 @@ export async function handleInitializeAfterLogin(
       }),
     });
 
-    await chromeApi.alarms.clear(SETTINGS_SYNC_ALARM);
-    chromeApi.alarms.create(SETTINGS_SYNC_ALARM, {
+    await chromeApi.alarms.clear(Constants.SETTINGS_SYNC_ALARM);
+    chromeApi.alarms.create(Constants.SETTINGS_SYNC_ALARM, {
       delayInMinutes: 2,
       periodInMinutes: 2,
     });
@@ -539,7 +534,7 @@ export async function handleClearDataAfterLogout(
 
     chromeApi.action.setBadgeText({ text: "0" });
     chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
-    
+
     if (!skipCookies) {
       await clearSocialPlatformCookies();
     }
@@ -684,12 +679,12 @@ export async function handleCancelTask(
       return;
     }
 
-    if (![State.PENDING, State.RUNNING].includes(task.state)) {
+    if (![State.TaskState.PENDING, State.TaskState.RUNNING].includes(task.state)) {
       sendResponse?.({ success: true, unchanged: true });
       return;
     }
 
-    task.state = State.CANCELED;
+    task.state = State.TaskState.CANCELED;
     task.result = "Canceled. Reason: Canceled by user.";
     task.endTime = Date.now();
 
@@ -782,8 +777,7 @@ export async function handleScriptExecuteResult(
     (task: any) => task.taskId === currentSettingsInputs.taskId,
   );
 
-  if (runningTask && ![State.FINISHED, State.CANCELED].includes(runningTask.state)) {
-    runningTask.state = State.FINISHED;
+  if (runningTask && ![State.TaskState.FINISHED, State.TaskState.CANCELED].includes(runningTask.state)) {
     if (
       currentSettingsInputs.result?.groupIds ||
       currentSettingsInputs.result?.groupLinks
@@ -797,6 +791,7 @@ export async function handleScriptExecuteResult(
 
     runningTask.nextTask = "end";
     runningTask.endTime = Date.now();
+    runningTask.state = State.TaskState.FINISHED;
 
     localUpdating = {
       ...(localUpdating || {}),

@@ -1,13 +1,13 @@
-import { bgState, SEND_TIKTOK_DATA_ALARM } from "../state";
+import { bgState } from "../state";
 import { _runKafkaPublish } from "./kafkaPublisher";
 import { handleSyncExtensionInfo } from "../services/syncService";
-import { TiktokPostData } from "@/utils/parsers/types";
-import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
+import { TiktokPostData } from "@/entrypoints/background/utils/parsers/types";
+import { Constants, DefaultValues } from "../utils/constants";
 
 export async function sendTiktokCachedData(): Promise<void> {
   return _runKafkaPublish({
     platform: "tiktok",
-    retryAlarm: SEND_TIKTOK_DATA_ALARM,
+    retryAlarm: Constants.SEND_TIKTOK_DATA_ALARM,
     logTag: "[sendTiktokCachedData]",
 
     resolveTopics(_settings) {
@@ -18,7 +18,7 @@ export async function sendTiktokCachedData(): Promise<void> {
       const { settings, tenantObjs, publish, incrementBadge } = ctx;
       const { tiktokTopic: topicSetting } = settings;
 
-      const tiktokTopic = topicSetting || DEFAULT_SETTINGS_JSON.tiktokTopic;
+      const tiktokTopic = topicSetting || DefaultValues.DEFAULT_SETTINGS_JSON.tiktokTopic;
       if (!tiktokTopic) {
         console.warn(this.logTag, "topics missing or invalid — skip publish", tiktokTopic);
         return;

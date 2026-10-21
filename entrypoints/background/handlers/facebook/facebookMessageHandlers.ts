@@ -1,10 +1,10 @@
 import { Message } from "../../types/types";
-import { getCorrectFacebookTabId } from "../../helpers/tabUtils";
+import * as helpers from "../../utils/helpers";
 import {
   isLikelyPlaceholderFacebookName,
   parseFacebookNameFromHtml,
   getStartDayTimestamp
-} from "../../helpers/tools";
+} from "../../utils/tools";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 import { getStorageCachedByKeys, setStorageCached } from "../../services/storageServices";
 
@@ -73,7 +73,7 @@ export async function handleGetFacebookAccountCache(_message: any, sendResponse:
 
     let name = "";
     try {
-      const allowedTabId = await getCorrectFacebookTabId();
+      const allowedTabId = await helpers.tabControl.getCorrectFacebookTabId();
       if (allowedTabId && allowedTabId !== -1) {
         const resp = await chromeApi.tabs
           .sendMessage(allowedTabId, { type: "GET_FB_ACCOUNT_CONTEXT" })

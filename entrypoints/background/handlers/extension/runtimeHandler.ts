@@ -1,37 +1,38 @@
 import { Message } from "../../types/types";
-import { simulateHumanClick } from "../../../content/helpers/simulate-click";
+import { simulateHumanClick } from "../../../content/utils/simulate-click";
 import {
   bootstrapExistingFacebookTabs,
   ensureFacebookGraphInterceptorInstalled,
 } from "../../scriptInjection";
+import { Constants, DefaultValues } from "../../utils/constants";
+
 // Message handler imports
 import {
-    handleGetUserInfo,
-    handleGetPendingUserInfo,
-    handleConfirmGatherUserInfo,
-    handleRemovePendingUserInfo,
-    handleInitializeAfterLogin,
-    handleClearDataAfterLogout,
-    handleStartPeriodicCheck,
-    handleSetBadgeText,
-    handleCancelTask,
-    handleDownloadImage,
-    handleScriptExecuteResult,
-    handleChangeTabUrl,
+  handleGetUserInfo,
+  handleGetPendingUserInfo,
+  handleConfirmGatherUserInfo,
+  handleRemovePendingUserInfo,
+  handleInitializeAfterLogin,
+  handleClearDataAfterLogout,
+  handleStartPeriodicCheck,
+  handleSetBadgeText,
+  handleCancelTask,
+  handleDownloadImage,
+  handleScriptExecuteResult,
+  handleChangeTabUrl,
 } from "./systemHandlers";
 import {
-    handleGetFacebookAccount,
-    handleGetFacebookAccountCache,
-    handleSendAddSourceRequest,
-    handleFetchJoinGroupResponse,
-    handleReportJoinGroupResponse,
-    handleFetchJoinGroupPreparationData
+  handleGetFacebookAccount,
+  handleGetFacebookAccountCache,
+  handleSendAddSourceRequest,
+  handleFetchJoinGroupResponse,
+  handleReportJoinGroupResponse,
+  handleFetchJoinGroupPreparationData
 } from "../facebook/facebookMessageHandlers";
-import { DEFAULT_SETTINGS_JSON } from "../../helpers/constants";
 import { getStorageCachedByKeys, setStorageCached, handleUpdateArchive, handleUpdateSettings, handleGetSettings, handleSetSettings, getStorageCache, setStorageCache } from "../../services/storageServices";
 import { handleProxy } from "../../services/proxyServices";
-import { getCorrectFacebookTabId } from "../../helpers/tabUtils";
-import { isLikelyProfilePageUrl } from "../../helpers/user-info";
+import * as helpers from "../../utils/helpers";
+import { isLikelyProfilePageUrl } from "../../utils/helpers/userInfo";
 import { HandlerContext } from "../../types/handle";
 
 import {
@@ -44,19 +45,7 @@ import {
 import { sendTiktokCachedData } from "../../dataPublishers/tiktokPublisher";
 import { sendXCachedData } from "../../dataPublishers/xPublisher";
 import { sendThreadsCachedData } from "../../dataPublishers/threadsPublisher";
-import {
-  bgState,
-  debounce,
-  MAXIMUM_TIME_WAIT_SECOND,
-  MAXIMUM_RECORD_ARCHIVED,
-  MAX_PENDING_USERINFO,
-  SEND_X_DATA_ALARM,
-  SEND_TIKTOK_DATA_ALARM,
-  SEND_THREADS_DATA_ALARM,
-  SEND_FACEBOOK_DATA_ALARM,
-  USERINFO_PUBLISH_DEBOUNCE_MS,
-  SEND_YOUTUBE_DATA_ALARM,
-} from "../../state";
+import { bgState } from "../../state";
 import * as tiktokHandlers from "../../handlers/tiktok";
 import * as facebookHandlers from "../../handlers/facebook";
 import * as xHandlers from "../../handlers/x";
@@ -68,6 +57,8 @@ import {
 } from "../eviden-collection";
 import { sendYoutubeCachedData } from "../../dataPublishers/youtubePublisher";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
+import { debounce } from "../../utils/tools";
+import { parseData } from "../../utils/parsers/parser-data";
 
 function blockNotificationPopup() {
   const maxAttempts = 10;
@@ -122,7 +113,7 @@ async function handleBodyDataIntercepted(
       return;
     }
 
-    const allowedTabId = await getCorrectFacebookTabId();
+    const allowedTabId = await helpers.tabControl.getCorrectFacebookTabId();
     if (!allowedTabId || allowedTabId === -1) {
       console.warn(
         "[App Interceptor] No valid allowed tab for current mode - ignoring data",
@@ -172,16 +163,16 @@ async function handleBodyDataIntercepted(
       // youtube
       sendYoutubeCachedData: sendYoutubeCachedData,
 
-      MAXIMUM_TIME_WAIT_SECOND,
-      MAXIMUM_RECORD_ARCHIVED,
-      MAX_PENDING_USERINFO,
-      USERINFO_PUBLISH_DEBOUNCE_MS,
+      MAXIMUM_TIME_WAIT_SECOND: Constants.MAXIMUM_TIME_WAIT_SECOND,
+      MAXIMUM_RECORD_ARCHIVED: Constants.MAXIMUM_RECORD_ARCHIVED,
+      MAX_PENDING_USERINFO: Constants.MAX_PENDING_USERINFO,
+      USERINFO_PUBLISH_DEBOUNCE_MS: Constants.USERINFO_PUBLISH_DEBOUNCE_MS,
 
-      SEND_X_DATA_ALARM,
-      SEND_TIKTOK_DATA_ALARM,
-      SEND_THREADS_DATA_ALARM,
-      SEND_FACEBOOK_DATA_ALARM,
-      SEND_YOUTUBE_DATA_ALARM,
+      SEND_X_DATA_ALARM: Constants.SEND_X_DATA_ALARM,
+      SEND_TIKTOK_DATA_ALARM: Constants.SEND_TIKTOK_DATA_ALARM,
+      SEND_THREADS_DATA_ALARM: Constants.SEND_THREADS_DATA_ALARM,
+      SEND_FACEBOOK_DATA_ALARM: Constants.SEND_FACEBOOK_DATA_ALARM,
+      SEND_YOUTUBE_DATA_ALARM: Constants.SEND_YOUTUBE_DATA_ALARM,
 
       facebookJoinedGroupsData: bgState.cachedFacebookJoinedGroupsData,
 
@@ -247,12 +238,12 @@ async function handleBodyDataIntercepted(
       if (dt.typeName === "ThreadsCommentData")
         handler = threadsHandlers.handleThreadsCommentInfo;
 
-            // Youtube            
-            if (["YoutubePostData", "YoutubeCommentData", "YoutubeUserProfileData", "YoutubeImageData"].includes(dt.typeName)) {
-                handler = youtubeHandlers.handleYoutubeDataInfo;
-            }
+      // Youtube            
+      if (["YoutubePostData", "YoutubeCommentData", "YoutubeUserProfileData", "YoutubeImageData"].includes(dt.typeName)) {
+        handler = youtubeHandlers.handleYoutubeDataInfo;
+      }
 
-            if (!handler) continue;
+      if (!handler) continue;
 
       await handler(dt, context);
     }
@@ -328,97 +319,97 @@ export function runTimeOnMessageHandler(
         });
     }
 
-        if (message.name === "clickAboutButton" && sender.tab?.id) {
-            chromeApi.tabs.sendMessage(
-                sender?.tab!.id as any,
-                {
-                    type: "CLICK_ABOUT_BUTTON",
-                    platform: "youtube",
-                    tabId: sender.tab?.id,
-                },
-                (response: any) => {
-                    void chromeApi.runtime.lastError;
-                },
-            );
-        }
+    if (message.name === "clickAboutButton" && sender.tab?.id) {
+      chromeApi.tabs.sendMessage(
+        sender?.tab!.id as any,
+        {
+          type: "CLICK_ABOUT_BUTTON",
+          platform: "youtube",
+          tabId: sender.tab?.id,
+        },
+        (response: any) => {
+          void chromeApi.runtime.lastError;
+        },
+      );
+    }
 
-        if (message.name === "clickTranscriptButton" && sender.tab?.id) {
-            chromeApi.tabs.sendMessage(
-                sender?.tab!.id as any,
-                {
-                    type: "CLICK_TRANSCRIPT_BUTTON",
-                    platform: "youtube",
-                    tabId: sender.tab?.id,
-                },
-                (response: any) => {
-                    void chromeApi.runtime.lastError;
-                },
-            );
-        }
+    if (message.name === "clickTranscriptButton" && sender.tab?.id) {
+      chromeApi.tabs.sendMessage(
+        sender?.tab!.id as any,
+        {
+          type: "CLICK_TRANSCRIPT_BUTTON",
+          platform: "youtube",
+          tabId: sender.tab?.id,
+        },
+        (response: any) => {
+          void chromeApi.runtime.lastError;
+        },
+      );
+    }
 
     return false;
   }
 
-    // ── Async dispatch — all handlers below keep the channel open ────────────
-    const dispatch = async () => {
-        switch (message.type) {
-            // FACEBOOK REQUESTS
-            case "FETCH_JG_RESPONSE":
-                return handleFetchJoinGroupResponse(message, sendResponse);
-            case "FETCH_JG_PREPARATION_DATA":
-                return handleFetchJoinGroupPreparationData(message, sendResponse);
-            case "REPORT_JG_RESPONSE":
-                return handleReportJoinGroupResponse(message, sendResponse);
-            case "SEND_ADD_SOURCE_REQUEST":
-                return handleSendAddSourceRequest(message, sendResponse);
-            case "GET_FB_ACCOUNT_CACHE":
-                return handleGetFacebookAccountCache(message, sendResponse);
-            case "GET_FB_ACCOUNT":
-                return handleGetFacebookAccount(message, sendResponse);
+  // ── Async dispatch — all handlers below keep the channel open ────────────
+  const dispatch = async () => {
+    switch (message.type) {
+      // FACEBOOK REQUESTS
+      case "FETCH_JG_RESPONSE":
+        return handleFetchJoinGroupResponse(message, sendResponse);
+      case "FETCH_JG_PREPARATION_DATA":
+        return handleFetchJoinGroupPreparationData(message, sendResponse);
+      case "REPORT_JG_RESPONSE":
+        return handleReportJoinGroupResponse(message, sendResponse);
+      case "SEND_ADD_SOURCE_REQUEST":
+        return handleSendAddSourceRequest(message, sendResponse);
+      case "GET_FB_ACCOUNT_CACHE":
+        return handleGetFacebookAccountCache(message, sendResponse);
+      case "GET_FB_ACCOUNT":
+        return handleGetFacebookAccount(message, sendResponse);
 
       // DATA INTERCEPTED
       case "BODY_DATA_INTERCEPTED":
         return handleBodyDataIntercepted(message, sender, sendResponse);
 
-            // SYSTEM REQUESTS
-            case "SET_SETTINGS":
-                return handleSetSettings(message, sendResponse);
-            case "GET_SETTINGS":
-                return handleGetSettings(message, sendResponse);
-            case "GET_USERINFO":
-                return handleGetUserInfo(message, sendResponse);
-            case "GET_PENDING_USERINFO":
-                return handleGetPendingUserInfo(message, sendResponse);
-            case "UPDATE_SETTINGS":
-                return handleUpdateSettings(message, sendResponse);
-            case "UPDATE_ARCHIVE":
-                return handleUpdateArchive(message, sendResponse);
-            case "REMOVE_PENDING_USERINFO":
-                return handleRemovePendingUserInfo(message, sendResponse);
-            case "CONFIRM_GATHER_USERINFO":
-                return handleConfirmGatherUserInfo(message, sendResponse);
-            case "INITIALIZE_AFTER_LOGIN":
-                return handleInitializeAfterLogin(message, sendResponse);
-            case "CLEAR_DATA_AFTER_LOGOUT":
-                return handleClearDataAfterLogout(message, sendResponse);
-            case "SET_PROXY":
-                return handleProxy(message, sendResponse);
-            case "SET_BADGE_TEXT":
-                return handleSetBadgeText(message, sendResponse);
-            case "CANCEL_TASK":
-                return handleCancelTask(message, sendResponse);
-            case "SCRIPT_EXECUTE_RESULT":
-                return handleScriptExecuteResult(message, sender, sendResponse);
-            case "CHANGE_TAB_URL":
-                return handleChangeTabUrl(message, sender, sendResponse);
-            case "START_PERIODIC_CHECK":
-                return handleStartPeriodicCheck(message, sendResponse);
-            case "DOWNLOAD_IMAGE":
-                return handleDownloadImage(message, sendResponse);
-            case "CAPTURE_SCREENSHOT":
-                return handleCaptureScreenshot(sendResponse);
-            case "SCREENSHOT_CROPPED":
-                return handleScreenshotCropped(message, sendResponse);
+      // SYSTEM REQUESTS
+      case "SET_SETTINGS":
+        return handleSetSettings(message, sendResponse);
+      case "GET_SETTINGS":
+        return handleGetSettings(message, sendResponse);
+      case "GET_USERINFO":
+        return handleGetUserInfo(message, sendResponse);
+      case "GET_PENDING_USERINFO":
+        return handleGetPendingUserInfo(message, sendResponse);
+      case "UPDATE_SETTINGS":
+        return handleUpdateSettings(message, sendResponse);
+      case "UPDATE_ARCHIVE":
+        return handleUpdateArchive(message, sendResponse);
+      case "REMOVE_PENDING_USERINFO":
+        return handleRemovePendingUserInfo(message, sendResponse);
+      case "CONFIRM_GATHER_USERINFO":
+        return handleConfirmGatherUserInfo(message, sendResponse);
+      case "INITIALIZE_AFTER_LOGIN":
+        return handleInitializeAfterLogin(message, sendResponse);
+      case "CLEAR_DATA_AFTER_LOGOUT":
+        return handleClearDataAfterLogout(message, sendResponse);
+      case "SET_PROXY":
+        return handleProxy(message, sendResponse);
+      case "SET_BADGE_TEXT":
+        return handleSetBadgeText(message, sendResponse);
+      case "CANCEL_TASK":
+        return handleCancelTask(message, sendResponse);
+      case "SCRIPT_EXECUTE_RESULT":
+        return handleScriptExecuteResult(message, sender, sendResponse);
+      case "CHANGE_TAB_URL":
+        return handleChangeTabUrl(message, sender, sendResponse);
+      case "START_PERIODIC_CHECK":
+        return handleStartPeriodicCheck(message, sendResponse);
+      case "DOWNLOAD_IMAGE":
+        return handleDownloadImage(message, sendResponse);
+      case "CAPTURE_SCREENSHOT":
+        return handleCaptureScreenshot(sendResponse);
+      case "SCREENSHOT_CROPPED":
+        return handleScreenshotCropped(message, sendResponse);
 
       // DEPRECATED
       case "BIND_TO_DEVTOOL_TAB":
@@ -457,7 +448,7 @@ export async function runTimeOnInstalledHandler(
       await getStorageCachedByKeys(["settings"]);
     if (settings) {
       const mergedSettings = {
-        ...DEFAULT_SETTINGS_JSON,
+        ...DefaultValues.DEFAULT_SETTINGS_JSON,
         ...settings,
         archive: settings.archive || {},
       };

@@ -1,5 +1,5 @@
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
-import { getCaseStorageKey } from "../../helpers/eviden-studio";
+import { getCaseStorageKey } from "../../utils/helpers/evidentStudio";
 import { Message, Screenshot } from "../../types/types";
 
 export function handleCaptureScreenshot(

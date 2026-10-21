@@ -1,59 +1,15 @@
-import { getStorageCachedByKeys } from "../services/storageServices";
-import { USERINFO_COLLECT_POLL_MS, USERINFO_DESCRIPTION_POLL_MS } from "../state";
-import { PendingUserInfo } from "../types/types";
-import { delayMs } from "./tools";
+import { getStorageCachedByKeys } from "../../services/storageServices";
+import { PendingUserInfo } from "../../types/types";
+import { delayMs } from "../tools";
+import { Constants } from "../constants";
 
-
-export const USER_PROFILE_PUBLISH_REQUIRED_FIELDS = [
-  "url",
-  "username",
-  "tenant_ids",
-  "id",
-  "gender",
-  "name",
-  "entry_rowkey",
-  "docType",
-  "crawler_system",
-  "_tenants",
-  "platform",
-] as const;
-
-export const USER_PROFILE_COLLECT_REQUIRED_FIELDS = [
-  "url",
-  "username",
-  "id",
-  "gender",
-  "name",
-  "docType",
-] as const;
-
-export const USER_PROFILE_MAIN_FIELD_KEYS = [
-  "id",
-  "name",
-  "username",
-  "alternate_name",
-  "url",
-  "gender",
-  "profile_picture",
-  "cover_photo",
-  "followers_text",
-  "following_text",
-  "category",
-  "current_city",
-  "hometown",
-  "work",
-  "description",
-  "description_list",
-  "docType",
-] as const;
-
-export type UserProfileMainFieldKey = (typeof USER_PROFILE_MAIN_FIELD_KEYS)[number];
+export type UserProfileMainFieldKey = (typeof Constants.USER_PROFILE_MAIN_FIELD_KEYS)[number];
 
 export function filterUserProfilePayload(value: any): Record<string, any> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
 
   const out: Record<string, any> = {};
-  for (const key of USER_PROFILE_MAIN_FIELD_KEYS) {
+  for (const key of Constants.USER_PROFILE_MAIN_FIELD_KEYS) {
     const val = (value as any)[key];
     if (!isMeaningfulValue(val)) continue;
     out[key] = val;
@@ -111,7 +67,7 @@ function isPublishFieldPresent(payload: any, key: string): boolean {
 }
 
 export function getMissingUserProfilePublishFields(payload: any): string[] {
-  return USER_PROFILE_PUBLISH_REQUIRED_FIELDS.filter(
+  return Constants.USER_PROFILE_PUBLISH_REQUIRED_FIELDS.filter(
     (key) => !isPublishFieldPresent(payload, key),
   );
 }
@@ -121,7 +77,7 @@ export function isUserProfilePublishReady(payload: any): boolean {
 }
 
 export function getMissingUserProfileCollectFields(payload: any): string[] {
-  return USER_PROFILE_COLLECT_REQUIRED_FIELDS.filter(
+  return Constants.USER_PROFILE_COLLECT_REQUIRED_FIELDS.filter(
     (key) => !isPublishFieldPresent(payload, key),
   );
 }
@@ -150,7 +106,7 @@ export function stripNonUserProfileFields(value: any): any {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value;
 
   const out: Record<string, any> = {};
-  const USER_PROFILE_MAIN_FIELD_SET = new Set<string>(USER_PROFILE_MAIN_FIELD_KEYS);
+  const USER_PROFILE_MAIN_FIELD_SET = new Set<string>(Constants.USER_PROFILE_MAIN_FIELD_KEYS);
   for (const [key, val] of Object.entries(value)) {
     if (USER_PROFILE_MAIN_FIELD_SET.has(key)) {
       out[key] = val;
@@ -168,15 +124,13 @@ export async function waitForUserInfoDescription(maxWaitMs: number): Promise<{ f
     const parsed = pendingUserInfo?.parsed;
     if (parsed) lastParsed = parsed;
     if (hasUserDescription(parsed)) return { found: true, info: parsed };
-    await delayMs(USERINFO_DESCRIPTION_POLL_MS);
+    await delayMs(Constants.USERINFO_DESCRIPTION_POLL_MS);
   }
 
   return { found: false, info: lastParsed };
 }
 
-export async function waitForUserInfoCollectReady(
-  maxWaitMs: number,
-): Promise<Record<string, any> | null> {
+export async function waitForUserInfoCollectReady(maxWaitMs: number): Promise<Record<string, any> | null> {
   const startedAt = Date.now();
   let lastFiltered: Record<string, any> | null = null;
 
@@ -193,7 +147,7 @@ export async function waitForUserInfoCollectReady(
     const filtered = filterUserProfilePayload(parsed);
     if (filtered) lastFiltered = filtered;
     if (filtered && isUserProfileCollectReady(filtered)) return filtered;
-    await delayMs(USERINFO_COLLECT_POLL_MS);
+    await delayMs(Constants.USERINFO_COLLECT_POLL_MS);
   }
 
   return lastFiltered;

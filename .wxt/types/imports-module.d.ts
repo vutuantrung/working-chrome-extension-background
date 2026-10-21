@@ -18,14 +18,4 @@ declare module '#imports' {
   export { InvalidMatchPattern, MatchPattern } from 'wxt/utils/match-patterns';
   export { useState, useCallback, useMemo, useEffect, useRef, useContext, useReducer } from 'react';
   export { fakeBrowser } from 'wxt/testing';
-  export { encryptCookieString, decryptCookieString } from '../utils/cookieCipher';
-  export { parsePEM, parseDER, encryptWithPrivateKey } from '../utils/crypto';
-  export { resolveFingerprintOwnerId } from '../utils/fingerprintProfile';
-  export { hashStringArr, makeid, deletePropertiesByNames } from '../utils/index';
-  export { parseData } from '../utils/parser-data';
-  export { SELECTED_PLATFORM_KEY, PLATFORM_LABELS, isPlatformId, getSelectedPlatformId, getPlatformLabel, getSelectedPlatformLabel, PLATFORM_CHANGED_EVENT, setSelectedPlatformId, PlatformId } from '../utils/platformDisplay';
-  export { randomInterval, randomFromPair } from '../utils/random-interval';
-  export { isActiveProxy, extractPersonaProxy, normalizePersonaSocialAccount, extractPersonaSocialAccounts, extractPersonaFacebookAccounts, findPersonaSocialAccountProxy, hasExtensionConfigId, findExtensionFacebookAccountProxy, findPersonaFacebookAccountProxy, findExtensionAccountProxyByPlatform, resolveEffectiveProxy, getProxyEndpoints, EffectiveProxySource, ProxyEndpoint, PersonaFacebookAccount } from '../utils/resolveEffectiveProxy';
-  export { SOCIAL_COOKIE_DOMAINS, PLATFORM_COOKIE_DOMAINS, getPlatformCookieDomains, SocialCookieDomain } from '../utils/social-cookie-domains';
-  export { formatTimeFromISO, toISOTimeToday, isTimeValid } from '../utils/time-format';
 }

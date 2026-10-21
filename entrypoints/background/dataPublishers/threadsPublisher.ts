@@ -1,13 +1,13 @@
-import { bgState, SEND_THREADS_DATA_ALARM } from "../state";
+import { bgState } from "../state";
 import { _runKafkaPublish } from "./kafkaPublisher";
 import { handleSyncExtensionInfo } from "../services/syncService";
-import { ThreadsPostData } from "@/utils/parsers/types";
-import { DEFAULT_SETTINGS_JSON } from "../helpers/constants";
+import { ThreadsPostData } from "@/entrypoints/background/utils/parsers/types";
+import { Constants, DefaultValues } from "../utils/constants";
 
 export async function sendThreadsCachedData(): Promise<void> {
   return _runKafkaPublish({
     platform: "threads",
-    retryAlarm: SEND_THREADS_DATA_ALARM,
+    retryAlarm: Constants.SEND_THREADS_DATA_ALARM,
     logTag: "[sendThreadsCachedData]",
 
     resolveTopics(_settings) {
@@ -18,7 +18,7 @@ export async function sendThreadsCachedData(): Promise<void> {
       const { settings, tenantObjs, publish, incrementBadge } = ctx;
       const { threadsTopic: topicSetting } = settings;
 
-      const threadsTopic = topicSetting || DEFAULT_SETTINGS_JSON.threadsTopic;
+      const threadsTopic = topicSetting || DefaultValues.DEFAULT_SETTINGS_JSON.threadsTopic;
       if (!threadsTopic) {
         console.warn(this.logTag, "topics missing or invalid — skip publish", threadsTopic);
         return;

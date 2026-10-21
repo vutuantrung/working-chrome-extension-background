@@ -1,7 +1,7 @@
 import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 import { browser } from "wxt/browser";
-import { PROXY_HEALTH_CHECK_ALARM } from "./state";
 import { setProxyHealth, handleProxyHealthCheck } from "./services/proxyServices";
+import { Constants } from "./utils/constants";
 
 import * as extensionHandlers from "./handlers/extension";
 
@@ -22,7 +22,7 @@ export default defineBackground(() => {
 // ========================================
 function initializeBackgroundServices() {
   console.log("Initializing background services...");
-  
+
   // Register all Chrome API event listeners
   // ========================================
   // ACTION HANDLERS
@@ -50,9 +50,9 @@ function initializeBackgroundServices() {
   // ========================================
   chromeApi.alarms.onAlarm.addListener(extensionHandlers.alarmsOnAlarmHandler);
   try {
-    chromeApi.alarms.get(PROXY_HEALTH_CHECK_ALARM, (existing) => {
+    chromeApi.alarms.get(Constants.PROXY_HEALTH_CHECK_ALARM, (existing) => {
       if (existing) return;
-      chromeApi.alarms.create(PROXY_HEALTH_CHECK_ALARM, {
+      chromeApi.alarms.create(Constants.PROXY_HEALTH_CHECK_ALARM, {
         delayInMinutes: 0.2,
         periodInMinutes: 1,
       });
