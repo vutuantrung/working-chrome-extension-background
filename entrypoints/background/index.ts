@@ -29,9 +29,6 @@ function initializeBackgroundServices() {
   // ========================================
   chromeApi.action.onClicked.addListener(extensionHandlers.actionOnClickedHandler);
 
-  // Setup side panel - open when extension icon clicked
-  extensionHandlers.setupSidePanelBehavior();
-
   // ========================================
   // RUNTIME HANDLERS
   // ========================================
@@ -99,4 +96,9 @@ function initializeBackgroundServices() {
 
     Promise.resolve(handleProxyHealthCheck());
   } catch { }
+
+  // Setup side panel - open when extension icon clicked
+  chromeApi.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((e) => {
+    console.warn("[sidePanel] setPanelBehavior not supported:", e);
+  });
 }

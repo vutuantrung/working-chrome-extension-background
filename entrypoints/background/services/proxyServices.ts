@@ -300,7 +300,7 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
                 archive: settings.archive || {},
             }
             : {
-                ...DefaultValues.DEFAULT_SETTINGS_JSON,
+                ...DefaultValues.SETTINGS_DATA,
                 ...settingsFromProxy,
             };
 

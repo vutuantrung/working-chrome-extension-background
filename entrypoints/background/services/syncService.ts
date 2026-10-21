@@ -200,23 +200,23 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
     const configIsTabSpecific = extractIsTabSpecific(extensionConfigInfo);
 
     const updatedSettings = {
-      ...DefaultValues.DEFAULT_SETTINGS_JSON,
+      ...DefaultValues.SETTINGS_DATA,
       ...settings,
       activatingAutomation: automation === true,
       scheduleStartTime,
       scheduleEndTime,
       facebookTopic: extensionConfigInfo?.facebookTopic
         ? extensionConfigInfo.facebookTopic
-        : settings.facebookTopic || DefaultValues.DEFAULT_SETTINGS_JSON.facebookTopic,
+        : settings.facebookTopic || DefaultValues.SETTINGS_DATA.facebookTopic,
       tiktokTopic: extensionConfigInfo?.tiktokTopic
         ? extensionConfigInfo.tiktokTopic
-        : settings.tiktokTopic || DefaultValues.DEFAULT_SETTINGS_JSON.tiktokTopic,
+        : settings.tiktokTopic || DefaultValues.SETTINGS_DATA.tiktokTopic,
       xTopic: extensionConfigInfo?.xTopic
         ? extensionConfigInfo.xTopic
-        : settings.xTopic || DefaultValues.DEFAULT_SETTINGS_JSON.xTopic,
+        : settings.xTopic || DefaultValues.SETTINGS_DATA.xTopic,
       threadsTopic: extensionConfigInfo?.threadsTopic
         ? extensionConfigInfo.threadsTopic
-        : settings.threadsTopic || DefaultValues.DEFAULT_SETTINGS_JSON.threadsTopic,
+        : settings.threadsTopic || DefaultValues.SETTINGS_DATA.threadsTopic,
       domain: extensionConfigInfo?.server_domain,
       proxy: hasEffectiveProxy ? "manual" : "system",
       proxyOption: hasEffectiveProxy ? "manual" : "system",
@@ -257,7 +257,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
         if (isValidArrayActLocal(activities)) {
           scheduledActivities = activities;
         } else {
-          scheduledActivities = DefaultValues.DEFAULT_SCHEDULED_DATA;
+          scheduledActivities = DefaultValues.SCHEDULED_TASK_DATA;
         }
       }
       if (scheduledActivities) {

@@ -1,5 +1,5 @@
 import { runTimeOnMessageHandler, runTimeOnInstalledHandler } from "./runtimeHandler";
-import { actionOnClickedHandler, setupSidePanelBehavior } from "./clickHandler";
+import { actionOnClickedHandler } from "./clickHandler";
 import { tabsOnUpdatedHandler, tabsOnRemovedHandler, tabsOnActivatedHandler } from "./tabHandler";
 import { alarmsOnAlarmHandler } from "./alarmHandler";
 import { storageOnChangedHandler } from "./storageHandler";
@@ -9,7 +9,6 @@ import { onProxyErrorHandler } from './proxyHandler';
 
 export {
     actionOnClickedHandler,
-    setupSidePanelBehavior,
     runTimeOnMessageHandler,
     runTimeOnInstalledHandler,
     tabsOnUpdatedHandler,

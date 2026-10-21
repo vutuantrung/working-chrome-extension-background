@@ -85,7 +85,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       // [LOCAL] API reporter
       let scheduledActivities = null;
       const actArr = await fetchScheduledActivities(
-        storageUser || DefaultValues.DEFAULT_SETTINGS_JSON,
+        storageUser || DefaultValues.SETTINGS_DATA,
       );
       // Priority: EXTERNAL > LOCAL > CACHED > DEFAULT
       if (isValidArrayAct(actArr)) {
@@ -93,8 +93,8 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       } else if (isValidArrayAct(storageActivities)) {
         scheduledActivities = storageActivities;
       } else {
-        scheduledActivities = DefaultValues.DEFAULT_SCHEDULED_DATA;
-        console.log("Using DEFAULT_SCHEDULED_DATA (no cached data available)");
+        scheduledActivities = DefaultValues.SCHEDULED_TASK_DATA;
+        console.log("Using SCHEDULED_TASK_DATA (no cached data available)");
       }
 
       await handleUpdateScheduleActivities(scheduledActivities);

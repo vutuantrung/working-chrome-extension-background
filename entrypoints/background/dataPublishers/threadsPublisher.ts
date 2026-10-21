@@ -18,7 +18,7 @@ export async function sendThreadsCachedData(): Promise<void> {
       const { settings, tenantObjs, publish, incrementBadge } = ctx;
       const { threadsTopic: topicSetting } = settings;
 
-      const threadsTopic = topicSetting || DefaultValues.DEFAULT_SETTINGS_JSON.threadsTopic;
+      const threadsTopic = topicSetting || DefaultValues.SETTINGS_DATA.threadsTopic;
       if (!threadsTopic) {
         console.warn(this.logTag, "topics missing or invalid — skip publish", threadsTopic);
         return;

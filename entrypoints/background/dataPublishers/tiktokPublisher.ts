@@ -18,7 +18,7 @@ export async function sendTiktokCachedData(): Promise<void> {
       const { settings, tenantObjs, publish, incrementBadge } = ctx;
       const { tiktokTopic: topicSetting } = settings;
 
-      const tiktokTopic = topicSetting || DefaultValues.DEFAULT_SETTINGS_JSON.tiktokTopic;
+      const tiktokTopic = topicSetting || DefaultValues.SETTINGS_DATA.tiktokTopic;
       if (!tiktokTopic) {
         console.warn(this.logTag, "topics missing or invalid — skip publish", tiktokTopic);
         return;

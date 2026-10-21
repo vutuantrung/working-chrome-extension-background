@@ -293,19 +293,19 @@ export async function handleInitializeAfterLogin(
 
       settingsFromAPI.facebookTopic = extensionConfig.facebookTopic
         ? extensionConfig.facebookTopic
-        : DefaultValues.DEFAULT_SETTINGS_JSON.facebookTopic;
+        : DefaultValues.SETTINGS_DATA.facebookTopic;
       settingsFromAPI.tiktokTopic = extensionConfig.tiktokTopic
         ? extensionConfig.tiktokTopic
-        : DefaultValues.DEFAULT_SETTINGS_JSON.tiktokTopic;
+        : DefaultValues.SETTINGS_DATA.tiktokTopic;
       settingsFromAPI.xTopic = extensionConfig.xTopic
         ? extensionConfig.xTopic
-        : DefaultValues.DEFAULT_SETTINGS_JSON.xTopic;
+        : DefaultValues.SETTINGS_DATA.xTopic;
       settingsFromAPI.threadsTopic = extensionConfig.threadsTopic
         ? extensionConfig.threadsTopic
-        : DefaultValues.DEFAULT_SETTINGS_JSON.threadsTopic;
+        : DefaultValues.SETTINGS_DATA.threadsTopic;
       settingsFromAPI.youtubeTopic = extensionConfig.youtubeTopic
         ? extensionConfig.youtubeTopic
-        : DefaultValues.DEFAULT_SETTINGS_JSON.youtubeTopic;
+        : DefaultValues.SETTINGS_DATA.youtubeTopic;
 
       if (extensionConfig.permissions && extensionConfig.permissions.length) {
         settingsFromAPI.permissions = extensionConfig.permissions;
@@ -433,7 +433,7 @@ export async function handleInitializeAfterLogin(
         archive: settings.archive || {},
       }
       : {
-        ...DefaultValues.DEFAULT_SETTINGS_JSON,
+        ...DefaultValues.SETTINGS_DATA,
         ...settingsFromAPI,
       };
 

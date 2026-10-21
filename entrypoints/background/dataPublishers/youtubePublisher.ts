@@ -18,7 +18,7 @@ export async function sendYoutubeCachedData(): Promise<void> {
       const { settings, tenantObjs, publish, incrementBadge } = ctx;
       const { youtubeTopic: topicSetting } = settings;
 
-      const youtubeTopic = topicSetting || DefaultValues.DEFAULT_SETTINGS_JSON.youtubeTopic;
+      const youtubeTopic = topicSetting || DefaultValues.SETTINGS_DATA.youtubeTopic;
       if (!youtubeTopic) {
         console.warn(this.logTag, "topics missing or invalid — skip publish", youtubeTopic);
         return;

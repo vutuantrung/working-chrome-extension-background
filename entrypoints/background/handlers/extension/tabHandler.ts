@@ -360,7 +360,7 @@ export async function handleMaybeFacebookTab(tabId: any) {
       if (!settings?.openingDevtoolsTabId) {
         console.log(`[Auto-bind] Setting first Facebook tab: ${tabId}`);
         const updatedSettings = {
-          ...(settings || DefaultValues.DEFAULT_SETTINGS_JSON),
+          ...(settings || DefaultValues.SETTINGS_DATA),
           openingDevtoolsTabId: tabId,
         };
         await setStorageCached({ settings: updatedSettings });

@@ -1,10 +1,13 @@
 import { Message } from "../../types/types";
-import { simulateHumanClick } from "../../../content/utils/simulate-click";
+// import { simulateHumanClick } from "../../../content/utils/simulate-click";
 import {
   bootstrapExistingFacebookTabs,
   ensureFacebookGraphInterceptorInstalled,
 } from "../../scriptInjection";
-import { Constants, DefaultValues } from "../../utils/constants";
+import {
+  Constants,
+  DefaultValues
+} from "../../utils/constants";
 
 // Message handler imports
 import {
@@ -29,7 +32,14 @@ import {
   handleReportJoinGroupResponse,
   handleFetchJoinGroupPreparationData
 } from "../facebook/facebookMessageHandlers";
-import { getStorageCachedByKeys, setStorageCached, handleUpdateArchive, handleUpdateSettings, handleGetSettings, handleSetSettings, getStorageCache, setStorageCache } from "../../services/storageServices";
+import {
+  getStorageCachedByKeys,
+  setStorageCached,
+  handleUpdateArchive,
+  handleUpdateSettings,
+  handleGetSettings,
+  handleSetSettings,
+} from "../../services/storageServices";
 import { handleProxy } from "../../services/proxyServices";
 import * as helpers from "../../utils/helpers";
 import { isLikelyProfilePageUrl } from "../../utils/helpers/userInfo";
@@ -59,40 +69,6 @@ import { sendYoutubeCachedData } from "../../dataPublishers/youtubePublisher";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 import { debounce } from "../../utils/tools";
 import { parseData } from "../../utils/parsers/parser-data";
-
-function blockNotificationPopup() {
-  const maxAttempts = 10;
-  let attempts = 0;
-
-  const interval = setInterval(() => {
-    attempts++;
-
-    const blockButton = Array.from(
-      document.querySelectorAll('button, div[role="button"]'),
-    ).find((el) => {
-      const text = el.textContent?.trim().toLowerCase();
-      return text === "block" || text === "chặn";
-    });
-
-    if (blockButton) {
-      simulateHumanClick(blockButton as HTMLElement);
-      clearInterval(interval);
-      return;
-    }
-
-    const closeButton = document.querySelector('div[aria-label="Close"]');
-    if (closeButton) {
-      simulateHumanClick(closeButton as HTMLElement);
-      clearInterval(interval);
-      return;
-    }
-
-    if (attempts >= maxAttempts) {
-      clearInterval(interval);
-    }
-  }, 500);
-}
-
 async function handleBodyDataIntercepted(
   message: any,
   sender: chrome.runtime.MessageSender,
@@ -270,10 +246,10 @@ export function runTimeOnMessageHandler(
     return false;
   }
 
-  if (message.type === "AUTO_BLOCK_NOTIFICATION") {
-    blockNotificationPopup();
-    return false;
-  }
+  // if (message.type === "AUTO_BLOCK_NOTIFICATION") {
+  //   blockNotificationPopup();
+  //   return false;
+  // }
 
   if (message.type === "ENSURE_FB_INTERCEPTOR") {
     const tabId = sender.tab?.id;
@@ -448,7 +424,7 @@ export async function runTimeOnInstalledHandler(
       await getStorageCachedByKeys(["settings"]);
     if (settings) {
       const mergedSettings = {
-        ...DefaultValues.DEFAULT_SETTINGS_JSON,
+        ...DefaultValues.SETTINGS_DATA,
         ...settings,
         archive: settings.archive || {},
       };
@@ -467,3 +443,37 @@ export async function runTimeOnInstalledHandler(
     console.warn("[SETUP] bootstrapExistingFacebookTabs failed:", e);
   }
 }
+
+// DEPRECATED:
+
+
+// function blockNotificationPopup() {
+//   const maxAttempts = 10;
+//   let attempts = 0;
+
+//   const interval = setInterval(() => {
+//     attempts++;
+
+//     const blockButton = Array.from(document.querySelectorAll('button, div[role="button"]')).find((el) => {
+//       const text = el.textContent?.trim().toLowerCase();
+//       return text === "block" || text === "chặn";
+//     });
+
+//     if (blockButton) {
+//       simulateHumanClick(blockButton as HTMLElement);
+//       clearInterval(interval);
+//       return;
+//     }
+
+//     const closeButton = document.querySelector('div[aria-label="Close"]');
+//     if (closeButton) {
+//       simulateHumanClick(closeButton as HTMLElement);
+//       clearInterval(interval);
+//       return;
+//     }
+
+//     if (attempts >= maxAttempts) {
+//       clearInterval(interval);
+//     }
+//   }, 500);
+// }

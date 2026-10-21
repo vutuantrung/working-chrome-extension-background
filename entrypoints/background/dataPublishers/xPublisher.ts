@@ -18,7 +18,7 @@ export async function sendXCachedData(): Promise<void> {
       const { settings, tenantObjs, publish, incrementBadge } = ctx;
       const { xTopic: topicSetting } = settings;
 
-      const xTopic = topicSetting || DefaultValues.DEFAULT_SETTINGS_JSON.xTopic;
+      const xTopic = topicSetting || DefaultValues.SETTINGS_DATA.xTopic;
       if (!xTopic) {
         console.warn(this.logTag, "topics missing or invalid — skip publish", xTopic);
         return;

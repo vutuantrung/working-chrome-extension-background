@@ -1,6 +1,6 @@
 import { State } from "./index";
 
-export const DEFAULT_SETTINGS_JSON = {
+export const SETTINGS_DATA = {
     autoReport: true,
     activatingAutomation: true,
     activatingDevtools: true,
@@ -33,7 +33,7 @@ export const DEFAULT_SETTINGS_JSON = {
     firstFacebookTabId: 0,
 }
 
-export const DEFAULT_SCHEDULED_DATA = [
+export const SCHEDULED_TASK_DATA = [
     {
         id: "asldjfnlknlkjsdf",
         name: "SCROLL_URLS",
@@ -65,10 +65,7 @@ export const DEFAULT_SCHEDULED_DATA = [
             groupTypeFocused: "private",
             reviewPeriod: 86400000, // 24 hours
             currentIdx: 0,
-            groupUrls: [
-                "https://www.facebook.com/groups/1234567789",
-                "https://www.facebook.com/groups/1251231234",
-            ],
+            groupUrls: [],
             feedScrollTimes: "15,20",
             defaultFeedGroupUrls: [
                 "https://www.facebook.com/",

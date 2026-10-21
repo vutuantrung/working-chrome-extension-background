@@ -84,7 +84,7 @@ export function clearStorageCache() {
 export async function handleUpdateArchive(message: any, sendResponse?: (resp: any) => void) {
     try {
         const storageData = await storage().get(["settings"]);
-        const currentSettings: any = storageData.settings || DefaultValues.DEFAULT_SETTINGS_JSON;
+        const currentSettings: any = storageData.settings || DefaultValues.SETTINGS_DATA;
 
         const updatedArchive: Archive = {
             ...(currentSettings.archive || {}),
@@ -150,7 +150,7 @@ export async function handleUpdateSettings(message: any, sendResponse?: (resp: a
 }
 
 export async function handleGetSettings(message: any, sendResponse: (resp: any) => void) {
-    const { settings } = (await getStorageCachedByKeys(["settings"])) ?? DefaultValues.DEFAULT_SETTINGS_JSON;
+    const { settings } = (await getStorageCachedByKeys(["settings"])) ?? DefaultValues.SETTINGS_DATA;
     if (sendResponse) {
         sendResponse({ data: settings });
     }
