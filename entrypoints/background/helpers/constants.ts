@@ -1,5 +1,18 @@
-import { Priority } from "../types/types";
+export const State = {
+  LOADING: "loading",
+  PENDING: "pending",
+  RUNNING: "running",
+  FINISHED: "finished",
+  CANCELED: "canceled",
+  COMPLETE: "complete",
+};
 
+export const Priority = {
+  Urgent: 3,
+  High: 2,
+  Medium: 1,
+  Low: 0,
+};
 export const DEFAULT_SETTINGS_JSON = {
   autoReport: true,
   activatingAutomation: true,
@@ -94,7 +107,7 @@ export const DEFAULT_SCHEDULED_DATA = [
   },
 ];
 
-export const PLATFORM_TAB_GLOBS: string[] = [
+export const PLATFORM_TAB_FB_GLOBS: string[] = [
   "*://*.facebook.com/*",
   "*://facebook.com/*",
   "https://www.facebook.com/*",

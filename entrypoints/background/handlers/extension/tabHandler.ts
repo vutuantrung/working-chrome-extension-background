@@ -1,7 +1,6 @@
 import { bgState } from "../../state";
-import { State } from "../../types/types";
 import { isSupportedPlatformUrl } from "../../helpers/tools";
-import { DEFAULT_SETTINGS_JSON } from "../../helpers/constants";
+import { DEFAULT_SETTINGS_JSON, State } from "../../helpers/constants";
 import {
   safeTabsSendMessage,
   findDeterministicFacebookTabId,
@@ -262,15 +261,10 @@ export async function tabsOnRemovedHandler(tabId: number) {
     const storedBoundTabId = settings?.openingDevtoolsTabId || 0;
 
     if (bgState.firstFacebookTabId === tabId || storedFirstTabId === tabId) {
-      console.log(
-        `[tabsOnRemovedHandler] First Facebook tab ${tabId} was closed. Resetting...`,
-      );
+      console.log(`[tabsOnRemovedHandler] First Facebook tab ${tabId} was closed. Resetting...`);
       bgState.firstFacebookTabId = null;
 
-      const updatedSettings = {
-        ...settings,
-        firstFacebookTabId: 0,
-      };
+      const updatedSettings = { ...settings, firstFacebookTabId: 0 };
       await setStorageCached({ settings: updatedSettings });
 
       // In first-tab mode, only when the default tab is closed, pick a new one (if any exist)

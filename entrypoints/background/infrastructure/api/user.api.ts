@@ -1,21 +1,5 @@
+import { UpdateExtensionSessionPayload, CreatePersonasPayload } from "../../types/types";
 import { http } from "./http";
-
-export interface CreatePersonasPayload {
-  generate_conditions?: {
-    country?: string;
-    topic_ids?: string[];
-  };
-  account_and_device_resources?: any[];
-  proxy_resources?: any[];
-  email_resources?: any[];
-  platforms?: string[];
-}
-
-export interface UpdateExtensionSessionPayload {
-  schedule_start_time: string; // ISO or "HH:mm:ss" depending on backend
-  schedule_end_time: string;
-  automation?: boolean;
-}
 
 export const loginApi = async (
   username: string,

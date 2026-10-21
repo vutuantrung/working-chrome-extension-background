@@ -22,6 +22,7 @@ export default defineBackground(() => {
 // ========================================
 function initializeBackgroundServices() {
   console.log("Initializing background services...");
+  
   // Register all Chrome API event listeners
   // ========================================
   // ACTION HANDLERS

@@ -1,11 +1,5 @@
+import { GetMemberSourcesResponse } from "../../types/types";
 import { http } from "./http";
-
-export interface GetMemberSourcesResponse {
-  success?: boolean;
-  memberSources?: any[];
-  data?: any[];
-  total?: number;
-}
 
 export const getMemberSourcesApi = async (
   data?: string,

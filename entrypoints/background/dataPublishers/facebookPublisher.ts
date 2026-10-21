@@ -3,8 +3,8 @@ import { _runKafkaPublish } from "./kafkaPublisher";
 import { handleSyncExtensionInfo } from "../services/syncService";
 import { FacebookPostData } from "@/utils/parsers/types";
 import { getStorageCachedByKeys, handleUpdateArchive, setStorageCached } from "../services/storageServices";
-import { UserInfoPublishStatus } from "../types/types";
-import { filterUserProfilePayload, getMissingUserProfileCollectFields, hasUserDescription, isUserProfileCollectReady, PendingUserInfo, removePendingUserInfo, waitForUserInfoCollectReady, waitForUserInfoDescription } from "../helpers/user-info";
+import { PendingUserInfo, UserInfoPublishStatus } from "../types/types";
+import { filterUserProfilePayload, getMissingUserProfileCollectFields, hasUserDescription, isUserProfileCollectReady, removePendingUserInfo, waitForUserInfoCollectReady, waitForUserInfoDescription } from "../helpers/user-info";
 import { PublishFacebookUserInfoOptions } from "../types/handle";
 
 export async function sendFacebookCachedData(): Promise<void> {

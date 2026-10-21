@@ -1,6 +1,5 @@
-import { State } from "./types/types";
 import { isSupportedPlatformUrl } from "./helpers/tools";
-import { PLATFORM_TAB_GLOBS } from "./helpers/constants";
+import { PLATFORM_TAB_FB_GLOBS, State } from "./helpers/constants";
 import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 
 export async function ensureFacebookProfileIdBootstrapInstalled(tabId: number, options?: { force?: boolean }): Promise<{ injected: boolean }> {
@@ -254,7 +253,7 @@ export async function ensureFacebookGraphInterceptorInstalled(tabId: number): Pr
 }
 
 export async function bootstrapExistingFacebookTabs(options?: { forceProfileIdBootstrap?: boolean }): Promise<void> {
-  const tabs = await chromeApi.tabs.query({ url: PLATFORM_TAB_GLOBS });
+  const tabs = await chromeApi.tabs.query({ url: PLATFORM_TAB_FB_GLOBS });
   const targetTabs = (tabs || []).filter((t) => isSupportedPlatformUrl(t.url));
   if (targetTabs.length === 0) {
     console.log("[SETUP] No existing Facebook tabs to bootstrap");

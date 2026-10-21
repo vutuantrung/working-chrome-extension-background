@@ -1,36 +1,10 @@
 import { bgState } from "../state";
 import { isSupportedPlatformUrl, PLATFORM_URL_PATTERNS } from "./tools";
-import { PLATFORM_TAB_GLOBS } from "./constants";
+import { PLATFORM_TAB_FB_GLOBS } from "./constants";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { getStorageCachedByKeys, setStorageCached } from "../services/storageServices";
 
 export function safeTabsSendMessage(tabId: number, message: any): Promise<any | null> {
-  return new Promise((resolve) => {
-    try {
-      chromeApi.tabs.sendMessage(tabId, message, (response) => {
-        const err = chromeApi.runtime.lastError;
-        if (!err) {
-          resolve(response ?? null);
-          return;
-        }
-
-        // Common, non-fatal: tab has no content script (closed/reloaded/not matching).
-        if (err.message?.includes("Receiving end does not exist")) {
-          resolve(null);
-          return;
-        }
-
-        console.warn(`SendMessage failed for tab ${tabId}:`, err);
-        resolve(null);
-      });
-    } catch (error) {
-      console.warn(`SendMessage threw for tab ${tabId}:`, error);
-      resolve(null);
-    }
-  });
-}
-
-function safeTabsSendMessageWithResponse(tabId: number, message: any): Promise<any | null> {
   return new Promise((resolve) => {
     try {
       chromeApi.tabs.sendMessage(tabId, message, (response) => {
@@ -72,7 +46,7 @@ export async function getActiveFacebookTabId(): Promise<number | null> {
 
 export async function findDeterministicFacebookTabId(): Promise<number | null> {
   try {
-    const tabs = await chromeApi.tabs.query({ url: PLATFORM_TAB_GLOBS });
+    const tabs = await chromeApi.tabs.query({ url: PLATFORM_TAB_FB_GLOBS });
 
     const fbTabs = (tabs || []).filter((t) => t.id && isSupportedPlatformUrl(t.url));
     if (fbTabs.length === 0) return null;

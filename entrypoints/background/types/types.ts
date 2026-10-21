@@ -1,11 +1,9 @@
 import { FacebookUserFollowData, FacebookUserFriendData } from "@/utils/parsers/types";
-import { PendingUserInfo } from "../helpers/user-info";
 import { User } from "@/entrypoints/sidepanel/types/types";
 
 export type Platform = "facebook" | "tiktok" | "x" | "threads" | "youtube";
-
-export type ProxyAuthCredentials = { username: string; password: string };
 export type ProxyHealthState = "ok" | "error";
+export type ProxyAuthCredentials = { username: string; password: string };
 export type ProxyHealth = {
   state: ProxyHealthState;
   updatedAt: number;
@@ -224,18 +222,34 @@ export interface Screenshot {
   timestamp: number;
 }
 
-export const State = {
-  LOADING: "loading",
-  PENDING: "pending",
-  RUNNING: "running",
-  FINISHED: "finished",
-  CANCELED: "canceled",
-  COMPLETE: "complete",
+export type PendingUserInfo = {
+  raw: string;
+  parsed?: any;
+  ts: number;
+  id?: string;
+  name?: string;
 };
 
-export const Priority = {
-  Urgent: 3,
-  High: 2,
-  Medium: 1,
-  Low: 0,
-};
+export interface GetMemberSourcesResponse {
+  success?: boolean;
+  memberSources?: any[];
+  data?: any[];
+  total?: number;
+}
+
+export interface CreatePersonasPayload {
+  generate_conditions?: {
+    country?: string;
+    topic_ids?: string[];
+  };
+  account_and_device_resources?: any[];
+  proxy_resources?: any[];
+  email_resources?: any[];
+  platforms?: string[];
+}
+
+export interface UpdateExtensionSessionPayload {
+  schedule_start_time: string; // ISO or "HH:mm:ss" depending on backend
+  schedule_end_time: string;
+  automation?: boolean;
+}

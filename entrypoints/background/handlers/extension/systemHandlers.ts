@@ -4,10 +4,10 @@ import {
   USERINFO_DESCRIPTION_POLL_MS,
   SETTINGS_SYNC_ALARM
 } from "../../state";
-import { Message, Settings, Archive, State } from "../../types/types";
+import { Message, Settings, Archive } from "../../types/types";
 import { hasUserDescription, removePendingUserInfo } from "../../helpers/user-info";
 import { UserInfoPublishStatus } from "../../types/types";
-import { DEFAULT_SETTINGS_JSON } from "../../helpers/constants";
+import { DEFAULT_SETTINGS_JSON, State } from "../../helpers/constants";
 import { delayMs } from "../../helpers/tools";
 import {
   findExtensionAccountProxyByPlatform,

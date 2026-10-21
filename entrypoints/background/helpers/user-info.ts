@@ -1,14 +1,31 @@
 import { getStorageCachedByKeys } from "../services/storageServices";
 import { USERINFO_COLLECT_POLL_MS, USERINFO_DESCRIPTION_POLL_MS } from "../state";
+import { PendingUserInfo } from "../types/types";
 import { delayMs } from "./tools";
 
-export type PendingUserInfo = {
-  raw: string;
-  parsed?: any;
-  ts: number;
-  id?: string;
-  name?: string;
-};
+
+export const USER_PROFILE_PUBLISH_REQUIRED_FIELDS = [
+  "url",
+  "username",
+  "tenant_ids",
+  "id",
+  "gender",
+  "name",
+  "entry_rowkey",
+  "docType",
+  "crawler_system",
+  "_tenants",
+  "platform",
+] as const;
+
+export const USER_PROFILE_COLLECT_REQUIRED_FIELDS = [
+  "url",
+  "username",
+  "id",
+  "gender",
+  "name",
+  "docType",
+] as const;
 
 export const USER_PROFILE_MAIN_FIELD_KEYS = [
   "id",
@@ -30,12 +47,7 @@ export const USER_PROFILE_MAIN_FIELD_KEYS = [
   "docType",
 ] as const;
 
-export type UserProfileMainFieldKey =
-  (typeof USER_PROFILE_MAIN_FIELD_KEYS)[number];
-
-const USER_PROFILE_MAIN_FIELD_SET = new Set<string>(
-  USER_PROFILE_MAIN_FIELD_KEYS,
-);
+export type UserProfileMainFieldKey = (typeof USER_PROFILE_MAIN_FIELD_KEYS)[number];
 
 export function filterUserProfilePayload(value: any): Record<string, any> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -63,29 +75,6 @@ export function filterUserProfilePayload(value: any): Record<string, any> | null
 export function isPublishableUserProfile(value: any): boolean {
   return filterUserProfilePayload(value) !== null;
 }
-
-export const USER_PROFILE_PUBLISH_REQUIRED_FIELDS = [
-  "url",
-  "username",
-  "tenant_ids",
-  "id",
-  "gender",
-  "name",
-  "entry_rowkey",
-  "docType",
-  "crawler_system",
-  "_tenants",
-  "platform",
-] as const;
-
-export const USER_PROFILE_COLLECT_REQUIRED_FIELDS = [
-  "url",
-  "username",
-  "id",
-  "gender",
-  "name",
-  "docType",
-] as const;
 
 function isPublishFieldPresent(payload: any, key: string): boolean {
   if (!payload || typeof payload !== "object") return false;
@@ -159,7 +148,9 @@ export function applyFacebookUserProfilePublishMeta(
 
 export function stripNonUserProfileFields(value: any): any {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+
   const out: Record<string, any> = {};
+  const USER_PROFILE_MAIN_FIELD_SET = new Set<string>(USER_PROFILE_MAIN_FIELD_KEYS);
   for (const [key, val] of Object.entries(value)) {
     if (USER_PROFILE_MAIN_FIELD_SET.has(key)) {
       out[key] = val;
@@ -168,9 +159,7 @@ export function stripNonUserProfileFields(value: any): any {
   return out;
 }
 
-export async function waitForUserInfoDescription(
-  maxWaitMs: number,
-): Promise<{ found: boolean; info?: any } | null> {
+export async function waitForUserInfoDescription(maxWaitMs: number): Promise<{ found: boolean; info?: any } | null> {
   const startedAt = Date.now();
   let lastParsed: any = undefined;
 

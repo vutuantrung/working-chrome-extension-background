@@ -11,7 +11,7 @@ import {
 } from "../dataPublishers/facebookPublisher";
 import { getCorrectFacebookTabId } from "../helpers/tabUtils";
 import { safeTabsSendMessage } from "../helpers/tabUtils";
-import { getStorageCachedByKeys, getStorageCache } from "./storageServices";
+import { getStorageCachedByKeys } from "./storageServices";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { FB_WEB_URL } from "../helpers/constants";
 
@@ -66,7 +66,6 @@ export async function syncFacebookJoinedGroups(): Promise<void> {
 
     // 3. Ask content script to perform the fetch and return all groups
     const response = await safeTabsSendMessage(tabId, { type: "FETCH_FB_JOINED_GROUPS", accountId });
-
     if (!response?.ok) {
       console.error(TAG, "Content script returned error:", response?.error || "Unknown error");
       return;

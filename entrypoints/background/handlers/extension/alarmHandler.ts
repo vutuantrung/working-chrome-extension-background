@@ -1,6 +1,6 @@
 import { bgState, PROXY_HEALTH_CHECK_ALARM, SEND_FACEBOOK_DATA_ALARM, SEND_TIKTOK_DATA_ALARM, SETTINGS_SYNC_ALARM, MAX_TASK_LIST_LENGTH, SYNC_FB_JOINED_GROUPS_ALARM, SEND_FB_JOINED_GROUPS_ALARM, SEND_FB_PENDING_GROUPS_ALARM } from "../../state";
-import { State, Task } from "../../types/types";
-import { DEFAULT_SCHEDULED_DATA, DEFAULT_SETTINGS_JSON } from "../../helpers/constants";
+import { Task } from "../../types/types";
+import { DEFAULT_SCHEDULED_DATA, DEFAULT_SETTINGS_JSON, State } from "../../helpers/constants";
 import { generateTaskFromActivity, isTimePassed, isValidArrayAct } from "../../helpers/tools";
 import { safeTabsSendMessage } from "../../helpers/tabUtils";
 import { getActiveFacebookTabId } from "../../helpers/tabUtils";
@@ -8,10 +8,10 @@ import { sendFacebookCachedData, sendFacebookUserData, sendFacebookJoinedGroupsC
 import { sendTiktokCachedData } from "../../dataPublishers/tiktokPublisher";
 import { checkExtensionUpdateAndNotify } from "../../updateChecker";
 import { handleSyncExtensionInfo } from "../../services/syncService";
-import { handleUpdateScheduleActivities, fetchScheduledActivities } from "../../services/scheduleService";
 import { handleProxyHealthCheck } from "../../services/proxyServices";
-import { syncFacebookJoinedGroups, syncFacebookPendingGroups } from "../../services/fbGroupSyncService";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
+import { handleUpdateScheduleActivities, fetchScheduledActivities } from "../../services/scheduleService";
+import { syncFacebookJoinedGroups, syncFacebookPendingGroups } from "../../services/fbGroupSyncService";
 import { getStorageCachedByKeys, setStorageCached, clearStorageCache } from "../../services/storageServices";
 
 export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
