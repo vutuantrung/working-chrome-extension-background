@@ -36,6 +36,12 @@ import * as services from "../../services";
 import * as helpers from "../../utils/helpers";
 import { HandlerContext } from "../../types/handle";
 
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
+import { bgState } from "../../state";
+import { debounce } from "../../utils/tools";
+
+import { parseData } from "../../utils/parsers/parser-data";
+// Publisher
 import {
   sendFacebookCachedData,
   sendFacebookUserData,
@@ -46,20 +52,15 @@ import {
 import { sendTiktokCachedData } from "../../dataPublishers/tiktokPublisher";
 import { sendXCachedData } from "../../dataPublishers/xPublisher";
 import { sendThreadsCachedData } from "../../dataPublishers/threadsPublisher";
-import { bgState } from "../../state";
-import * as tiktokHandlers from "../../handlers/tiktok";
-import * as facebookHandlers from "../../handlers/facebook";
-import * as xHandlers from "../../handlers/x";
-import * as threadsHandlers from "../../handlers/threads";
-import * as youtubeHandlers from "../../handlers/youtube";
-import {
-  handleCaptureScreenshot,
-  handleScreenshotCropped,
-} from "../eviden-collection";
 import { sendYoutubeCachedData } from "../../dataPublishers/youtubePublisher";
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
-import { debounce } from "../../utils/tools";
-import { parseData } from "../../utils/parsers/parser-data";
+// Hanlders
+import * as tiktokHandlers from "../tiktok";
+import * as facebookHandlers from "../facebook";
+import * as xHandlers from "../x";
+import * as threadsHandlers from "../threads";
+import * as youtubeHandlers from "../youtube";
+import * as evidenCollectionHandlers from "../eviden-collection";
+
 async function handleBodyDataIntercepted(
   message: any,
   sender: chrome.runtime.MessageSender,
@@ -374,9 +375,9 @@ export function runTimeOnMessageHandler(
       case "DOWNLOAD_IMAGE":
         return handleDownloadImage(message, sendResponse);
       case "CAPTURE_SCREENSHOT":
-        return handleCaptureScreenshot(sendResponse);
+        return evidenCollectionHandlers.handleCaptureScreenshot(sendResponse);
       case "SCREENSHOT_CROPPED":
-        return handleScreenshotCropped(message, sendResponse);
+        return evidenCollectionHandlers.handleScreenshotCropped(message, sendResponse);
 
       // DEPRECATED
       case "BIND_TO_DEVTOOL_TAB":

@@ -38,10 +38,7 @@ export async function parseData(dataString: string, requestInfo: any): Promise<P
     if (parsingResult?.postData?.length) { dataReturn.push({ typeName: "TiktokPostData", data: parsingResult.postData }); }
     if (parsingResult?.commentData?.length) { dataReturn.push({ typeName: "TiktokCommentData", data: parsingResult.commentData }); }
     if (parsingResult?.userData?.length) { dataReturn.push({ typeName: "TiktokUserProfileData", data: parsingResult.userData }); }
-    if (parsingResult?.followData?.length) {
-      //console.log(">>>>>>> parseData - followData:", parsingResult.followData);
-      dataReturn.push({ typeName: "TiktokUserFollowerData", data: parsingResult.followData });
-    }
+    if (parsingResult?.followData?.length) { dataReturn.push({ typeName: "TiktokUserFollowerData", data: parsingResult.followData }); }
     if (parsingResult?.imageData?.length) { dataReturn.push({ typeName: "TiktokImageData", data: parsingResult.imageData }); }
   }
 
@@ -64,6 +61,7 @@ export async function parseData(dataString: string, requestInfo: any): Promise<P
     if (parsingResult?.commentData?.length) { dataReturn.push({ typeName: "ThreadsCommentData", data: parsingResult.commentData }); }
   }
 
+  // YOUTUBE
   if (platform === "youtube") {
     const parsingResult = await parseYoutubeData(dataString, requestInfo);
     if (parsingResult?.postData?.length) { dataReturn.push({ typeName: "YoutubePostData", data: parsingResult.postData }) }

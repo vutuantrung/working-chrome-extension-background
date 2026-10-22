@@ -41,16 +41,17 @@ export async function sendYoutubeCachedData(): Promise<void> {
 
       // Sending task
       if (bgState.cachedYoutubeData.length) {
-        await publish(youtubeTopic, bgState.cachedYoutubeData, true);
-        console.log(new Date().toLocaleTimeString(), "[Youtube Cached Data] Sent successfully!");
-        await incrementBadge(videoCount);
+
+        const result = await publish(youtubeTopic, bgState.cachedYoutubeData, true);
+        if (result.ok) {
+          console.log(new Date().toLocaleTimeString(), "[Youtube Cached Data] Sent successfully!");
+          await incrementBadge(videoCount);
+        } else {
+          console.log(new Date().toLocaleTimeString(), "[Youtube Cached Data] Failed to send:", result.error.message);
+        }
 
         bgState.cachedYoutubeData = [];
-        try {
-          await services.syncServices.handleSyncExtensionInfo(true);
-        } catch (e) {
-          console.warn(this.logTag, "handleSyncExtensionInfo failed:", e);
-        }
+        services.syncServices.handleSyncExtensionInfo(true);
       }
     },
   });

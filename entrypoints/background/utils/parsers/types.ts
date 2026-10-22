@@ -347,6 +347,24 @@ export type FacebookUserProfileData = {
   docType: string;
   entry_rowkey: string;
 };
+export type FacebookUserData = {
+  id: string;
+  name: string;
+  username: string;
+  alternate_name?: string;
+  url?: string;
+  gender?: string;
+  profile_picture?: string;
+  cover_photo?: string;
+  followers_text?: string;
+  following_text?: string;
+  category?: string;
+  current_city?: string;
+  hometown?: string;
+  work?: string;
+  description?: string;
+  docType: string;
+}
 export type FacebookUserFollowData = {
   follow_id: string;
   follow_rowkey: string;
@@ -589,12 +607,11 @@ export type YoutubeProfileLocalStorageInfo = {
   username: string;
   attachments: XAttachment[];
 };
-
 export type YoutubeTranscriptData = {
   start: number;
   duration: number;
   text: string;
-}
+};
 export type YoutubeAttachment = {
   type?: string;
   url: string;

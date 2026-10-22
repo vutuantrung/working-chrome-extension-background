@@ -35,9 +35,7 @@ function parsePayloadRoot(payload: unknown): any | null {
 /**
  * ProfileCometHeader only: data.user.profile_header_renderer.user (id + name).
  */
-export function extractFacebookUserIdAndName(
-  payload: unknown,
-): { id: string; name: string } | null {
+export function extractFacebookUserIdAndName(payload: unknown): { id: string; name: string } | null {
   const root = parsePayloadRoot(payload);
   if (!root) return null;
 

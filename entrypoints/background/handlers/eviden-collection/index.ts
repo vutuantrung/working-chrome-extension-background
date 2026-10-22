@@ -15,10 +15,7 @@ export function handleCaptureScreenshot(sendResponse: (resp: any) => void) {
   );
 }
 
-export async function handleScreenshotCropped(
-  message: Message,
-  sendResponse: (resp: any) => void,
-) {
+export async function handleScreenshotCropped(message: Message, sendResponse: (resp: any) => void) {
   const { dataUrl, caseId, windowId } = message;
 
   chromeApi.sidePanel.open({ windowId }).catch(console.error)

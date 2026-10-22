@@ -232,7 +232,7 @@ export function onProxyErrorHandler(details: any) {
 
     try {
         // Only mark error when proxy is actually in fixed_servers mode.
-        const proxyApi: any = (chrome as any)?.proxy?.settings;
+        const proxyApi: any = chromeApi?.proxy?.settings;
         if (!proxyApi?.get) {
             setProxyHealth({
                 state: "error",

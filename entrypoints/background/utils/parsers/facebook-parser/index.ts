@@ -6,13 +6,14 @@ import {
     FacebookPostData,
     FacebookProfileData,
     FacebookReactionData,
+    FacebookUserData,
     FacebookUserFollowData,
     FacebookUserFriendData,
     FacebookUserProfileData,
 } from "../types";
 import { parseDataJoinedGroup } from "./parse-data-joined-group";
 import { parseDataPost } from "./parse-data-post";
-import { parseDataUserProfile } from "./parse-data-user-profile";
+import { parseDataUserProfile, parseDataUserProfileUpdated } from "./parse-data-user-profile";
 import { parseDataComment } from "./parse-data-comment";
 import { parseDataReaction } from "./parse-data-reaction";
 import { parseDataGroupHover } from "./parse-data-group";
@@ -21,11 +22,11 @@ import { parseDataFriend } from "./parse-data-friend";
 import { extractFacebookUserIdAndName } from "./user-info-map";
 
 export async function parseFacebookData(dataString: string): Promise<{
+    userData: FacebookUserData;
     postData: FacebookPostData[];
     imageData: FacebookImageData[];
     groupData: FacebookGroupJoinedData[];
     commentData: FacebookCommentData[];
-    userData: FacebookUserProfileData[];
     reactionData: FacebookReactionData[];
     profileData: FacebookProfileData[];
     followData: FacebookUserFollowData[];
@@ -35,11 +36,11 @@ export async function parseFacebookData(dataString: string): Promise<{
     let stringArr = dataString.split("\n");
 
     const dataArray = {
+        userData: {} as FacebookUserData,
         commentData: [] as FacebookCommentData[],
         postData: [] as FacebookPostData[],
         imageData: [] as FacebookImageData[],
         groupData: [] as FacebookGroupJoinedData[],
-        userData: [] as FacebookUserProfileData[],
         reactionData: [] as FacebookReactionData[],
         profileData: [] as FacebookProfileData[],
         followData: [] as FacebookUserFollowData[],
@@ -84,16 +85,27 @@ export async function parseFacebookData(dataString: string): Promise<{
         }
 
         //*** CHECK IF DATA IS PROFILE COMET HEADER (user id + name) ***//
-        {
-            const identity = extractFacebookUserIdAndName(tmpDataJSONValue);
-            if (identity) {
-                const finalUpdate: FacebookUserProfileData = {
-                    fbU: JSON.stringify(tmpDataJSONValue),
-                    docType: "Profile",
-                    entry_rowkey: identity.id,
-                };
+        // {
+        //     const identity = extractFacebookUserIdAndName(tmpDataJSONValue);
+        //     if (identity) {
+        //         const finalUpdate: FacebookUserProfileData = {
+        //             fbU: JSON.stringify(tmpDataJSONValue),
+        //             docType: "Profile",
+        //             entry_rowkey: identity.id,
+        //         };
 
-                dataArray.userData.push(finalUpdate);
+        //         dataArray.userData.push(finalUpdate);
+
+        //         dataStringArr[i] = null as any;
+        //         continue;
+        //     }
+        // }
+
+        //*** CHECK IF DATA IS PROFILE COMET HEADER (user id + name) ***//
+        {
+            const result = parseDataUserProfileUpdated(tmpDataJSONValue);
+            if (result.ok) {
+                dataArray.userData.push(result.data);
 
                 dataStringArr[i] = null as any;
                 continue;

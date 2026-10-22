@@ -41,17 +41,16 @@ export async function sendThreadsCachedData(): Promise<void> {
 
       // Sending task
       if (bgState.cachedThreadsData.length) {
-        await publish(threadsTopic, bgState.cachedThreadsData, true);
-        console.log(new Date().toLocaleTimeString(), "[Threads Cached Data] Sent successfully!");
-
-        await incrementBadge(postCount);
+        const result = await publish(threadsTopic, bgState.cachedThreadsData, true);
+        if (result.ok) {
+          console.log(new Date().toLocaleTimeString(), "[Threads Cached Data] Sent successfully!");
+          await incrementBadge(postCount);
+        } else {
+          console.log(new Date().toLocaleTimeString(), "[Threads Cached Data] Failed to send:", result.error.message);
+        }
 
         bgState.cachedThreadsData = [];
-        try {
-          await services.syncServices.handleSyncExtensionInfo(true);
-        } catch (e) {
-          console.warn(this.logTag, "handleSyncExtensionInfo failed:", e);
-        }
+        services.syncServices.handleSyncExtensionInfo(true);
       }
     },
   });

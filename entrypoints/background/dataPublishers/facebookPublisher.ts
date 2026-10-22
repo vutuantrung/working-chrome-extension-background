@@ -38,16 +38,10 @@ export async function sendFacebookCachedData(): Promise<void> {
           continue;
         }
 
-        if (
-          ["post", "profile", "photo", "comment", "joinedgroup"].includes(
-            record?.docType?.toLowerCase(),
-          )
-        ) {
+        if (["post", "profile", "photo", "comment", "joinedgroup"].includes(record?.docType?.toLowerCase())) {
           postCount++;
           record._tenants = tenantObjs;
-          record.tenant_ids = tenantObjs.map(
-            (t: any) => t.id,
-          );
+          record.tenant_ids = tenantObjs.map((t: any) => t.id);
         }
       }
 
@@ -55,7 +49,6 @@ export async function sendFacebookCachedData(): Promise<void> {
       let treatedFacebookData = [];
       if (settings.focus === "private") {
         console.log("[sendFacebookCachedData] Focus is private, filtering data to only include private group posts and their related photos");
-
 
         const isPrivateGroupPost = (e: any) => e?.owner_type === "private_group" && e?.docType?.toLowerCase() === "post";
         const filteredEntryRowkeys = bgState.cachedFacebookData
@@ -81,18 +74,18 @@ export async function sendFacebookCachedData(): Promise<void> {
 
       // Sending task
       if (treatedFacebookData.length) {
-        await publish(facebookTopic, treatedFacebookData, true);
-        console.log(new Date().toLocaleTimeString(), "[Facebook Post] Sent successfully!");
-        await incrementBadge(postCount);
+        const result = await publish(facebookTopic, treatedFacebookData, true);
+        if (result.ok) {
+          console.log(new Date().toLocaleTimeString(), "[Facebook Post] Sent successfully!");
+          await incrementBadge(postCount);
+        } else {
+          console.log(new Date().toLocaleTimeString(), "[Facebook Post] Failed to send:", result.error.message);
+        }
 
         // Clear cached data after successful publish
         bgState.cachedFacebookData = [];
         treatedFacebookData = [];
-        try {
-          await services.syncServices.handleSyncExtensionInfo(true);
-        } catch (e) {
-          console.warn("[sendFacebookCachedData] handleSyncExtensionInfo failed:", e);
-        }
+        services.syncServices.handleSyncExtensionInfo(true);
       }
     }
   })
@@ -135,16 +128,16 @@ export async function sendFacebookUserData(): Promise<void> {
       userPayload.entry_rowkey = userPayload.id;
       userPayload.platform = "facebook";
       userPayload.crawler_system = "extension";
-      await publish(facebookTopic, [userPayload], false);
-      console.log(new Date().toLocaleTimeString(), "[User] Sent successfully!");
 
-      try {
+      const result = await publish(facebookTopic, [userPayload], false);
+      if (result.ok) {
+        console.log(new Date().toLocaleTimeString(), "[Facebook Post] Sent successfully!");
         await incrementBadge(1);
-      } catch (e) {
-        console.warn(this.logTag, "failed to update badge for userInfo:", e);
+      } else {
+        console.log(new Date().toLocaleTimeString(), "[Facebook Post] Failed to send:", result.error.message);
       }
-      bgState.cachedFacebookUserInfoToPublish = null;
 
+      bgState.cachedFacebookUserInfoToPublish = null;
     },
   });
 }
@@ -467,16 +460,10 @@ export async function sendFacebookPendingGroupsCachedData(): Promise<void> {
       for (let i = 0; i < totalChunks; i++) {
         const chunk = recordsToPublish.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
         await publish("facebook-joined-groups-crawled-data", chunk, true);
-        console.log(
-          new Date().toLocaleTimeString(),
-          `[Facebook Pending Groups] Sent chunk ${i + 1}/${totalChunks} (${chunk.length} groups)`,
-        );
+        console.log(new Date().toLocaleTimeString(), `[Facebook Pending Groups] Sent chunk ${i + 1}/${totalChunks} (${chunk.length} groups)`);
       }
 
-      console.log(
-        new Date().toLocaleTimeString(),
-        `[Facebook Pending Groups] All ${recordCount} groups sent in ${totalChunks} batch(es).`,
-      );
+      console.log(new Date().toLocaleTimeString(), `[Facebook Pending Groups] All ${recordCount} groups sent in ${totalChunks} batch(es).`);
 
       bgState.cachedFacebookSyncPendingGroupsData = [];
     },

@@ -3,6 +3,7 @@ import { bgState } from "../state";
 import { KafkaPublishConfig, Settings } from "../types/types";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { DefaultValues } from "../utils/constants";
+import { Result } from "../utils/parsers/types";
 
 export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<void> {
 
@@ -72,7 +73,7 @@ export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<voi
         : attachToItem(payload);
     };
 
-    const publish = async (topic: string, payload: any, hasExtensionInfo: boolean) => {
+    const publish = async (topic: string, payload: any, hasExtensionInfo: boolean): Promise<Result<any>> => {
       const enrichedPayload = hasExtensionInfo
         ? attachKafkaMeta(
           payload,
@@ -93,10 +94,13 @@ export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<voi
           message: JSON.stringify(enrichedPayload),
         }),
       });
+
       if (!res.ok) {
         const body = await res.text().catch(() => "");
-        throw new Error(`HTTP ${res.status} ${res.statusText} ${body}`);
+        const error = new Error(`HTTP ${res.status} ${res.statusText} ${body}`);
+        return { ok: false, error: error };
       }
+      return { ok: true, data: null };
     };
 
     const toSafeNonNegInt = (v: any) => {
@@ -105,15 +109,17 @@ export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<voi
     };
 
     const incrementBadge = async (delta: number) => {
-      const { settings: cs } = await services.storageServices.getStorageCachedByKeys(["settings"]);
-      const newNC = toSafeNonNegInt(cs?.n_c) + delta;
-      if (cs) {
-        await services.storageServices.setStorageCached({
-          settings: { ...cs, n_c: newNC },
-        });
-      }
-      await chromeApi.action.setBadgeText({ text: String(newNC) });
-      await chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
+      try {
+        const { settings: cs } = await services.storageServices.getStorageCachedByKeys(["settings"]);
+        const newNC = toSafeNonNegInt(cs?.n_c) + delta;
+        if (cs) {
+          await services.storageServices.setStorageCached({
+            settings: { ...cs, n_c: newNC },
+          });
+        }
+        await chromeApi.action.setBadgeText({ text: String(newNC) });
+        await chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
+      } catch (_ignored) { }
     };
 
     // 7. Delegate to platform-specific publish steps

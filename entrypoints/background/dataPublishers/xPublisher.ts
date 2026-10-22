@@ -41,16 +41,16 @@ export async function sendXCachedData(): Promise<void> {
 
       // Sending task
       if (bgState.cachedXData.length) {
-        await publish(xTopic, bgState.cachedXData, true);
-        console.log(new Date().toLocaleTimeString(), "[X Cached Data] Sent successfully!");
-        await incrementBadge(postCount);
+        const result = await publish(xTopic, bgState.cachedXData, true);
+        if (result.ok) {
+          console.log(new Date().toLocaleTimeString(), "[X Cached Data] Sent successfully!");
+          await incrementBadge(postCount);
+        } else {
+          console.log(new Date().toLocaleTimeString(), "[X Cached Data] Failed to send:", result.error.message);
+        }
 
         bgState.cachedXData = [];
-        try {
-          await services.syncServices.handleSyncExtensionInfo(true);
-        } catch (e) {
-          console.warn(this.logTag, "handleSyncExtensionInfo failed:", e);
-        }
+        services.syncServices.handleSyncExtensionInfo(true);
       }
     },
   });

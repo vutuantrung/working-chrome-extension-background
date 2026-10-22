@@ -1,10 +1,30 @@
-import { FacebookUserFollowData, FacebookUserFriendData } from "@/entrypoints/background/utils/parsers/types";
+import { FacebookUserFollowData, FacebookUserFriendData, Result } from "@/entrypoints/background/utils/parsers/types";
+
+export type Platform = "facebook" | "tiktok" | "x" | "threads" | "youtube";
 
 export type EffectiveProxySource = "extension" | "persona" | "account" | "none";
+
+export type ProxyHealthState = "ok" | "error";
+
+export type ProxyAuthCredentials = {
+  username: string;
+  password: string;
+};
 
 export type ProxyEndpoint = {
   host: string;
   port: string
+};
+
+export type ProxyHealth = {
+  state: ProxyHealthState;
+  updatedAt: number;
+  lastErrorAt?: number;
+  lastOkAt?: number;
+  consecutiveFailures?: number;
+  error?: any;
+  details?: any;
+  reason?: string;
 };
 
 export type PersonaFacebookAccount = {
@@ -28,26 +48,6 @@ export type PersonaFacebookAccount = {
   uid?: string;
   updated_time?: number;
   user_id?: string;
-};
-
-export type Platform = "facebook" | "tiktok" | "x" | "threads" | "youtube";
-
-export type ProxyHealthState = "ok" | "error";
-
-export type ProxyAuthCredentials = {
-  username: string;
-  password: string;
-};
-
-export type ProxyHealth = {
-  state: ProxyHealthState;
-  updatedAt: number;
-  lastErrorAt?: number;
-  lastOkAt?: number;
-  consecutiveFailures?: number;
-  error?: any;
-  details?: any;
-  reason?: string;
 };
 
 export interface Settings {
@@ -124,7 +124,7 @@ export interface KafkaPublishContext {
     topic: string,
     payload: any,
     hasExtensionInfo: boolean,
-  ) => Promise<void>;
+  ) => Promise<Result<any>>;
   incrementBadge: (delta: number) => Promise<void>;
 }
 

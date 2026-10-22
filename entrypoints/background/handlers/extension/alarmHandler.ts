@@ -55,6 +55,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       "user",
       "automationByUser",
     ];
+
     const {
       settings: storageSettings,
       activities: storageActivities,
@@ -64,25 +65,18 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
     } = await services.storageServices.getStorageCachedByKeys(keys);
 
     if (alarm.name === "periodicCheck") {
-      try {
-        await checkExtensionUpdateAndNotify();
-      } catch { }
+      try { await checkExtensionUpdateAndNotify(); } catch { }
 
       if (!storageUser) {
         return;
       }
 
-      console.log(
-        new Date().toLocaleTimeString(),
-        "Performing periodic check.. .",
-        bgState.__periodicServerCheckCount++,
-      );
+      console.log(new Date().toLocaleTimeString(), "Performing periodic check.. .", bgState.__periodicServerCheckCount++);
 
       // [LOCAL] API reporter
       let scheduledActivities = null;
-      const actArr = await services.scheduleServices.fetchScheduledActivities(
-        storageUser || DefaultValues.SETTINGS_DATA,
-      );
+      const actArr = await services.scheduleServices.fetchScheduledActivities(storageUser || DefaultValues.SETTINGS_DATA);
+
       // Priority: EXTERNAL > LOCAL > CACHED > DEFAULT
       if (isValidArrayAct(actArr)) {
         scheduledActivities = actArr;
@@ -94,12 +88,6 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       }
 
       await services.scheduleServices.handleUpdateScheduleActivities(scheduledActivities);
-    }
-
-    if (alarm.name === "reset") {
-      console.log(new Date().toLocaleTimeString(), "Performing reset task...");
-      bgState.__periodicServerCheckCount = 0;
-      await services.storageServices.setStorageCached({ activities: [], taskList: [] });
     }
 
     if (alarm.name.includes("scheduleTask") && automationByUser === true) {
@@ -124,39 +112,20 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       // Default to full day if not specified: 00:00:00 to 23:59:59
       const endPeriodVal = endPeriod ? endPeriod : storageSettings?.scheduleEndTime || "23:59:59";
       const startPeriodVal = startPeriod ? startPeriod : storageSettings?.scheduleStartTime || "00:00:00";
-
-      console.log(
-        new Date().toLocaleTimeString(),
-        `[SCHEDULE CHECK] Activity: ${activity.name}, Start: ${startPeriodVal}, End: ${endPeriodVal}`,
-      );
-
       if (isTimePassed(endPeriodVal)) {
-        console.log(
-          new Date().toLocaleTimeString(),
-          `Task already passed the end time (${endPeriodVal})`,
-        );
+        console.log(new Date().toLocaleTimeString(), `Task already passed the end time (${endPeriodVal})`);
         return;
       }
-
       if (!isTimePassed(startPeriodVal)) {
-        console.log(
-          new Date().toLocaleTimeString(),
-          `Task have not yet passed the start time (${startPeriodVal})`,
-        );
+        console.log(new Date().toLocaleTimeString(), `Task have not yet passed the start time (${startPeriodVal})`);
         return;
       }
 
-      console.log(
-        new Date().toLocaleTimeString(),
-        `Task time is valid - creating task for ${activity.name}`,
-      );
+      console.log(new Date().toLocaleTimeString(), `Task time is valid - creating task for ${activity.name}`);
 
       const activeTabId = await helpers.tabControl.getActiveFacebookTabId();
       if (!activeTabId) {
-        console.warn(
-          "[SCHEDULE CHECK] Active tab is not a Facebook page — skipping activity:",
-          activity.name,
-        );
+        console.warn("[SCHEDULE CHECK] Active tab is not a Facebook page — skipping activity:", activity.name);
         return;
       }
 
@@ -204,7 +173,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
 
         // Invalidate cache before writing so subsequent reads get fresh data.
         services.storageServices.clearStorageCache();
-        await services.storageServices.setStorageCached({ taskList });
+        services.storageServices.setStorageCached({ taskList });
       } finally {
         releaseLock();
       }
@@ -213,6 +182,12 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
     if (alarm.name === Constants.SETTINGS_SYNC_ALARM) {
       await services.syncServices.handleSyncExtensionInfo();
       return;
+    }
+
+    if (alarm.name === "reset") {
+      console.log(new Date().toLocaleTimeString(), "Performing reset task...");
+      bgState.__periodicServerCheckCount = 0;
+      await services.storageServices.setStorageCached({ activities: [], taskList: [] });
     }
   } catch (error) {
     console.warn("[ERROR ALARM] error:", error);

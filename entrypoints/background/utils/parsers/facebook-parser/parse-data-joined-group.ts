@@ -1,3 +1,4 @@
+import { chromeApi } from "@/entrypoints/background/infrastructure/chrome-api/chrome-api";
 import { FacebookGroupJoinedData, Result } from "../types";
 
 export async function parseDataJoinedGroup(payload: any): Promise<Result<{ fbGroupJoined: FacebookGroupJoinedData[] }>> {
