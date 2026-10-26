@@ -528,7 +528,7 @@ export async function handleClearDataAfterLogout(
       await helpers.cookie.clearSocialPlatformCookies();
     }
 
-    await chromeApi.storage.local.remove([
+    await services.storageServices.removeStorageByKeys([
       "settings",
       "taskList",
       "activities",

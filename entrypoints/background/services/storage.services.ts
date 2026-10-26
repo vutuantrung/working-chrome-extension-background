@@ -84,6 +84,12 @@ export async function setStorageCached(patchObj: Record<string, any>): Promise<v
     await storage().set(patchObj);
 }
 
+/** Remove persistent keys and invalidate the in-memory cache. */
+export async function removeStorageByKeys(keys: string[]): Promise<void> {
+    await storage().remove(keys);
+    for (const key of keys) delete (storageCache as Record<string, any>)[key];
+}
+
 export function clearStorageCache() {
     storageCache = {};
     storageInFlight = null;

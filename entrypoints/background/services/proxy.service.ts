@@ -92,7 +92,7 @@ export function setProxyHealth(patch: Partial<ProxyHealth>) {
             consecutiveFailures: prev?.consecutiveFailures ?? 0,
             ...patch,
         };
-        chromeApi.storage.local.set({ proxyHealth: next });
+        void services.storageServices.setStorageCached({ proxyHealth: next }).catch(() => {});
 
         // Keep cache in sync even if storage event is delayed.
         const cache = services.storageServices.getStorageCache();
@@ -289,7 +289,7 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
         // Persist effective proxy so popup can reflect changes (Restart button logic depends on it).
         try {
             const proxyActive = helpers.proxy.isActiveProxy(proxyConfig);
-            await chromeApi.storage.local.set({ activeProxy: proxyActive ? proxyConfig : {} });
+            await services.storageServices.setStorageCached({ activeProxy: proxyActive ? proxyConfig : {} });
         } catch { }
 
         const { settings } = await services.storageServices.getStorageCachedByKeys(["settings"]);
@@ -304,7 +304,7 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
                 ...settingsFromProxy,
             };
 
-        await chromeApi.storage.local.set({ settings: finalSettings });
+        await services.storageServices.setStorageCached({ settings: finalSettings });
         if (sendResponse) {
             sendResponse({
                 success: true,

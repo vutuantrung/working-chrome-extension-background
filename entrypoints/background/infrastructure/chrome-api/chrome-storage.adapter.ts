@@ -9,4 +9,7 @@ export const chromeStorageAdapter: StoragePort = {
   async set(values) {
     await chromeApi.storage.local.set(values);
   },
+  async remove(keys) {
+    await chromeApi.storage.local.remove(keys);
+  },
 };

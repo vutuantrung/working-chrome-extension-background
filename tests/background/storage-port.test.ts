@@ -23,6 +23,9 @@ function inMemoryStorage(): StoragePort {
     async set(values) {
       for (const [key, value] of Object.entries(values)) entries.set(key, value);
     },
+    async remove(keys) {
+      for (const key of keys) entries.delete(key);
+    },
   };
 }
 
@@ -33,5 +36,14 @@ describe("StoragePort integration", () => {
     expect(await getStorageByKeys(["connection"])).toEqual({ connection: "local" });
     clearStorageCache();
     expect(await getStorageCachedByKeys(["connection"])).toEqual({ connection: "local" });
+  });
+  it("removes keys from persistence and cache", async () => {
+    setStorageAdapter(inMemoryStorage());
+    await setStorageCached({ retained: 1, removed: 2 });
+    const { removeStorageByKeys } = await import("../../entrypoints/background/services/storage.services");
+    await removeStorageByKeys(["removed"]);
+    expect(await getStorageByKeys(["removed"])).toEqual({});
+    expect(await getStorageCachedByKeys(["removed"])).toEqual({});
+    expect(await getStorageCachedByKeys(["retained"])).toEqual({ retained: 1 });
   });
 });
