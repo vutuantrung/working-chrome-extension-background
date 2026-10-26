@@ -1,4 +1,4 @@
-import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
+import * as alarmService from "./alarm.service";
 import { Activity } from "../types/types";
 import { parseDelayAndPeriodInMinutes } from "../utils/tools";
 import { getExtensionConfigInfo } from "../infrastructure/api/source-member.api";
@@ -13,7 +13,7 @@ export interface ScheduleDependencies {
 /** Resolve production dependencies at invocation time, not module import time. */
 function defaultScheduleDependencies(): ScheduleDependencies {
   return {
-    alarms: chromeApi.alarms,
+    alarms: { get: alarmService.getAlarm, clear: alarmService.clearAlarm, create: alarmService.createAlarm },
     storage: {
       getStorageCachedByKeys: services.storageServices.getStorageCachedByKeys,
       setStorageCached: services.storageServices.setStorageCached

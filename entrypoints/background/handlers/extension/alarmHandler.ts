@@ -1,3 +1,6 @@
+import * as alarmService from "../../services/alarm.service";
+import * as tabService from "../../services/tab.service";
+import * as runtimeService from "../../services/runtime.service";
 import { bgState } from "../../state";
 import { Task } from "../../types/types";
 import { Constants, DefaultValues, State } from "../../utils/constants";
@@ -98,7 +101,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       const [_, activityId] = alarm?.name?.split("_");
       const activity = storageActivities?.find((t) => t.id === activityId);
       if (!activity) {
-        chromeApi.alarms.clear(alarm.name, (wasCleared) => { });
+        void alarmService.clearAlarm(alarm.name);
         return;
       }
 
@@ -156,10 +159,10 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
 
             lastTask.state = State.TaskState.CANCELED;
             lastTask.result = "Canceled. Reason: Higher or equal priority task replaced."
-            chromeApi.tabs.sendMessage(
+            tabService.sendTabMessage(
               lastTask.tabId,
               { type: "STOP_TASK", taskId: lastTask.taskId },
-              () => { void chromeApi.runtime.lastError; },
+              () => { void runtimeService.getRuntimeLastError(); },
             );
           }
 

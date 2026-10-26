@@ -1,8 +1,9 @@
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
+import * as tabService from "../../services/tab.service";
+import * as windowService from "../../services/window.service";
 import { handleMaybeFacebookTab } from "./tabHandler";
 
 export async function windowOnFocusChangedHandler(windowId: number) {
-    if (windowId === chromeApi.windows.WINDOW_ID_NONE) return;
-    const [activeTab] = await chromeApi.tabs.query({ active: true, windowId });
+    if (windowService.isWindowClosed(windowId)) return;
+    const [activeTab] = await tabService.queryTabs({ active: true, windowId });
     if (activeTab?.id) await handleMaybeFacebookTab(activeTab.id);
 }
