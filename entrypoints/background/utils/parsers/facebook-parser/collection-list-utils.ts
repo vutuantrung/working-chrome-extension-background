@@ -1,10 +1,5 @@
-export type FacebookCollectionListKind = "following" | "followers" | "friends";
-
-export function readString(v: unknown): string {
-  if (typeof v === "string") return v.trim();
-  if (typeof v === "number" && Number.isFinite(v)) return String(v);
-  return "";
-}
+import { FacebookCollectionListKind, ProfileTabCollectionRef, ResolvedCollectionPage } from "../types";
+import { readTrimmedString } from "./utils";
 
 export function detectCollectionListKind(meta: {
   name?: string;
@@ -12,13 +7,13 @@ export function detectCollectionListKind(meta: {
   tabKey?: string;
   edges?: unknown[];
 }): FacebookCollectionListKind | null {
-  const tabKey = readString(meta.tabKey).toLowerCase();
+  const tabKey = readTrimmedString(meta.tabKey).toLowerCase();
   if (tabKey === "friends_all") return "friends";
   if (tabKey === "followers") return "followers";
   if (tabKey === "following") return "following";
 
-  const name = readString(meta.name).toLowerCase();
-  const url = readString(meta.url).toLowerCase();
+  const name = readTrimmedString(meta.name).toLowerCase();
+  const url = readTrimmedString(meta.url).toLowerCase();
 
   if (
     name.includes("đang theo dõi") ||
@@ -47,7 +42,7 @@ export function detectCollectionListKind(meta: {
       const node = (edge as any)?.node;
       if (!node) continue;
 
-      const actionsRendererType = readString(node.actions_renderer?.__typename);
+      const actionsRendererType = readTrimmedString(node.actions_renderer?.__typename);
 
       if (actionsRendererType.includes("FriendsList")) {
         return "friends";
@@ -58,16 +53,8 @@ export function detectCollectionListKind(meta: {
   return null;
 }
 
-export type ProfileTabCollectionRef = {
-  tabKey: string;
-  collectionId: string;
-  kind: FacebookCollectionListKind;
-};
-
 /** Read followers / following / friends_all collection ids from profile header tabs. */
-export function extractProfileTabCollections(
-  payload: unknown,
-): ProfileTabCollectionRef[] {
+export function extractProfileTabCollections(payload: unknown): ProfileTabCollectionRef[] {
   const root = payload as {
     data?: {
       user?: {
@@ -100,12 +87,9 @@ export function extractProfileTabCollections(
     if (!section || typeof section !== "object") continue;
 
     const collections = Array.isArray(
-      (section as { all_collections?: { nodes?: unknown[] } }).all_collections
-        ?.nodes,
+      (section as { all_collections?: { nodes?: unknown[] } }).all_collections?.nodes,
     )
-      ? (section as { all_collections: { nodes: unknown[] } }).all_collections
-          .nodes
-      : [];
+      ? (section as { all_collections: { nodes: unknown[] } }).all_collections.nodes : [];
 
     for (const c of collections) {
       const node = c as {
@@ -114,14 +98,14 @@ export function extractProfileTabCollections(
         name?: string;
         url?: string;
       };
-      const tabKey = readString(node?.tab_key);
-      const collectionId = readString(node?.id);
+      const tabKey = readTrimmedString(node?.tab_key);
+      const collectionId = readTrimmedString(node?.id);
       if (!tabKey || !collectionId) continue;
 
       const kind = detectCollectionListKind({
         tabKey,
-        name: readString(node?.name),
-        url: readString(node?.url),
+        name: readTrimmedString(node?.name),
+        url: readTrimmedString(node?.url),
       });
       if (!kind) continue;
 
@@ -132,20 +116,17 @@ export function extractProfileTabCollections(
   return out;
 }
 
-export type ResolvedCollectionPage = {
-  collectionId: string;
-  edges: unknown[];
-  kind: FacebookCollectionListKind;
-};
-
 export function resolveCollectionPageFromPayload(payload: {
-  data?: { node?: Record<string, unknown>; user?: { id?: string } };
+  data?: {
+    node?: Record<string, unknown>;
+    user?: { id?: string }
+  };
 }): ResolvedCollectionPage | null {
   const node = payload?.data?.node;
   if (!node || typeof node !== "object") return null;
 
   if (node.__typename === "TimelineAppCollection") {
-    const collectionId = readString(node.id);
+    const collectionId = readTrimmedString(node.id);
     const edges = Array.isArray(
       (node.pageItems as { edges?: unknown[] } | undefined)?.edges,
     )
@@ -153,8 +134,8 @@ export function resolveCollectionPageFromPayload(payload: {
       : [];
     if (!collectionId || !edges.length) return null;
 
-    const name = readString(node.name);
-    const url = readString(node.url);
+    const name = readTrimmedString(node.name);
+    const url = readTrimmedString(node.url);
     const kind =
       detectCollectionListKind({ name, url, edges }) ||
       ("following" as FacebookCollectionListKind);
@@ -173,10 +154,10 @@ export function resolveCollectionPageFromPayload(payload: {
   const navKindById = new Map<string, FacebookCollectionListKind>();
   for (const nav of navNodes) {
     const n = nav as { id?: string; name?: string; url?: string };
-    const id = readString(n?.id);
+    const id = readTrimmedString(n?.id);
     const kind = detectCollectionListKind({
-      name: readString(n?.name),
-      url: readString(n?.url),
+      name: readTrimmedString(n?.name),
+      url: readTrimmedString(n?.url),
     });
     if (id && kind) navKindById.set(id, kind);
   }
@@ -206,16 +187,16 @@ export function resolveCollectionPageFromPayload(payload: {
       : [];
     if (!edges.length) continue;
 
-    const collectionId = readString(inner?.id) || readString(wrapper?.id);
+    const collectionId = readTrimmedString(inner?.id) || readTrimmedString(wrapper?.id);
     if (!collectionId) continue;
 
     const kind =
       navKindById.get(collectionId) ||
-      navKindById.get(readString(wrapper?.id)) ||
+      navKindById.get(readTrimmedString(wrapper?.id)) ||
       detectCollectionListKind({
-        tabKey: readString(wrapper?.tab_key),
-        name: readString(inner?.name),
-        url: readString(inner?.url),
+        tabKey: readTrimmedString(wrapper?.tab_key),
+        name: readTrimmedString(inner?.name),
+        url: readTrimmedString(inner?.url),
         edges,
       });
 
@@ -237,8 +218,8 @@ export function extractListPersonFromEdge(edge: unknown): {
   if (!node) return null;
 
   const id =
-    readString((node.node as { id?: string } | undefined)?.id) ||
-    readString(
+    readTrimmedString((node.node as { id?: string } | undefined)?.id) ||
+    readTrimmedString(
       (
         node.actions_renderer as {
           profile_actions?: { profile_owner?: { id?: string } }[];
@@ -248,8 +229,8 @@ export function extractListPersonFromEdge(edge: unknown): {
   if (!id) return null;
 
   const nameRaw =
-    readString((node.title as { text?: string } | undefined)?.text) ||
-    readString(
+    readTrimmedString((node.title as { text?: string } | undefined)?.text) ||
+    readTrimmedString(
       (
         node.actions_renderer as {
           profile_actions?: { profile_owner?: { name?: string } }[];
@@ -260,7 +241,7 @@ export function extractListPersonFromEdge(edge: unknown): {
   return {
     id,
     name: nameRaw,
-    url: readString(node.url) || readString((node.node as { url?: string })?.url),
-    avatar: readString((node.image_v2 as { uri?: string } | undefined)?.uri),
+    url: readTrimmedString(node.url) || readTrimmedString((node.node as { url?: string })?.url),
+    avatar: readTrimmedString((node.image_v2 as { uri?: string } | undefined)?.uri),
   };
 }

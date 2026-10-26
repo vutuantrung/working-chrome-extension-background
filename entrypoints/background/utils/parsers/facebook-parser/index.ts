@@ -13,16 +13,15 @@ import {
 } from "../types";
 import { parseDataJoinedGroup } from "./parse-data-joined-group";
 import { parseDataPost } from "./parse-data-post";
-import { parseDataUserProfile, parseDataUserProfileUpdated } from "./parse-data-user-profile";
+import { parseDataUserProfile } from "./parse-data-user-profile";
 import { parseDataComment } from "./parse-data-comment";
 import { parseDataReaction } from "./parse-data-reaction";
 import { parseDataGroupHover } from "./parse-data-group";
 import { parseDataFollow } from "./parse-data-follow";
 import { parseDataFriend } from "./parse-data-friend";
-import { extractFacebookUserIdAndName } from "./user-info-map";
 
 export async function parseFacebookData(dataString: string): Promise<{
-    userData: FacebookUserData;
+    userData: FacebookUserData[];
     postData: FacebookPostData[];
     imageData: FacebookImageData[];
     groupData: FacebookGroupJoinedData[];
@@ -36,7 +35,7 @@ export async function parseFacebookData(dataString: string): Promise<{
     let stringArr = dataString.split("\n");
 
     const dataArray = {
-        userData: {} as FacebookUserData,
+        userData: {} as FacebookUserData[],
         commentData: [] as FacebookCommentData[],
         postData: [] as FacebookPostData[],
         imageData: [] as FacebookImageData[],
@@ -103,7 +102,7 @@ export async function parseFacebookData(dataString: string): Promise<{
 
         //*** CHECK IF DATA IS PROFILE COMET HEADER (user id + name) ***//
         {
-            const result = parseDataUserProfileUpdated(tmpDataJSONValue);
+            const result = parseDataUserProfile(tmpDataJSONValue);
             if (result.ok) {
                 dataArray.userData.push(result.data);
 

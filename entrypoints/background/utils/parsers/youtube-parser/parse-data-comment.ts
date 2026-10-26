@@ -3,19 +3,18 @@ import { findByKey, generateKey, parseVietnameseRelativeTime, parseYoutubePostsI
 import { findAllKeyValuePairs } from "../facebook-parser/utils";
 import * as services from "../../../services";
 
-type ParseCommentDataResult = Promise<Result<{
-    commentArray: YoutubeCommentData[];
-    updatingPost: YoutubePostData | null
-}>>
-
-export async function parseCommentData(payload: string): ParseCommentDataResult {    
+export async function parseCommentData(payload: string)
+    : Promise<Result<{
+        commentArray: YoutubeCommentData[];
+        updatingPost: YoutubePostData | null
+    }>> {
     try {
         const commentArray: YoutubeCommentData[] = [];
         let updatingPost: YoutubePostData | null = null;
-        
+
         const data = JSON.parse(payload);
         const commentEntities = findAllKeyValuePairs(data, "commentEntityPayload");
-        if(!commentEntities.length) {
+        if (!commentEntities.length) {
             return { ok: false, error: new Error("No Youtube comment entity found") };
         }
 
@@ -32,7 +31,7 @@ export async function parseCommentData(payload: string): ParseCommentDataResult 
         }
 
         // Parse comments
-        commentEntities.forEach(({value}) => {
+        commentEntities.forEach(({ value }) => {
             const normalizedComment = normalizeCommentEntity(value);
             const commentRowKey = generateKey(postId, normalizedComment.comment_id)
 
@@ -49,16 +48,16 @@ export async function parseCommentData(payload: string): ParseCommentDataResult 
 
         // Parse total comment
         const commentHeader = findByKey(data, "commentsHeaderRenderer")?.countText?.runs;
-        if(Array.isArray(commentHeader)) {
-            const commentTotal = commentHeader.map((item: {text: string}) => Number(item.text.replace(/[.,]/g, ""))).find(item => !Number.isNaN(item));
-            if(commentTotal) {
+        if (Array.isArray(commentHeader)) {
+            const commentTotal = commentHeader.map((item: { text: string }) => Number(item.text.replace(/[.,]/g, ""))).find(item => !Number.isNaN(item));
+            if (commentTotal) {
                 updatingPost = {
                     entry_rowkey: "",
                     post_id: postId,
                     comment_count: commentTotal,
                     docType: "Post",
                 } as YoutubePostData;
-            }         
+            }
         }
 
         return {
@@ -81,7 +80,7 @@ function normalizeCommentEntity(data: any): YoutubeCommentData {
     let parentCommentId = "";
     let commentId = data.properties.commentId
     const idParts: string[] = data.properties.commentId.split('.')
-    if(idParts.length > 1) {
+    if (idParts.length > 1) {
         parentCommentId = idParts[0]
     }
 

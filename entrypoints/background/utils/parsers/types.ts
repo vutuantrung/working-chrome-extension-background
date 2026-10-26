@@ -228,6 +228,20 @@ export type XDataType =
   | XUserFollowData;
 
 // Facebook
+export type FacebookCollectionListKind = "following" | "followers" | "friends";
+
+export type ProfileTabCollectionRef = {
+  tabKey: string;
+  collectionId: string;
+  kind: FacebookCollectionListKind;
+};
+
+export type ResolvedCollectionPage = {
+  collectionId: string;
+  edges: unknown[];
+  kind: FacebookCollectionListKind;
+};
+
 export type FacebookReactionData = {
   source_type: string;
   article_id: string;
@@ -437,6 +451,7 @@ export type FacebookDataType =
   | FacebookGroupJoinedData
   | FacebookReactionData
   | FacebookUserProfileData
+  | FacebookUserData
   | FacebookProfileData
   | FacebookUserFollowData
   | FacebookUserFriendData;
@@ -726,7 +741,7 @@ export type ParseType =
   | { typeName: "FacebookPostData"; data: FacebookPostData[] }
   | { typeName: "FacebookImageData"; data: FacebookImageData[] }
   | { typeName: "FacebookGroupJoinedData"; data: FacebookGroupJoinedData[] }
-  | { typeName: "FacebookUserProfileData"; data: FacebookUserProfileData[] }
+  | { typeName: "FacebookUserProfileData"; data: FacebookUserData[] }
   | { typeName: "FacebookUserFollowerData"; data: FacebookUserFollowData[] }
   | { typeName: "FacebookUserFriendData"; data: FacebookUserFriendData[] }
   | { typeName: "FacebookProfileData"; data: FacebookProfileData[] }

@@ -1,14 +1,11 @@
-import { FacebookUserFollowData, Result } from "../types";
-import {
-  decodeUnicodeEscapes,
-  extractFacebookUserIdAndName,
-} from "./user-info-map";
+import { FacebookCollectionListKind, FacebookUserFollowData, Result } from "../types";
+import { extractFacebookUserIdAndName } from "./user-info-map";
 import {
   extractListPersonFromEdge,
-  readString,
-  resolveCollectionPageFromPayload,
-  type FacebookCollectionListKind,
+  resolveCollectionPageFromPayload
 } from "./collection-list-utils";
+import { readTrimmedString, decodeUnicodeEscapes } from "./utils";
+
 
 function buildFollowRow(
   kind: FacebookCollectionListKind,
@@ -91,13 +88,13 @@ export function parseDataFollow(
     }
 
     const profileIdentity = extractFacebookUserIdAndName(payload);
-    let ownerId = profileIdentity?.id || readString(payload?.data?.user?.id);
+    let ownerId = profileIdentity?.id || readTrimmedString(payload?.data?.user?.id);
     const ownerName = profileIdentity?.name || "";
 
     if (!ownerId && resolved.edges.length > 0) {
       for (const edge of resolved.edges) {
         const itemNode = (edge as any)?.node;
-        const itemId = readString(itemNode?.id);
+        const itemId = readTrimmedString(itemNode?.id);
         if (itemId) {
           try {
             const decoded = atob(itemId);

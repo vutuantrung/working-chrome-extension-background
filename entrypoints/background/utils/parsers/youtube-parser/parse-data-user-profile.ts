@@ -2,7 +2,10 @@ import { Result, XAttachment, YoutubeProfileLocalStorageInfo, YoutubeUserProfile
 import { findByKey, parseYoutubeProfilesInfo, storeYoutubeProfileData, YOUTUBE_PROFILE_INFO_KEY } from "./utils";
 import * as services from "../../../services";
 
-export async function parseDataUserProfile(data: any, type: "channelPage" | "channelAbout"): Promise<Result<YoutubeUserProfileData[]>> {
+export async function parseDataUserProfile(
+    data: any,
+    type: "channelPage" | "channelAbout"
+): Promise<Result<YoutubeUserProfileData[]>> {
     try {
         if (type === "channelPage") {
             const parsedProfile = normalizeOverviewProfileData(data);

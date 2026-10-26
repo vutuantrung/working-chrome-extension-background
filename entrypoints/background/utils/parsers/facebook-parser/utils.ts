@@ -5,6 +5,31 @@ import SparkMD5 from "spark-md5";
 import * as services from "../../../services";
 import { FacebookPostData, FacebookPostLocalStorageInfo } from "../types";
 
+
+export function decodeUnicodeEscapes(value: string): string {
+  if (typeof value !== "string" || !value) return "";
+  if (!/\\u[0-9a-fA-F]{4}/.test(value)) return value;
+  try {
+    return JSON.parse(`"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
+  } catch {
+    return value.replace(/\\u([0-9a-fA-F]{4})/gi, (_, hex) =>
+      String.fromCharCode(parseInt(hex, 16)),
+    );
+  }
+}
+
+export function readTrimmedId(value: unknown): string {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "";
+}
+
+export function readTrimmedString(v: any): string {
+  if (typeof v === "string") return v.trim();
+  if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  return "";
+}
+
 export function deriveArticleId(postId: string): string {
   if (typeof postId !== "string" || !postId) return "";
   const lastUnderscore = postId.lastIndexOf("_");

@@ -1,7 +1,7 @@
 import {
   FacebookDataType,
   FacebookGroupJoinedData,
-  FacebookUserProfileData,
+  FacebookUserData,
   TiktokDataType,
   XDataType,
   ThreadsDataType,
@@ -29,7 +29,7 @@ export const bgState = {
   cachedFacebookJoinedGroupsData: [] as FacebookGroupJoinedData[],
   cachedFacebookSyncGroupsData: [] as FacebookGroupJoinedData[],
   cachedFacebookSyncPendingGroupsData: [] as FacebookGroupJoinedData[],
-  cachedFacebookUserInfo: null as FacebookUserProfileData | null,
+  cachedFacebookUserInfo: null as FacebookUserData | null,
   cachedFacebookUserInfoToPublish: null as string | null,
   // TikTok data interception state
   cachedTiktokData: [] as TiktokDataType[],

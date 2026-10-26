@@ -9,12 +9,8 @@ import { handleFbFollowInfo } from "./follow-info";
 import { handleFbFriendInfo } from "./friend-info";
 
 export {
-    buildFacebookUserInfoMapEntry,
-    decodeUnicodeEscapes,
     extractFacebookUserIdAndName,
-    isProfileCometHeaderPayload,
     normalizeFacebookUserInfoMap,
-    resolveFacebookUserNameFromMapValue,
 } from "./user-info-map";
 export {
     clearFacebookFollowStagingState,

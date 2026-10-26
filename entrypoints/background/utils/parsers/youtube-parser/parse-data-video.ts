@@ -1,5 +1,5 @@
 import { findAllKeyValuePairs } from "../facebook-parser/utils";
-import { Result, YoutubeAttachment, YoutubeImageData, YoutubePostData } from "../types";
+import { Result, YoutubeImageData, YoutubePostData } from "../types";
 import { findByKey, generateKey, parseVietnameseRelativeTime, parseVietnameseViewCount, storeYoutubePostData } from "./utils";
 
 export function parsePostData(
@@ -219,6 +219,7 @@ function parseHomeDate(
         }
     }
 }
+
 function parseHomeContinuationData(
     jsonStr: string,
     postArray: YoutubePostData[],

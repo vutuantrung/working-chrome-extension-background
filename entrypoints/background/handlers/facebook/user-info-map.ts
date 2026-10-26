@@ -1,8 +1,4 @@
 export {
-  buildFacebookUserInfoMapEntry,
-  decodeUnicodeEscapes,
   extractFacebookUserIdAndName,
-  isProfileCometHeaderPayload,
-  normalizeFacebookUserInfoMap,
-  resolveFacebookUserNameFromMapValue,
+  normalizeFacebookUserInfoMap
 } from "@/entrypoints/background/utils/parsers/facebook-parser/user-info-map";

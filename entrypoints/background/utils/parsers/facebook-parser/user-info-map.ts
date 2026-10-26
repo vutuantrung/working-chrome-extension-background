@@ -1,21 +1,7 @@
 /** Decode literal \\uXXXX sequences (e.g. Khmer/Vietnamese names from FB GraphQL). */
-export function decodeUnicodeEscapes(value: string): string {
-  if (typeof value !== "string" || !value) return "";
-  if (!/\\u[0-9a-fA-F]{4}/.test(value)) return value;
-  try {
-    return JSON.parse(`"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
-  } catch {
-    return value.replace(/\\u([0-9a-fA-F]{4})/gi, (_, hex) =>
-      String.fromCharCode(parseInt(hex, 16)),
-    );
-  }
-}
 
-function readId(value: unknown): string {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (typeof value === "number" && Number.isFinite(value)) return String(value);
-  return "";
-}
+import { decodeUnicodeEscapes } from "./utils";
+import { readTrimmedId } from "./utils";
 
 function parsePayloadRoot(payload: unknown): any | null {
   let root: any = payload;
@@ -46,9 +32,9 @@ export function extractFacebookUserIdAndName(payload: unknown): { id: string; na
   const profileUser = headerUser?.header_top_row?.profile_user;
 
   const id =
-    readId(headerUser?.id) ||
-    readId(profileUser?.id) ||
-    readId(root.data?.user?.id);
+    readTrimmedId(headerUser?.id) ||
+    readTrimmedId(profileUser?.id) ||
+    readTrimmedId(root.data?.user?.id);
 
   const rawName =
     (typeof headerUser?.name === "string" && headerUser.name) ||
@@ -60,13 +46,8 @@ export function extractFacebookUserIdAndName(payload: unknown): { id: string; na
   return { id, name };
 }
 
-export function isProfileCometHeaderPayload(payload: unknown): boolean {
-  const root = parsePayloadRoot(payload);
-  return Boolean(root?.data?.user?.profile_header_renderer);
-}
-
 /** Map value: decoded display name (legacy JSON blobs still supported). */
-export function resolveFacebookUserNameFromMapValue(value: string): string {
+function resolveFacebookUserNameFromMapValue(value: string): string {
   if (typeof value !== "string") return "";
   const trimmed = value.trim();
   if (!trimmed) return "";
@@ -79,23 +60,14 @@ export function resolveFacebookUserNameFromMapValue(value: string): string {
   return decodeUnicodeEscapes(trimmed);
 }
 
-export function normalizeFacebookUserInfoMap(
-  map: Record<string, string> | null | undefined,
-): Record<string, string> {
+export function normalizeFacebookUserInfoMap(map: Record<string, string> | null | undefined): Record<string, string> {
   if (!map || typeof map !== "object") return {};
   const out: Record<string, string> = {};
   for (const [id, raw] of Object.entries(map)) {
-    const key = readId(id);
+    const key = readTrimmedId(id);
     if (!key) continue;
     const name = resolveFacebookUserNameFromMapValue(String(raw ?? ""));
     if (name) out[key] = name;
   }
   return out;
-}
-
-export function buildFacebookUserInfoMapEntry(identity: {
-  id: string;
-  name: string;
-}): Record<string, string> {
-  return { [identity.id]: identity.name };
 }

@@ -1,13 +1,10 @@
 import { FacebookUserFriendData, Result } from "../types";
-import {
-  decodeUnicodeEscapes,
-  extractFacebookUserIdAndName,
-} from "./user-info-map";
+import { extractFacebookUserIdAndName } from "./user-info-map";
 import {
   extractListPersonFromEdge,
-  readString,
   resolveCollectionPageFromPayload,
 } from "./collection-list-utils";
+import { readTrimmedString, decodeUnicodeEscapes } from "./utils";
 
 function buildFriendRow(
   listPerson: { id: string; name: string; url: string; avatar: string },
@@ -45,9 +42,8 @@ function buildFriendRow(
   };
 }
 
-export function parseDataFriend(
-  payload: any,
-): Result<FacebookUserFriendData[]> {
+export function parseDataFriend(payload: any)
+  : Result<FacebookUserFriendData[]> {
   try {
     const resolved = resolveCollectionPageFromPayload(payload);
     if (!resolved) {
@@ -67,13 +63,13 @@ export function parseDataFriend(
     }
 
     const profileIdentity = extractFacebookUserIdAndName(payload);
-    let ownerId = profileIdentity?.id || readString(payload?.data?.user?.id);
+    let ownerId = profileIdentity?.id || readTrimmedString(payload?.data?.user?.id);
     const ownerName = profileIdentity?.name || "";
 
     if (!ownerId && resolved.edges.length > 0) {
       for (const edge of resolved.edges) {
         const itemNode = (edge as any)?.node;
-        const itemId = readString(itemNode?.id);
+        const itemId = readTrimmedString(itemNode?.id);
         if (itemId) {
           try {
             const decoded = atob(itemId);

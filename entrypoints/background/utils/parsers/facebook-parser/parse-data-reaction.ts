@@ -1,5 +1,13 @@
-import { FacebookPostLocalStorageInfo, FacebookReactionData, Result } from "../types";
-import { FACEBOOK_POST_INFO_KEY, generateReactionKey, parseFacebookPostInfo } from "./utils";
+import {
+    FacebookPostLocalStorageInfo,
+    FacebookReactionData,
+    Result
+} from "../types";
+import {
+    FACEBOOK_POST_INFO_KEY,
+    generateReactionKey,
+    parseFacebookPostInfo
+} from "./utils";
 import * as services from "../../../services";
 
 const REACTION_TYPE_MAP: Record<string, string> = {

@@ -4,11 +4,9 @@ import {
   FacebookDataType,
 } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import {
-  decodeUnicodeEscapes,
-  normalizeFacebookUserInfoMap,
-} from "./user-info-map";
+import { normalizeFacebookUserInfoMap } from "./user-info-map";
 import * as services from "../../services";
+import { decodeUnicodeEscapes } from "../../utils/tools";
 
 const FB_FOLLOW_FLUSH_IMMEDIATE_LIMIT = 30;
 const FB_FOLLOW_FLUSH_DEBOUNCE_MS = 10_000;

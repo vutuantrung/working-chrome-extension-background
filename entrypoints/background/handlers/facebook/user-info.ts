@@ -1,15 +1,14 @@
-import { FacebookUserProfileData, ParseType } from "@/entrypoints/background/utils/parsers/types";
+import { FacebookUserData, ParseType } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import {
-    buildFacebookUserInfoMapEntry,
-    extractFacebookUserIdAndName,
-} from "./user-info-map";
 import { refreshPendingFollowsFromUserInfoMap } from "./follow-info";
 import { refreshPendingFriendsFromUserInfoMap } from "./friend-info";
 import { seedCollectionMapsFromProfile } from "./register-profile-collections";
-import { parseDataUserProfile } from "@/entrypoints/background/utils/parsers/facebook-parser/parse-data-user-profile";
 import * as services from "../../services";
 import * as helpers from "../../utils/helpers";
+
+function buildFacebookUserInfoMapEntry(identity: { id: string; name: string; }): Record<string, string> {
+    return { [identity.id]: identity.name };
+}
 
 export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
@@ -19,41 +18,17 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     } = ctx;
 
     const { data } = dt;
-    const crawledPostData = data as FacebookUserProfileData[];
-    const rawPayload = crawledPostData?.[0]?.fbU;
-    if (!rawPayload) {
-        console.log("[FB Follow Trace][handleFbUserInfo] skip: no fbU payload");
-        return;
-    }
+    const crawledUser = data as FacebookUserData[];
+    const crawledUserData = crawledUser[0];
+    console.log(
+        "[FB Interceptor] Found userInfo:",
+        crawledUserData?.id,
+        crawledUserData?.name,
+    );
 
-    let parsedPayload: unknown = null;
-    try {
-        parsedPayload = JSON.parse(rawPayload);
-    } catch (error) {
-        console.warn("[FB Follow Trace][handleFbUserInfo] parse fbU failed:", error);
-        return;
-    }
+    const identity = { id: crawledUserData.id, name: crawledUserData.name };
 
-    const identity = extractFacebookUserIdAndName(parsedPayload);
-    if (!identity) {
-        console.log("[FB Follow Trace][handleFbUserInfo] skip: not ProfileCometHeader (data.user.profile_header_renderer)");
-        return;
-    }
-
-    const parsedResult = parseDataUserProfile(parsedPayload);
-    if (!parsedResult.ok) {
-        console.warn("[FB Follow Trace][handleFbUserInfo] parseDataUserProfile failed:", parsedResult?.error);
-        return;
-    }
-
-    let parsedUserObj: any = null;
-    try {
-        parsedUserObj = JSON.parse(parsedResult.data.fbU);
-    } catch (e) {
-        console.warn("[FB Follow Trace][handleFbUserInfo] parse fbU string from parseDataUserProfile failed:", e);
-        return;
-    }
-    const filteredIncoming = helpers.userInfo.filterUserProfilePayload(parsedUserObj);
+    const filteredIncoming = helpers.userInfo.filterUserProfilePayload(crawledUserData);
     if (!filteredIncoming) {
         console.log("[FB Follow Trace][handleFbUserInfo] skip: invalid id/name after filter");
         return;
@@ -81,7 +56,7 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const nextItem = helpers.userInfo.buildPendingUserInfoItem(JSON.stringify(filteredIncoming), filteredIncoming);
     const nextList = [nextItem];
 
-    const { followMap: seedFollowMap, friendMap: seedFriendMap } = seedCollectionMapsFromProfile(parsedPayload, identity.id, identity.name);
+    const { followMap: seedFollowMap, friendMap: seedFriendMap } = seedCollectionMapsFromProfile(crawledUserData, identity.id, identity.name);
 
     const existingMaps = await services.storageServices.getStorageCachedByKeys([
         "facebook_follow_collection_owner_map",
