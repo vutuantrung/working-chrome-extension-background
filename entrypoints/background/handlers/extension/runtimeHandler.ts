@@ -14,10 +14,6 @@ import {
 // Message handler imports
 import {
   handleGetUserInfo,
-  handleGetPendingUserInfo,
-  handleConfirmGatherUserInfo,
-  handleRemovePendingUserInfo,
-  handleInitializeAfterLogin,
   handleClearDataAfterLogout,
   handleStartPeriodicCheck,
   handleSetBadgeText,
@@ -25,6 +21,7 @@ import {
   handleDownloadImage,
   handleScriptExecuteResult,
   handleChangeTabUrl,
+  handleInitializeAfterLogin,
 } from "./systemHandlers";
 import {
   handleGetFacebookAccount,
@@ -348,16 +345,10 @@ export function runTimeOnMessageHandler(
         return services.storageServices.handleGetSettings(message, sendResponse);
       case "GET_USERINFO":
         return handleGetUserInfo(message, sendResponse);
-      case "GET_PENDING_USERINFO":
-        return handleGetPendingUserInfo(message, sendResponse);
       case "UPDATE_SETTINGS":
         return services.storageServices.handleUpdateSettings(message, sendResponse);
       case "UPDATE_ARCHIVE":
         return services.storageServices.handleUpdateArchive(message, sendResponse);
-      case "REMOVE_PENDING_USERINFO":
-        return handleRemovePendingUserInfo(message, sendResponse);
-      case "CONFIRM_GATHER_USERINFO":
-        return handleConfirmGatherUserInfo(message, sendResponse);
       case "INITIALIZE_AFTER_LOGIN":
         return handleInitializeAfterLogin(message, sendResponse);
       case "CLEAR_DATA_AFTER_LOGOUT":
@@ -380,12 +371,6 @@ export function runTimeOnMessageHandler(
         return evidenCollectionHandlers.handleCaptureScreenshot(sendResponse);
       case "SCREENSHOT_CROPPED":
         return evidenCollectionHandlers.handleScreenshotCropped(message, sendResponse);
-
-      // DEPRECATED
-      case "BIND_TO_DEVTOOL_TAB":
-        return () => {
-          console.log("Implementation Exception");
-        };
       default:
         console.warn(
           "[runTimeOnMessageHandler] Unhandled message type:",
@@ -434,37 +419,3 @@ export async function runTimeOnInstalledHandler(details: chrome.runtime.Installe
     console.warn("[SETUP] bootstrapExistingFacebookTabs failed:", e);
   }
 }
-
-// DEPRECATED:
-
-
-// function blockNotificationPopup() {
-//   const maxAttempts = 10;
-//   let attempts = 0;
-
-//   const interval = setInterval(() => {
-//     attempts++;
-
-//     const blockButton = Array.from(document.querySelectorAll('button, div[role="button"]')).find((el) => {
-//       const text = el.textContent?.trim().toLowerCase();
-//       return text === "block" || text === "chặn";
-//     });
-
-//     if (blockButton) {
-//       simulateHumanClick(blockButton as HTMLElement);
-//       clearInterval(interval);
-//       return;
-//     }
-
-//     const closeButton = document.querySelector('div[aria-label="Close"]');
-//     if (closeButton) {
-//       simulateHumanClick(closeButton as HTMLElement);
-//       clearInterval(interval);
-//       return;
-//     }
-
-//     if (attempts >= maxAttempts) {
-//       clearInterval(interval);
-//     }
-//   }, 500);
-// }
