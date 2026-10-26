@@ -1,2 +1,2 @@
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
-export const getCookie = (details: chrome.cookies.CookieDetails) => chromeApi.cookies.get(details);
+export const getCookie = (details: { url: string; name: string; storeId?: string }) => chromeApi.cookies.get(details);
