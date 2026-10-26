@@ -1,6 +1,7 @@
 import * as helpers from "../../utils/helpers";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 import { Message, Screenshot } from "../../types/types";
+import { storageServices } from "../../services";
 
 export function handleCaptureScreenshot(sendResponse: (resp: any) => void) {
   chromeApi.tabs.captureVisibleTab(
@@ -24,10 +25,12 @@ export async function handleScreenshotCropped(message: Message, sendResponse: (r
   const timestamp = Date.now();
   const entry: Screenshot = { dataUrl, timestamp };
 
-  const data = await chromeApi.storage.local.get([storageKey]);
+  const data = await storageServices.getStorageByKeys([storageKey]);
   const list = [...((data[storageKey] ?? []) as typeof entry[]), entry];
-  await chromeApi.storage.local.set({ [storageKey]: list });
-  await chromeApi.storage.local.set({ lastUnsavedProfileCase: { id: caseId, timestamp } });
+  await storageServices.setStorageCached({
+    [storageKey]: list,
+    lastUnsavedProfileCase: { id: caseId, timestamp },
+  });
 
   sendResponse({ ok: true });
 }
