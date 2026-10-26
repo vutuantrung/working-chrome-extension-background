@@ -1,10 +1,7 @@
 import * as actionService from "../../services/action.service";
-import * as downloadService from "../../services/download.service";
 import * as tabService from "../../services/tab.service";
 import * as runtimeService from "../../services/runtime.service";
-import * as alarmService from "../../services/alarm.service";
 import { Message } from "../../types/types";
-// import { simulateHumanClick } from "../../../content/utils/simulate-click";
 import {
   bootstrapExistingFacebookTabs,
   ensureFacebookGraphInterceptorInstalled,
@@ -41,7 +38,6 @@ import * as services from "../../services";
 import * as helpers from "../../utils/helpers";
 import { HandlerContext } from "../../types/handle";
 
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 import { bgState } from "../../state";
 import { debounce } from "../../utils/tools";
 
@@ -58,6 +54,7 @@ import { sendTiktokCachedData } from "../../dataPublishers/tiktokPublisher";
 import { sendXCachedData } from "../../dataPublishers/xPublisher";
 import { sendThreadsCachedData } from "../../dataPublishers/threadsPublisher";
 import { sendYoutubeCachedData } from "../../dataPublishers/youtubePublisher";
+
 // Hanlders
 import * as tiktokHandlers from "../tiktok";
 import * as facebookHandlers from "../facebook";
@@ -409,16 +406,13 @@ export function runTimeOnMessageHandler(
   return true;
 }
 
-export async function runTimeOnInstalledHandler(
-  details: chrome.runtime.InstalledDetails,
-): Promise<void> {
+export async function runTimeOnInstalledHandler(details: chrome.runtime.InstalledDetails): Promise<void> {
   console.log("Extension installed/updated", details);
   bgState.manifests = runtimeService.getManifest();
 
   if (details.reason === "install") {
   } else if (details.reason === "update") {
-    const { settings } =
-      await services.storageServices.getStorageCachedByKeys(["settings"]);
+    const { settings } = await services.storageServices.getStorageCachedByKeys(["settings"]);
     if (settings) {
       const mergedSettings = {
         ...DefaultValues.SETTINGS_DATA,

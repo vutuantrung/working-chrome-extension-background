@@ -6,7 +6,7 @@ import {
 import { HandlerContext } from "../../types/handle";
 import { normalizeFacebookUserInfoMap } from "./user-info-map";
 import * as services from "../../services";
-import { decodeUnicodeEscapes } from "../../utils/tools";
+import { decodeUnicodeEscapes } from "../../utils/parsers/facebook-parser/utils";
 
 const FB_FRIEND_FLUSH_IMMEDIATE_LIMIT = 30;
 const FB_FRIEND_FLUSH_DEBOUNCE_MS = 10_000;

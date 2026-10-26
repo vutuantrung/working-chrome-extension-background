@@ -1,6 +1,5 @@
 import * as tabService from "../../services/tab.service";
 import * as runtimeService from "../../services/runtime.service";
-import * as alarmService from "../../services/alarm.service";
 import { bgState } from "../../state";
 import { isSupportedPlatformUrl } from "../../utils/tools";
 import { DefaultValues, State } from "../../utils/constants";
@@ -11,7 +10,6 @@ import {
   ensureFacebookGraphForwarderInstalled,
   ensureFacebookProfileIdBootstrapInstalled,
 } from "../../scriptInjection";
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 export async function tabsOnActivatedHandler(tabId: any) {
   await handleMaybeFacebookTab(tabId);
@@ -312,9 +310,6 @@ export async function tabsOnRemovedHandler(tabId: number) {
   }
 }
 
-// export async function tabsOnUpdatedHandler(tabId: any) {
-//   await handleMaybeFacebookTab(tabId);
-// }
 
 // ========================================
 // HANDLE MAYBE FACEBOOK TAB
@@ -337,8 +332,7 @@ export async function handleMaybeFacebookTab(tabId: any) {
       },
     });
 
-    const { settings } =
-      await services.storageServices.getStorageCachedByKeys(["settings"]);
+    const { settings } = await services.storageServices.getStorageCachedByKeys(["settings"]);
     const isTabSpecific = settings?.isTabSpecific ?? false;
 
     // ── NEW: if a manual bind is active, never auto-override it ──────────

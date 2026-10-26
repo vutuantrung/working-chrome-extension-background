@@ -6,7 +6,7 @@ import {
 import { HandlerContext } from "../../types/handle";
 import { normalizeFacebookUserInfoMap } from "./user-info-map";
 import * as services from "../../services";
-import { decodeUnicodeEscapes } from "../../utils/tools";
+import { decodeUnicodeEscapes } from "../../utils/parsers/facebook-parser/utils";
 
 const FB_FOLLOW_FLUSH_IMMEDIATE_LIMIT = 30;
 const FB_FOLLOW_FLUSH_DEBOUNCE_MS = 10_000;
@@ -226,9 +226,7 @@ function clearCollectionRowBuffers(
 }
 
 /** Clear pending follow buffer and in-memory follow queue after publish. Keeps user/collection maps. */
-export async function clearFacebookFollowStagingState(
-  cachedFacebookData: FacebookDataType[],
-): Promise<void> {
+export async function clearFacebookFollowStagingState(cachedFacebookData: FacebookDataType[]): Promise<void> {
   const cached = await services.storageServices.getStorageCachedByKeys([
     FB_COLLECTION_OWNER_MAP_KEY,
   ]);
@@ -256,9 +254,7 @@ export async function clearFacebookFollowStagingState(
   );
 }
 
-export function hasFacebookFollowRecordsInQueue(
-  records: FacebookDataType[],
-): boolean {
+export function hasFacebookFollowRecordsInQueue(records: FacebookDataType[]): boolean {
   return records.some(isFollowRecord);
 }
 
@@ -270,9 +266,7 @@ async function loadPendingFollows(): Promise<FacebookUserFollowData[]> {
   return Array.isArray(pending) ? [...pending] : [];
 }
 
-async function savePendingFollows(
-  rows: FacebookUserFollowData[],
-): Promise<void> {
+async function savePendingFollows(rows: FacebookUserFollowData[]): Promise<void> {
   await services.storageServices.setStorageCached({
     [FB_PENDING_FOLLOW_KEY]: rows,
   });

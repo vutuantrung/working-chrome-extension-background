@@ -15,7 +15,6 @@ import {
 } from "../../scriptInjection";
 import * as services from "../../services";
 import * as helpers from "../../utils/helpers";
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 // ========================================
 // INTERNAL HELPERS

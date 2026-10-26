@@ -1,4 +1,4 @@
-import * as services from "../services";
+import * as services from ".";
 import * as helpers from "../utils/helpers";
 import { isValidArrayAct } from "../utils/tools";
 import { Archive, Settings, StorageData } from "../types/types";

@@ -15,7 +15,6 @@ import {
 } from "../../dataPublishers/facebookPublisher";
 import { sendTiktokCachedData } from "../../dataPublishers/tiktokPublisher";
 import { checkExtensionUpdateAndNotify } from "../../updateChecker";
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
   try {

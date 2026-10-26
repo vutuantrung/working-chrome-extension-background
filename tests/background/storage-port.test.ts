@@ -6,7 +6,7 @@ import {
   getStorageByKeys,
   getStorageCachedByKeys,
   clearStorageCache,
-} from "../../entrypoints/background/services/storage.services";
+} from "../../entrypoints/background/services/storage.service";
 
 afterEach(() => setStorageAdapter());
 
@@ -40,7 +40,7 @@ describe("StoragePort integration", () => {
   it("removes keys from persistence and cache", async () => {
     setStorageAdapter(inMemoryStorage());
     await setStorageCached({ retained: 1, removed: 2 });
-    const { removeStorageByKeys } = await import("../../entrypoints/background/services/storage.services");
+    const { removeStorageByKeys } = await import("../../entrypoints/background/services/storage.service");
     await removeStorageByKeys(["removed"]);
     expect(await getStorageByKeys(["removed"])).toEqual({});
     expect(await getStorageCachedByKeys(["removed"])).toEqual({});
