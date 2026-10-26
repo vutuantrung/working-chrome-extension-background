@@ -1,3 +1,6 @@
+import * as tabService from "../../services/tab.service";
+import * as runtimeService from "../../services/runtime.service";
+import * as alarmService from "../../services/alarm.service";
 import { bgState } from "../../state";
 import { Message, Settings, Archive } from "../../types/types";
 import { UserInfoPublishStatus } from "../../types/types";
@@ -435,8 +438,8 @@ export async function handleInitializeAfterLogin(
       }),
     });
 
-    await chromeApi.alarms.clear(Constants.SETTINGS_SYNC_ALARM);
-    chromeApi.alarms.create(Constants.SETTINGS_SYNC_ALARM, {
+    await alarmService.clearAlarm(Constants.SETTINGS_SYNC_ALARM);
+    alarmService.createAlarm(Constants.SETTINGS_SYNC_ALARM, {
       delayInMinutes: 2,
       periodInMinutes: 2,
     });
@@ -512,7 +515,7 @@ export async function handleClearDataAfterLogout(
 
     // Clear ALL alarms (MV3-safe): periodic, scheduleTask_*, sendFacebookPostData, etc.
     await new Promise<void>((resolve) => {
-      chromeApi.alarms.clearAll(() => resolve());
+      void alarmService.clearAllAlarms().then(() => resolve());
     });
 
     setTimeout(() => {
@@ -586,16 +589,16 @@ export async function handleStartPeriodicCheck(
 ) {
   console.log("[handleStartPeriodicCheck] Starting periodic check alarm...");
   try {
-    const existingAlarm = await chromeApi.alarms.get("periodicCheck");
+    const existingAlarm = await alarmService.getAlarm("periodicCheck");
     const periodicTimeCheck = 3;
     const shouldRecreate =
       !existingAlarm || existingAlarm.periodInMinutes !== periodicTimeCheck;
 
     if (shouldRecreate) {
       if (existingAlarm) {
-        await chromeApi.alarms.clear("periodicCheck");
+        await alarmService.clearAlarm("periodicCheck");
       }
-      chromeApi.alarms.create("periodicCheck", {
+      alarmService.createAlarm("periodicCheck", {
         delayInMinutes: 0.5,
         periodInMinutes: periodicTimeCheck,
       });
@@ -684,11 +687,11 @@ export async function handleCancelTask(
     // Ask the content script (if any) to stop this task loop immediately.
     if (typeof task.tabId === "number" && task.tabId > 0) {
       try {
-        chromeApi.tabs.sendMessage(
+        tabService.sendTabMessage(
           task.tabId,
           { type: "STOP_TASK", taskId },
           () => {
-            void chromeApi.runtime.lastError;
+            void runtimeService.getRuntimeLastError();
           },
         );
       } catch { }
@@ -846,7 +849,7 @@ export async function handleChangeTabUrl(
     }
 
     await services.storageServices.setStorageCached({ taskList: storageTaskList });
-    chromeApi.tabs.update(parseInt(message.inputs.tabId), {
+    tabService.updateTab(parseInt(message.inputs.tabId), {
       url: message.inputs.url,
     });
   }

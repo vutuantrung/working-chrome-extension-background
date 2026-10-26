@@ -1,3 +1,6 @@
+import * as tabService from "../../services/tab.service";
+import * as runtimeService from "../../services/runtime.service";
+import * as alarmService from "../../services/alarm.service";
 import { Message } from "../../types/types";
 // import { simulateHumanClick } from "../../../content/utils/simulate-click";
 import {
@@ -93,7 +96,7 @@ async function handleBodyDataIntercepted(
     let tabUrl = "",
       isProfileTab = false;
     try {
-      const tab = await chromeApi.tabs.get(senderTabId);
+      const tab = await tabService.getTab(senderTabId);
       isProfileTab = helpers.userInfo.isLikelyProfilePageUrl(tab?.url || "");
       tabUrl = tab?.url || "";
     } catch {
@@ -271,7 +274,7 @@ export function runTimeOnMessageHandler(
         .then(({ settings }) => {
           if (settings?.openingDevtoolsTabId === sender.tab?.id) {
             setTimeout(() => {
-              chromeApi.tabs.sendMessage(
+              tabService.sendTabMessage(
                 sender?.tab!.id as any,
                 {
                   platform: "facebook",
@@ -279,7 +282,7 @@ export function runTimeOnMessageHandler(
                   tabId: sender.tab?.id,
                 },
                 (response: any) => {
-                  void chromeApi.runtime.lastError;
+                  void runtimeService.getRuntimeLastError();
                 },
               );
             }, 1000);
@@ -288,7 +291,7 @@ export function runTimeOnMessageHandler(
     }
 
     if (message.name === "clickAboutButton" && sender.tab?.id) {
-      chromeApi.tabs.sendMessage(
+      tabService.sendTabMessage(
         sender?.tab!.id as any,
         {
           type: "CLICK_ABOUT_BUTTON",
@@ -296,13 +299,13 @@ export function runTimeOnMessageHandler(
           tabId: sender.tab?.id,
         },
         (response: any) => {
-          void chromeApi.runtime.lastError;
+          void runtimeService.getRuntimeLastError();
         },
       );
     }
 
     if (message.name === "clickTranscriptButton" && sender.tab?.id) {
-      chromeApi.tabs.sendMessage(
+      tabService.sendTabMessage(
         sender?.tab!.id as any,
         {
           type: "CLICK_TRANSCRIPT_BUTTON",
@@ -310,7 +313,7 @@ export function runTimeOnMessageHandler(
           tabId: sender.tab?.id,
         },
         (response: any) => {
-          void chromeApi.runtime.lastError;
+          void runtimeService.getRuntimeLastError();
         },
       );
     }
@@ -408,7 +411,7 @@ export async function runTimeOnInstalledHandler(
   details: chrome.runtime.InstalledDetails,
 ): Promise<void> {
   console.log("Extension installed/updated", details);
-  bgState.manifests = chromeApi.runtime.getManifest();
+  bgState.manifests = runtimeService.getManifest();
 
   if (details.reason === "install") {
   } else if (details.reason === "update") {
