@@ -13,6 +13,7 @@ export async function parseData(dataString: string, requestInfo: any): Promise<P
     requestInfo.requestUrl,
     requestInfo.tabUrl,
   );
+  
   // console.log(">>>>>> parseData - platform:", platform, "requestUrl:", requestInfo.requestUrl);
   if (!dataString || !platform) {
     return dataReturn;

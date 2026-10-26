@@ -1,9 +1,9 @@
 import * as services from "../services";
 import * as helpers from "../utils/helpers";
-import { readTrimmedString } from "../utils/tools";
 import { Message, ProxyAuthCredentials, ProxyHealth, Settings } from "../types/types";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { DefaultValues, Constants } from "../utils/constants";
+import { readTrimmedString } from "../utils/tools";
 
 interface Proxy {
     host: string;

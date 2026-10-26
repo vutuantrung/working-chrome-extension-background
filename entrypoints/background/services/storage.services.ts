@@ -11,13 +11,19 @@ let currentStorageAdapter: LocalStorageAdapter | undefined;
 let storageCache: StorageData = {};
 let storageInFlight: Promise<StorageData> | null = null;
 
-function storage(): LocalStorageAdapter { return currentStorageAdapter ?? chromeApi.storage.local; }
+function storage(): LocalStorageAdapter {
+    return currentStorageAdapter ?? chromeApi.storage.local;
+}
 export function setStorageAdapter(adapter?: LocalStorageAdapter): void {
     currentStorageAdapter = adapter;
     clearStorageCache();
 }
-export function getStorageCache(): StorageData { return storageCache; }
-export function setStorageCache(value: StorageData): void { storageCache = value; }
+export function getStorageCache(): StorageData {
+    return storageCache;
+}
+export function setStorageCache(value: StorageData): void {
+    storageCache = value;
+}
 
 export async function getStorageByKeys(keys: string[]): Promise<Record<string, any>> {
     return storage().get(keys);

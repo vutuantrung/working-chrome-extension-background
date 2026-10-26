@@ -11,6 +11,12 @@ export function delayMs(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function readTrimmedString(v: any): string {
+  if (typeof v === "string") return v.trim();
+  if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  return "";
+}
+
 export function decodeHtmlEntities(input: string): string {
   return input
     .replaceAll("&amp;", "&")

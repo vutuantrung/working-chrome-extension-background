@@ -30,7 +30,9 @@ export function parseThreadsUserInfo(threadsUserInfoStr = ""): ThreadsUserLocalS
     return JSON.parse(threadsUserInfoStr);
 }
 
-export async function storeThreadsProfileData(newUsers: ThreadsUserProfileData[] = []): Promise<ThreadsUserLocalStorageInfo[]> {
+export async function storeThreadsProfileData(
+    newUsers: ThreadsUserProfileData[] = [],
+): Promise<ThreadsUserLocalStorageInfo[]> {
     const localStorageUserInfo = await services.storageServices.getStorageByKeys([THREADS_USER_INFO_KEY]);
     const threadsUserInfoStr = localStorageUserInfo[THREADS_USER_INFO_KEY] || "";
     const currentUserInfo = parseThreadsUserInfo(threadsUserInfoStr);
