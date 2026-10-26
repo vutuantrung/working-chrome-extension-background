@@ -2,17 +2,19 @@ import * as services from "../services";
 import * as helpers from "../utils/helpers";
 import { isValidArrayAct } from "../utils/tools";
 import { Archive, Settings, StorageData } from "../types/types";
-import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
+import type { StoragePort } from "../contracts/storage.port";
+import { chromeStorageAdapter } from "../infrastructure/chrome-api/chrome-storage.adapter";
 import { DefaultValues } from "../utils/constants";
 
-export type LocalStorageAdapter = Pick<typeof chrome.storage.local, "get" | "set">;
+/** @deprecated Prefer StoragePort from contracts/storage.port. */
+export type LocalStorageAdapter = StoragePort;
 
 let currentStorageAdapter: LocalStorageAdapter | undefined;
 let storageCache: StorageData = {};
 let storageInFlight: Promise<StorageData> | null = null;
 
 function storage(): LocalStorageAdapter {
-    return currentStorageAdapter ?? chromeApi.storage.local;
+    return currentStorageAdapter ?? chromeStorageAdapter;
 }
 export function setStorageAdapter(adapter?: LocalStorageAdapter): void {
     currentStorageAdapter = adapter;
