@@ -1,3 +1,5 @@
+import * as actionService from "../../services/action.service";
+import * as downloadService from "../../services/download.service";
 import * as tabService from "../../services/tab.service";
 import * as runtimeService from "../../services/runtime.service";
 import * as alarmService from "../../services/alarm.service";
@@ -429,8 +431,8 @@ export async function runTimeOnInstalledHandler(
     }
   }
 
-  chromeApi.action.setBadgeText({ text: "0" });
-  chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
+  actionService.setBadgeText({ text: "0" });
+  actionService.setBadgeBackgroundColor({ color: "#0000FF" });
 
   try {
     await bootstrapExistingFacebookTabs();

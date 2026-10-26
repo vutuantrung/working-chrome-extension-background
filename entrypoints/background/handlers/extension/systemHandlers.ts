@@ -1,3 +1,5 @@
+import * as actionService from "../../services/action.service";
+import * as downloadService from "../../services/download.service";
 import * as tabService from "../../services/tab.service";
 import * as runtimeService from "../../services/runtime.service";
 import * as alarmService from "../../services/alarm.service";
@@ -524,8 +526,8 @@ export async function handleClearDataAfterLogout(
 
     services.proxyServices.clearProxy();
 
-    chromeApi.action.setBadgeText({ text: "0" });
-    chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
+    actionService.setBadgeText({ text: "0" });
+    actionService.setBadgeBackgroundColor({ color: "#0000FF" });
 
     if (!skipCookies) {
       await helpers.cookie.clearSocialPlatformCookies();
@@ -560,8 +562,8 @@ export async function handleClearDataAfterLogout(
       "youtube_profiles_info",
     ]);
 
-    chromeApi.action.setBadgeText({ text: "0" });
-    chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
+    actionService.setBadgeText({ text: "0" });
+    actionService.setBadgeBackgroundColor({ color: "#0000FF" });
 
     console.log("[handleClearDataAfterLogout] Cleanup completed successfully");
 
@@ -637,10 +639,10 @@ export async function handleSetBadgeText(
 ): Promise<void> {
   let badgeValue = Number(message.inputs.badgeData);
   if (!Number.isFinite(badgeValue) || badgeValue < 0) badgeValue = 0;
-  chromeApi.action.setBadgeText({
+  actionService.setBadgeText({
     text: badgeValue.toString(),
   });
-  chromeApi.action.setBadgeBackgroundColor({ color: "#0000FF" });
+  actionService.setBadgeBackgroundColor({ color: "#0000FF" });
 
   if (sendResponse) {
     sendResponse({ success: true });
@@ -732,7 +734,7 @@ export async function handleDownloadImage(
   sendResponse?: (resp: any) => void,
 ): Promise<void> {
   const { url, fileName = "extImgDownload.jpg" } = message.inputs;
-  await chromeApi.downloads.download({
+  await downloadService.download({
     url,
     filename: fileName,
     conflictAction: "uniquify",
