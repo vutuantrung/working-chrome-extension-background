@@ -19,7 +19,7 @@ async function waitForUserInfoDescription(
   let lastParsed: any = undefined;
 
   while (Date.now() - startedAt < maxWaitMs) {
-    const { pendingUserInfo } = (await services.storageServices.getStorageCachedByKeys(["pendingUserInfo"])) || {};
+    const { pendingUserInfo } = (await services.storageService.getStorageCachedByKeys(["pendingUserInfo"])) || {};
     const parsed = pendingUserInfo?.parsed;
     if (parsed) lastParsed = parsed;
     if (helpers.userInfo.hasUserDescription(parsed)) return { found: true, info: parsed };
@@ -34,7 +34,7 @@ async function waitForUserInfoDescription(
 // ========================================
 
 export async function handleGetUserInfo(message: any, sendResponse: (resp: any) => void) {
-  const { user } = await services.storageServices.getStorageCachedByKeys(["user"]);
+  const { user } = await services.storageService.getStorageCachedByKeys(["user"]);
   if (sendResponse) {
     sendResponse({ data: user });
   }
@@ -46,7 +46,7 @@ export async function handleInitializeAfterLogin(
 ) {
   try {
     const keys = ["settings", "taskList", "activities", "automationByUser"];
-    const { settings, taskList, activities, automationByUser } = await services.storageServices.getStorageCachedByKeys(keys);
+    const { settings, taskList, activities, automationByUser } = await services.storageService.getStorageCachedByKeys(keys);
 
     const {
       extension_session: extensionSession,
@@ -114,7 +114,7 @@ export async function handleInitializeAfterLogin(
       extensionSession?.extension_config_id ?? extensionConfig?.id;
     const useExtensionConfig = helpers.proxy.hasExtensionConfigId(extensionConfigId);
     const { personaProxy, personaFacebookAccounts, fbLoginMode } =
-      await services.storageServices.getStorageCachedByKeys([
+      await services.storageService.getStorageCachedByKeys([
         "personaProxy",
         "personaFacebookAccounts",
         "fbLoginMode",
@@ -124,7 +124,7 @@ export async function handleInitializeAfterLogin(
     let personaAccountProxy: Record<string, unknown> | null = null;
     if (fbLoginMode?.mode === "auto") {
       if (useExtensionConfig) {
-        const { allSocialAccounts: storedSocialAccounts } = await services.storageServices.getStorageCachedByKeys(["allSocialAccounts"]);
+        const { allSocialAccounts: storedSocialAccounts } = await services.storageService.getStorageCachedByKeys(["allSocialAccounts"]);
         const savedPlatform = (fbLoginMode as any)?.platform ?? "facebook";
         extensionAccountProxy = helpers.proxy.findExtensionAccountProxyByPlatform(
           extensionConfig?.social_accounts ?? storedSocialAccounts ?? [],
@@ -139,7 +139,7 @@ export async function handleInitializeAfterLogin(
           : [];
 
         const { allSocialAccounts } =
-          await services.storageServices.getStorageCachedByKeys([
+          await services.storageService.getStorageCachedByKeys([
             "allSocialAccounts",
           ]);
 
@@ -165,7 +165,7 @@ export async function handleInitializeAfterLogin(
         );
 
         if (accountsFromMessage.length > 0) {
-          await services.storageServices.setStorageCached({
+          await services.storageService.setStorageCached({
             allSocialAccounts: accountsFromMessage,
             personaFacebookAccounts: accountsFromMessage.filter(
               (a: any) => a.platform === "facebook",
@@ -188,13 +188,13 @@ export async function handleInitializeAfterLogin(
       settingsFromAPI.proxyOption = "manual";
       const { httpProxy, httpsProxy } = helpers.proxy.getProxyEndpoints(effectiveProxy);
       if (httpProxy || httpsProxy) {
-        services.proxyServices.setProxy(
+        services.proxyService.setProxy(
           httpProxy ?? undefined,
           httpsProxy ?? undefined,
         );
       }
       try {
-        await services.storageServices.setStorageCached({
+        await services.storageService.setStorageCached({
           activeProxy: effectiveProxy,
           extensionProxy: extensionConfigProxy || {},
           personaProxy: personaProxy || {},
@@ -205,15 +205,15 @@ export async function handleInitializeAfterLogin(
         !Object.entries(extensionConfigProxy as object).length) ||
       (extensionProxy && !Object.entries(extensionProxy).length)
     ) {
-      services.proxyServices.clearProxy();
+      services.proxyService.clearProxy();
       try {
-        await services.storageServices.setStorageCached({
+        await services.storageService.setStorageCached({
           activeProxy: {},
         });
       } catch { }
     }
 
-    services.storageServices.clearStorageCache();
+    services.storageService.clearStorageCache();
 
     const finalSettings = settings
       ? {
@@ -226,7 +226,7 @@ export async function handleInitializeAfterLogin(
         ...settingsFromAPI,
       };
 
-    await services.storageServices.setStorageCached({
+    await services.storageService.setStorageCached({
       settings: finalSettings,
       taskList: taskList || [],
       activities: activities || [],
@@ -243,11 +243,11 @@ export async function handleInitializeAfterLogin(
 
     const initialScheduleTime = extensionConfig?.joinedGroupScheduleTime;
     if (typeof initialScheduleTime === "number" && initialScheduleTime > 0) {
-      await services.storageServices.setStorageCached({
+      await services.storageService.setStorageCached({
         joinedGroupScheduleTime: initialScheduleTime,
       });
     }
-    await services.syncServices.ensureJoinedGroupsAlarmSchedule(
+    await services.syncService.ensureJoinedGroupsAlarmSchedule(
       typeof initialScheduleTime === "number" && initialScheduleTime > 0
         ? initialScheduleTime
         : undefined,
@@ -292,7 +292,7 @@ export async function handleClearDataAfterLogout(
 
     const skipCookies = message?.inputs?.skipCookies === true;
 
-    services.storageServices.clearStorageCache();
+    services.storageService.clearStorageCache();
 
     // Cancel any in-flight send from previous session.
     bgState.__sendDataKafkaRunId += 1;
@@ -319,7 +319,7 @@ export async function handleClearDataAfterLogout(
       cleanupFacebookTabs().catch(() => { });
     }, 0);
 
-    services.proxyServices.clearProxy();
+    services.proxyService.clearProxy();
 
     services.actionService.setBadgeText({ text: "0" });
     services.actionService.setBadgeBackgroundColor({ color: "#0000FF" });
@@ -328,7 +328,7 @@ export async function handleClearDataAfterLogout(
       await helpers.cookie.clearSocialPlatformCookies();
     }
 
-    await services.storageServices.removeStorageByKeys([
+    await services.storageService.removeStorageByKeys([
       "settings",
       "taskList",
       "activities",
@@ -412,7 +412,7 @@ export async function handleStartPeriodicCheck(
       );
     }
 
-    await services.syncServices.ensureJoinedGroupsAlarmSchedule();
+    await services.syncService.ensureJoinedGroupsAlarmSchedule();
 
     if (sendResponse) {
       sendResponse({ success: true });
@@ -456,7 +456,7 @@ export async function handleCancelTask(
     }
 
     const { taskList: storageTaskList } =
-      await services.storageServices.getStorageCachedByKeys(["taskList"]);
+      await services.storageService.getStorageCachedByKeys(["taskList"]);
     if (!storageTaskList || !Array.isArray(storageTaskList)) {
       sendResponse?.({ success: false, error: "No taskList" });
       return;
@@ -477,7 +477,7 @@ export async function handleCancelTask(
     task.result = "Canceled. Reason: Canceled by user.";
     task.endTime = Date.now();
 
-    await services.storageServices.setStorageCached({
+    await services.storageService.setStorageCached({
       taskList: storageTaskList,
     });
 
@@ -550,7 +550,7 @@ export async function handleScriptExecuteResult(
     settings: storageSettings,
     taskList: storageTaskList,
     user: storageUser,
-  } = await services.storageServices.getStorageCachedByKeys([
+  } = await services.storageService.getStorageCachedByKeys([
     "settings",
     "taskList",
     "user",
@@ -608,8 +608,8 @@ export async function handleScriptExecuteResult(
   }
 
   if (localUpdating) {
-    services.storageServices.clearStorageCache();
-    await services.storageServices.setStorageCached(localUpdating);
+    services.storageService.clearStorageCache();
+    await services.storageService.setStorageCached(localUpdating);
     if (runningTask) {
       bgState.injectedTabs.delete(runningTask.tabId);
     }
@@ -626,7 +626,7 @@ export async function handleChangeTabUrl(
   sendResponse?: (resp: any) => void,
 ) {
   const { taskList: storageTaskList, user: storageUser } =
-    await services.storageServices.getStorageCachedByKeys([
+    await services.storageService.getStorageCachedByKeys([
       "taskList",
       "user",
     ]);
@@ -645,7 +645,7 @@ export async function handleChangeTabUrl(
       };
     }
 
-    await services.storageServices.setStorageCached({ taskList: storageTaskList });
+    await services.storageService.setStorageCached({ taskList: storageTaskList });
     services.tabService.updateTab(parseInt(message.inputs.tabId), {
       url: message.inputs.url,
     });

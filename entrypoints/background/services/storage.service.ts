@@ -206,12 +206,12 @@ export async function handleSetSettings(message: any, sendResponse?: (resp: any)
             updatedSettings = { ...updatedSettings, proxy: updatedProxy };
             const proxyData = JSON.parse(updatedProxy);
             if (proxyData === "system") {
-                services.proxyServices.clearProxy();
+                services.proxyService.clearProxy();
             } else {
                 const { http, https } = proxyData;
                 const httpProxy = http.host && http.port ? http : null;
                 const httpsProxy = https.host && https.port ? https : null;
-                services.proxyServices.setProxy(httpProxy, httpsProxy);
+                services.proxyService.setProxy(httpProxy, httpsProxy);
             }
         }
 

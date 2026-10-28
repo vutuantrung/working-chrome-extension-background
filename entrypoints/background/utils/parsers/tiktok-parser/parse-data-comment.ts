@@ -12,7 +12,7 @@ export async function parseDataComment(
 
     // 1. get owner info of posts from localstorage
     // format: postEntryRowkey|postId|ownerId|ownerName, split by comma for multiple records
-    const localStoragePostOwner = await services.storageServices.getStorageByKeys([TIKTOK_POST_INFO_KEY]);
+    const localStoragePostOwner = await services.storageService.getStorageByKeys([TIKTOK_POST_INFO_KEY]);
     const tiktokPostsCached = localStoragePostOwner[TIKTOK_POST_INFO_KEY] || "";
     const tiktokPostsCachedArr = parseTiktokPostInfo(tiktokPostsCached);
 

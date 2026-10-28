@@ -113,7 +113,7 @@ export async function parseDataUserProfile(payload: any): Promise<Result<{
         if (userResultsObjects.length > 0) {
             // 1. get on page user information
             if (isFollowerUrlMatch || isFollowingUrlMatch) {
-                const localStorageUserProfile = await services.storageServices.getStorageByKeys([THREADS_USER_INFO_KEY]);
+                const localStorageUserProfile = await services.storageService.getStorageByKeys([THREADS_USER_INFO_KEY]);
                 const threadsUserInfoStr = localStorageUserProfile[THREADS_USER_INFO_KEY] || "";
                 const threadsUserInfoArr = parseThreadJSONObject(threadsUserInfoStr);
                 onPageUserData = threadsUserInfoArr.find((u) => u.profile_id.replace("t", "") === onPageUserId?.replace("t", ""));

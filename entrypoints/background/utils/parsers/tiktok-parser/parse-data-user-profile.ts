@@ -111,7 +111,7 @@ export async function parseDataUserProfile(
             const onPageUserUniqueId = extra?.requestInfo?.tabUrl?.replace("https://www.tiktok.com/@", "");
             const onPageUserProfileFromTab = userProfileArray.find((u) => u.uniqueId === onPageUserUniqueId);
 
-            const localStorageUserProfile = await services.storageServices.getStorageByKeys([TIKTOK_USER_INFO_KEY]);
+            const localStorageUserProfile = await services.storageService.getStorageByKeys([TIKTOK_USER_INFO_KEY]);
             const tiktokUserInfoStr = localStorageUserProfile[TIKTOK_USER_INFO_KEY] || "";
             const tiktokUserInfoArr = parseTiktokUserInfo(tiktokUserInfoStr);
             const tiktokLocalStorageUser = tiktokUserInfoArr.find((u) => u.uniqueId === onPageUserUniqueId);

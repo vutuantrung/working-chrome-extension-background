@@ -1,4 +1,4 @@
-import { FACEBOOK_POST_INFO_KEY, generateCommentKey, parseFacebookPostInfo } from "./utils";
+import { FACEBOOK_POST_INFO_KEY, generateCommentKey, parseToPostLocalStorage } from "./utils";
 import { FacebookCommentData, Result } from "../types";
 import * as services from "../../../services";
 
@@ -27,8 +27,8 @@ export async function parseDataComment(payload: any)
         }
 
         // 1. get owner info of posts from localstorage
-        const localStoragePostOwner = await services.storageServices.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
-        const cachedPostArray = parseFacebookPostInfo(localStoragePostOwner[FACEBOOK_POST_INFO_KEY] || "");
+        const localStoragePostOwner = await services.storageService.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
+        const cachedPostArray = parseToPostLocalStorage(localStoragePostOwner[FACEBOOK_POST_INFO_KEY] || "");
 
         const cachedPost = cachedPostArray.find((o) => o.post_id === commentPostId);
         if (!cachedPost) {

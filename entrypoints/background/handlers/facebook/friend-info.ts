@@ -146,12 +146,12 @@ function clearCollectionRowBuffers(
 }
 
 export async function clearFacebookFriendStagingState(cachedFacebookData: FacebookDataType[]): Promise<void> {
-  const cached = await services.storageServices.getStorageCachedByKeys([FB_COLLECTION_OWNER_MAP_KEY]);
+  const cached = await services.storageService.getStorageCachedByKeys([FB_COLLECTION_OWNER_MAP_KEY]);
   const collectionOwnerMapRaw = cached[FB_COLLECTION_OWNER_MAP_KEY];
   const collectionOwnerMap = normalizeCollectionOwnerMap(collectionOwnerMapRaw);
   clearCollectionRowBuffers(collectionOwnerMap);
 
-  await services.storageServices.setStorageCached({
+  await services.storageService.setStorageCached({
     [FB_COLLECTION_OWNER_MAP_KEY]: collectionOwnerMap,
     [FB_PENDING_FRIEND_KEY]: [],
   });
@@ -172,13 +172,13 @@ export function hasFacebookFriendRecordsInQueue(records: FacebookDataType[]): bo
 }
 
 async function loadPendingFriends(): Promise<FacebookUserFriendData[]> {
-  const cached = await services.storageServices.getStorageCachedByKeys([FB_PENDING_FRIEND_KEY]);
+  const cached = await services.storageService.getStorageCachedByKeys([FB_PENDING_FRIEND_KEY]);
   const pending = cached[FB_PENDING_FRIEND_KEY];
   return Array.isArray(pending) ? [...pending] : [];
 }
 
 async function savePendingFriends(rows: FacebookUserFriendData[]): Promise<void> {
-  await services.storageServices.setStorageCached({ [FB_PENDING_FRIEND_KEY]: rows });
+  await services.storageService.setStorageCached({ [FB_PENDING_FRIEND_KEY]: rows });
 }
 
 export async function flushFacebookFriendStaging(
@@ -236,7 +236,7 @@ export async function refreshPendingFriendsFromUserInfoMap(
   const pending = await loadPendingFriends();
   if (!pending.length) return;
 
-  const cachedMaps = await services.storageServices.getStorageCachedByKeys([
+  const cachedMaps = await services.storageService.getStorageCachedByKeys([
     FB_USER_NAME_MAP_KEY,
     FB_COLLECTION_OWNER_MAP_KEY,
   ]);
@@ -295,7 +295,7 @@ export const handleFbFriendInfo = async (
     crawledFriendData.length,
   );
 
-  const cachedMaps = await services.storageServices.getStorageCachedByKeys([
+  const cachedMaps = await services.storageService.getStorageCachedByKeys([
     FB_USER_NAME_MAP_KEY,
     FB_COLLECTION_OWNER_MAP_KEY,
     "facebook_follow_collection_owner_map",
@@ -483,7 +483,7 @@ export const handleFbFriendInfo = async (
     }
   }
 
-  await services.storageServices.setStorageCached({
+  await services.storageService.setStorageCached({
     [FB_COLLECTION_OWNER_MAP_KEY]: collectionOwnerMap,
   });
 

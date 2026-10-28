@@ -16,7 +16,7 @@ import { checkExtensionUpdateAndNotify } from "../../updateChecker";
 export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
   try {
     if (alarm.name === Constants.PROXY_HEALTH_CHECK_ALARM) {
-      await services.proxyServices.handleProxyHealthCheck();
+      await services.proxyService.handleProxyHealthCheck();
       return;
     }
 
@@ -32,8 +32,8 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
     }
 
     if (alarm.name === Constants.SYNC_FB_JOINED_GROUPS_ALARM) {
-      await services.syncServices.syncFacebookJoinedGroups();
-      await services.syncServices.syncFacebookPendingGroups();
+      await services.syncService.syncFacebookJoinedGroups();
+      await services.syncService.syncFacebookPendingGroups();
       return;
     }
 
@@ -61,7 +61,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
       taskList: storageTaskList,
       user: storageUser,
       automationByUser: automationByUser,
-    } = await services.storageServices.getStorageCachedByKeys(keys);
+    } = await services.storageService.getStorageCachedByKeys(keys);
 
     if (alarm.name === "periodicCheck") {
       try { await checkExtensionUpdateAndNotify(); } catch { }
@@ -74,7 +74,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
 
       // [LOCAL] API reporter
       let scheduledActivities = null;
-      const actArr = await services.scheduleServices.fetchScheduledActivities(storageUser || DefaultValues.SETTINGS_DATA);
+      const actArr = await services.scheduleService.fetchScheduledActivities(storageUser || DefaultValues.SETTINGS_DATA);
 
       // Priority: EXTERNAL > LOCAL > CACHED > DEFAULT
       if (isValidArrayAct(actArr)) {
@@ -86,7 +86,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
         console.log("Using SCHEDULED_TASK_DATA (no cached data available)");
       }
 
-      await services.scheduleServices.handleUpdateScheduleActivities(scheduledActivities);
+      await services.scheduleService.handleUpdateScheduleActivities(scheduledActivities);
     }
 
     if (alarm.name.includes("scheduleTask") && automationByUser === true) {
@@ -140,7 +140,7 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
 
         // Re-read taskList directly from storage (bypass cache) so we always
         // see any write performed by a concurrent alarm handler that just finished.
-        const { taskList: freshTaskListRaw } = await services.storageServices.getStorageCachedByKeys(["taskList"]);
+        const { taskList: freshTaskListRaw } = await services.storageService.getStorageCachedByKeys(["taskList"]);
         const taskList: Task[] | any = freshTaskListRaw || [];
 
         for (const tabId of automationTabIds) {
@@ -171,22 +171,22 @@ export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
         }
 
         // Invalidate cache before writing so subsequent reads get fresh data.
-        services.storageServices.clearStorageCache();
-        services.storageServices.setStorageCached({ taskList });
+        services.storageService.clearStorageCache();
+        services.storageService.setStorageCached({ taskList });
       } finally {
         releaseLock();
       }
     }
 
     if (alarm.name === Constants.SETTINGS_SYNC_ALARM) {
-      await services.syncServices.handleSyncExtensionInfo();
+      await services.syncService.handleSyncExtensionInfo();
       return;
     }
 
     if (alarm.name === "reset") {
       console.log(new Date().toLocaleTimeString(), "Performing reset task...");
       bgState.__periodicServerCheckCount = 0;
-      await services.storageServices.setStorageCached({ activities: [], taskList: [] });
+      await services.storageService.setStorageCached({ activities: [], taskList: [] });
     }
   } catch (error) {
     console.warn("[ERROR ALARM] error:", error);

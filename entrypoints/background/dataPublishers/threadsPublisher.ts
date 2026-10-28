@@ -50,7 +50,7 @@ export async function sendThreadsCachedData(): Promise<void> {
         }
 
         bgState.cachedThreadsData = [];
-        services.syncServices.handleSyncExtensionInfo(true);
+        services.syncService.handleSyncExtensionInfo(true);
       }
     },
   });

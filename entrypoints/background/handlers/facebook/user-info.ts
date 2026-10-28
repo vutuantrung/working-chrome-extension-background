@@ -31,7 +31,7 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
 
     const userInfoMap = buildFacebookUserInfoMapEntry(identity);
 
-    const cachedMaps = await services.storageServices.getStorageCachedByKeys(["facebook_user_info_map"]);
+    const cachedMaps = await services.storageService.getStorageCachedByKeys(["facebook_user_info_map"]);
     const prevMap = cachedMaps.facebook_user_info_map as
         | Record<string, string>
         | undefined;
@@ -54,7 +54,7 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const seedFollowMap = crawledUserData.followMap || {};
     const seedFriendMap = crawledUserData.friendMap || {};
 
-    const existingMaps = await services.storageServices.getStorageCachedByKeys([
+    const existingMaps = await services.storageService.getStorageCachedByKeys([
         "facebook_follow_collection_owner_map",
         "facebook_friend_collection_owner_map",
     ]);
@@ -86,7 +86,7 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
         };
     }
 
-    await services.storageServices.setStorageCached(storagePatch);
+    await services.storageService.setStorageCached(storagePatch);
 
     void refreshPendingFollowsFromUserInfoMap(ctx);
     void refreshPendingFriendsFromUserInfoMap(ctx);

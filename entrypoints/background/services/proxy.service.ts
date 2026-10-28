@@ -74,7 +74,7 @@ export function setProxy(httpProxy?: Proxy, httpsProxy?: Proxy) {
 
 export function getCachedProxyHealth(): ProxyHealth | undefined {
     try {
-        return (services.storageServices.getStorageCache() as any)?.proxyHealth as ProxyHealth | undefined;
+        return (services.storageService.getStorageCache() as any)?.proxyHealth as ProxyHealth | undefined;
     } catch {
         return undefined;
     }
@@ -92,10 +92,10 @@ export function setProxyHealth(patch: Partial<ProxyHealth>) {
             consecutiveFailures: prev?.consecutiveFailures ?? 0,
             ...patch,
         };
-        void services.storageServices.setStorageCached({ proxyHealth: next }).catch(() => {});
+        void services.storageService.setStorageCached({ proxyHealth: next }).catch(() => {});
 
         // Keep cache in sync even if storage event is delayed.
-        const cache = services.storageServices.getStorageCache();
+        const cache = services.storageService.getStorageCache();
         if (cache) {
             (cache as any).proxyHealth = next;
         }
@@ -289,10 +289,10 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
         // Persist effective proxy so popup can reflect changes (Restart button logic depends on it).
         try {
             const proxyActive = helpers.proxy.isActiveProxy(proxyConfig);
-            await services.storageServices.setStorageCached({ activeProxy: proxyActive ? proxyConfig : {} });
+            await services.storageService.setStorageCached({ activeProxy: proxyActive ? proxyConfig : {} });
         } catch { }
 
-        const { settings } = await services.storageServices.getStorageCachedByKeys(["settings"]);
+        const { settings } = await services.storageService.getStorageCachedByKeys(["settings"]);
         const finalSettings = settings
             ? {
                 ...settings,
@@ -304,7 +304,7 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
                 ...settingsFromProxy,
             };
 
-        await services.storageServices.setStorageCached({ settings: finalSettings });
+        await services.storageService.setStorageCached({ settings: finalSettings });
         if (sendResponse) {
             sendResponse({
                 success: true,

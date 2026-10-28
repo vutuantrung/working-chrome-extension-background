@@ -19,7 +19,7 @@ export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<voi
     if (runId !== bgState.__sendDataKafkaRunId) return;
 
     // 1. Load settings + user
-    const runtimeReq: any = await services.storageServices.getStorageCachedByKeys(["settings", "user"]);
+    const runtimeReq: any = await services.storageService.getStorageCachedByKeys(["settings", "user"]);
     const settings: Settings | null = runtimeReq?.settings ?? null;
 
     if (!settings || !runtimeReq?.user) {
@@ -110,10 +110,10 @@ export async function _runKafkaPublish(kConfig: KafkaPublishConfig): Promise<voi
 
     const incrementBadge = async (delta: number) => {
       try {
-        const { settings: cs } = await services.storageServices.getStorageCachedByKeys(["settings"]);
+        const { settings: cs } = await services.storageService.getStorageCachedByKeys(["settings"]);
         const newNC = toSafeNonNegInt(cs?.n_c) + delta;
         if (cs) {
-          await services.storageServices.setStorageCached({
+          await services.storageService.setStorageCached({
             settings: { ...cs, n_c: newNC },
           });
         }

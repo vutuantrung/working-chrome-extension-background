@@ -263,7 +263,7 @@ export function runTimeOnMessageHandler(
       sender.tab?.id,
     );
     if (message.name === "getFbProfileId" && sender.tab?.id) {
-      services.storageServices.getStorageCachedByKeys(["settings"])
+      services.storageService.getStorageCachedByKeys(["settings"])
         .then(({ settings }) => {
           if (settings?.openingDevtoolsTabId === sender.tab?.id) {
             setTimeout(() => {
@@ -337,21 +337,21 @@ export function runTimeOnMessageHandler(
 
       // SYSTEM REQUESTS
       case "SET_SETTINGS":
-        return services.storageServices.handleSetSettings(message, sendResponse);
+        return services.storageService.handleSetSettings(message, sendResponse);
       case "GET_SETTINGS":
-        return services.storageServices.handleGetSettings(message, sendResponse);
+        return services.storageService.handleGetSettings(message, sendResponse);
       case "GET_USERINFO":
         return handleGetUserInfo(message, sendResponse);
       case "UPDATE_SETTINGS":
-        return services.storageServices.handleUpdateSettings(message, sendResponse);
+        return services.storageService.handleUpdateSettings(message, sendResponse);
       case "UPDATE_ARCHIVE":
-        return services.storageServices.handleUpdateArchive(message, sendResponse);
+        return services.storageService.handleUpdateArchive(message, sendResponse);
       case "INITIALIZE_AFTER_LOGIN":
         return handleInitializeAfterLogin(message, sendResponse);
       case "CLEAR_DATA_AFTER_LOGOUT":
         return handleClearDataAfterLogout(message, sendResponse);
       case "SET_PROXY":
-        return services.proxyServices.handleProxy(message, sendResponse);
+        return services.proxyService.handleProxy(message, sendResponse);
       case "SET_BADGE_TEXT":
         return handleSetBadgeText(message, sendResponse);
       case "CANCEL_TASK":
@@ -394,14 +394,14 @@ export async function runTimeOnInstalledHandler(details: chrome.runtime.Installe
 
   if (details.reason === "install") {
   } else if (details.reason === "update") {
-    const { settings } = await services.storageServices.getStorageCachedByKeys(["settings"]);
+    const { settings } = await services.storageService.getStorageCachedByKeys(["settings"]);
     if (settings) {
       const mergedSettings = {
         ...DefaultValues.SETTINGS_DATA,
         ...settings,
         archive: settings.archive || {},
       };
-      await services.storageServices.setStorageCached({
+      await services.storageService.setStorageCached({
         settings: mergedSettings,
       });
     }

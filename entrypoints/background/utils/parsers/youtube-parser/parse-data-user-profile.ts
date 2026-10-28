@@ -90,7 +90,7 @@ async function normalizeAboutProfileData(aboutChannelRenderer: any): Promise<You
         })
     }
 
-    const localStorageProfile = await services.storageServices.getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
+    const localStorageProfile = await services.storageService.getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
     const youtubeProfilesCached = localStorageProfile[YOUTUBE_PROFILE_INFO_KEY] || "";
     const youtubeProfilesCachedArr = parseYoutubeProfilesInfo(youtubeProfilesCached);
     const youtubeProfileById = youtubeProfilesCachedArr.find(p => p.profile_id === aboutMetadata.channelId);

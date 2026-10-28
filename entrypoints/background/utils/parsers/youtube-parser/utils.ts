@@ -31,7 +31,7 @@ export function parseYoutubeProfilesInfo(youtubeProfilesInfoStr = ""): YoutubePr
 }
 
 export async function storeYoutubePostData(newPosts: YoutubePostData[] = []): Promise<YoutubePostLocalStorageInfo[]> {
-  const localStoragePostInfo = await services.storageServices.getStorageByKeys([YOUTUBE_POST_INFO_KEY]);
+  const localStoragePostInfo = await services.storageService.getStorageByKeys([YOUTUBE_POST_INFO_KEY]);
   const youtubePostInfoStr = localStoragePostInfo[YOUTUBE_POST_INFO_KEY] || "";
   const currentPostInfo = parseYoutubePostsInfo(youtubePostInfoStr);
   const tmpCurrentPostInfo = [...currentPostInfo];
@@ -54,12 +54,12 @@ export async function storeYoutubePostData(newPosts: YoutubePostData[] = []): Pr
     tmpCurrentPostInfo.push(newPostLocalStorageInfo);
   }
 
-  services.storageServices.setStorageCached({ [YOUTUBE_POST_INFO_KEY]: JSON.stringify(tmpCurrentPostInfo) });
+  services.storageService.setStorageCached({ [YOUTUBE_POST_INFO_KEY]: JSON.stringify(tmpCurrentPostInfo) });
   return tmpCurrentPostInfo;
 }
 
 export async function storeYoutubeProfileData(newProfiles: YoutubeProfileLocalStorageInfo[] = []): Promise<YoutubeProfileLocalStorageInfo[]> {
-  const localStoragePostInfo = await services.storageServices.getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
+  const localStoragePostInfo = await services.storageService.getStorageByKeys([YOUTUBE_PROFILE_INFO_KEY]);
   const youtubeProfileInfoStr = localStoragePostInfo[YOUTUBE_PROFILE_INFO_KEY] || "";
   const currentProfileInfo = parseYoutubeProfilesInfo(youtubeProfileInfoStr);
   const tmpCurrentProfileInfo = [...currentProfileInfo];
@@ -77,7 +77,7 @@ export async function storeYoutubeProfileData(newProfiles: YoutubeProfileLocalSt
     tmpCurrentProfileInfo.push(newPostLocalStorageInfo);
   }
 
-  services.storageServices.setStorageCached({ [YOUTUBE_PROFILE_INFO_KEY]: JSON.stringify(tmpCurrentProfileInfo) });
+  services.storageService.setStorageCached({ [YOUTUBE_PROFILE_INFO_KEY]: JSON.stringify(tmpCurrentProfileInfo) });
   return tmpCurrentProfileInfo;
 }
 

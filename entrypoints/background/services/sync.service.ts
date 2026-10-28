@@ -20,7 +20,7 @@ import * as cookieService from "./cookie.service";
 export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promise<void> {
   try {
 
-    const { settings, user, activities, fbLoginMode } = await services.storageServices.getStorageCachedByKeys(["settings", "user", "activities", "fbLoginMode"]);
+    const { settings, user, activities, fbLoginMode } = await services.storageService.getStorageCachedByKeys(["settings", "user", "activities", "fbLoginMode"]);
     const extensionConfigId = user?.extension_session?.extension_config_id;
     const useExtensionConfig = helpers.proxy.hasExtensionConfigId(extensionConfigId);
 
@@ -29,13 +29,13 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
       return;
     }
 
-    const { personaProxy, personaFacebookAccounts } = await services.storageServices.getStorageCachedByKeys(["personaProxy", "personaFacebookAccounts"]);
+    const { personaProxy, personaFacebookAccounts } = await services.storageService.getStorageCachedByKeys(["personaProxy", "personaFacebookAccounts"]);
 
     if (!useExtensionConfig) {
       let personaAccountProxy: Record<string, unknown> | null = null;
       if (fbLoginMode?.mode === "auto") {
         let freshAccounts: any[] | null = null;
-        const getPersonaIdResult = await services.storageServices.getStorageCachedByKeys(["selectedPersonaId"]);
+        const getPersonaIdResult = await services.storageService.getStorageCachedByKeys(["selectedPersonaId"]);
         const selectedPersonaId: string | undefined = getPersonaIdResult?.selectedPersonaId;
 
         if (selectedPersonaId) {
@@ -69,7 +69,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
                   }),
               );
 
-              await services.storageServices.setStorageCached({
+              await services.storageService.setStorageCached({
                 allSocialAccounts: freshAccounts,
                 personaFacebookAccounts: freshAccounts.filter(
                   (a) => a.platform === "facebook",
@@ -84,7 +84,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
           }
         }
 
-        const { allSocialAccounts } = await services.storageServices.getStorageCachedByKeys(["allSocialAccounts"]);
+        const { allSocialAccounts } = await services.storageService.getStorageCachedByKeys(["allSocialAccounts"]);
         const accountList = freshAccounts ?? allSocialAccounts ?? personaFacebookAccounts ?? [];
 
         personaAccountProxy = helpers.proxy.findPersonaSocialAccountProxy(
@@ -103,17 +103,17 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
       if (hasEffectiveProxy) {
         const { httpProxy, httpsProxy } = helpers.proxy.getProxyEndpoints(proxyInfo);
         if (httpProxy || httpsProxy) {
-          services.proxyServices.setProxy(
+          services.proxyService.setProxy(
             httpProxy ?? undefined,
             httpsProxy ?? undefined,
           );
         }
       } else {
-        services.proxyServices.clearProxy();
+        services.proxyService.clearProxy();
       }
 
       try {
-        await services.storageServices.setStorageCached({
+        await services.storageService.setStorageCached({
           activeProxy: hasEffectiveProxy ? proxyInfo : {},
           personaProxy: personaProxy || {},
         });
@@ -142,7 +142,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
     // Persist joinedGroupScheduleTime from API so alarm scheduling can stay dynamic
     const joinedGroupScheduleTime = extensionConfigInfo?.joinedGroupScheduleTime;
     if (typeof joinedGroupScheduleTime === "number" && joinedGroupScheduleTime > 0) {
-      await services.storageServices.setStorageCached({ joinedGroupScheduleTime });
+      await services.storageService.setStorageCached({ joinedGroupScheduleTime });
     }
     await ensureJoinedGroupsAlarmSchedule(
       typeof joinedGroupScheduleTime === "number" && joinedGroupScheduleTime > 0
@@ -215,17 +215,17 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
     if (hasEffectiveProxy) {
       const { httpProxy, httpsProxy } = helpers.proxy.getProxyEndpoints(proxyInfo);
       if (httpProxy || httpsProxy) {
-        services.proxyServices.setProxy(
+        services.proxyService.setProxy(
           httpProxy ?? undefined,
           httpsProxy ?? undefined,
         );
       }
     } else {
-      services.proxyServices.clearProxy();
+      services.proxyService.clearProxy();
     }
 
     try {
-      await services.storageServices.setStorageCached({
+      await services.storageService.setStorageCached({
         activeProxy: hasEffectiveProxy ? proxyInfo : {},
         extensionProxy: extensionConfigProxy || {},
         personaProxy: personaProxy || {},
@@ -250,7 +250,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
         }
       }
       if (scheduledActivities) {
-        await services.scheduleServices.handleUpdateScheduleActivities(scheduledActivities);
+        await services.scheduleService.handleUpdateScheduleActivities(scheduledActivities);
       }
     }
 
@@ -269,7 +269,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
       },
     };
 
-    await services.storageServices.setStorageCached({
+    await services.storageService.setStorageCached({
       user: updatedUser,
       settings: updatedSettings as any,
     });
@@ -291,7 +291,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
 export async function ensureJoinedGroupsAlarmSchedule(targetScheduleTime?: number): Promise<void> {
   let periodMin = targetScheduleTime;
   if (typeof periodMin !== "number" || periodMin <= 0) {
-    const { joinedGroupScheduleTime } = await services.storageServices.getStorageCachedByKeys(["joinedGroupScheduleTime"]);
+    const { joinedGroupScheduleTime } = await services.storageService.getStorageCachedByKeys(["joinedGroupScheduleTime"]);
     periodMin = typeof joinedGroupScheduleTime === "number" && joinedGroupScheduleTime > 0
       ? joinedGroupScheduleTime
       : 20;

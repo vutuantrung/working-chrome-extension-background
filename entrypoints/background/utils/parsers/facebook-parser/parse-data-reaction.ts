@@ -6,7 +6,7 @@ import {
 import {
     FACEBOOK_POST_INFO_KEY,
     generateReactionKey,
-    parseFacebookPostInfo
+    parseToPostLocalStorage
 } from "./utils";
 import * as services from "../../../services";
 
@@ -26,8 +26,8 @@ export async function parseDataReaction(payload: any): Promise<Result<FacebookRe
             return { ok: false, error: new Error("No reactions found") };
         }
 
-        const localStoragePostOwner = await services.storageServices.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
-        const cachedPostArray: FacebookPostLocalStorageInfo[] = parseFacebookPostInfo(localStoragePostOwner[FACEBOOK_POST_INFO_KEY] || "");
+        const localStoragePostOwner = await services.storageService.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
+        const cachedPostArray: FacebookPostLocalStorageInfo[] = parseToPostLocalStorage(localStoragePostOwner[FACEBOOK_POST_INFO_KEY] || "");
 
         const cachedPost = cachedPostArray.find((o) => o.post_id === articleIdDecoded);
         if (!cachedPost) {

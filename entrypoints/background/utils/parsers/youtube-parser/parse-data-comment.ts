@@ -20,7 +20,7 @@ export async function parseCommentData(payload: string)
 
         const postId = findByKey(data, "commentSurfaceEntityPayload")?.publishedTimeCommand.innertubeCommand.watchEndpoint.videoId ?? ""
 
-        const localStoragePostOwner = await services.storageServices.getStorageByKeys([YOUTUBE_POST_INFO_KEY]);
+        const localStoragePostOwner = await services.storageService.getStorageByKeys([YOUTUBE_POST_INFO_KEY]);
         const youtubePostsCached = localStoragePostOwner[YOUTUBE_POST_INFO_KEY] || "";
         const youtubePostsCachedArr = parseYoutubePostsInfo(youtubePostsCached);
 

@@ -213,7 +213,7 @@ export async function parsePostData(
         const threadsPostsKeyValues = findAllKeyValuePairs(payload, "post");
         // console.log(">>>>>> parsePostData - threadsPostsObjects:", threadsPostsObjects.length);
 
-        const localStoragePostInfo = await services.storageServices.getStorageByKeys([THREADS_POST_INFO_KEY]);
+        const localStoragePostInfo = await services.storageService.getStorageByKeys([THREADS_POST_INFO_KEY]);
         const threadsPostInfoStr = localStoragePostInfo[THREADS_POST_INFO_KEY] || "";
         const cachedPostInfo = parseThreadsPostsInfo(threadsPostInfoStr);
         // console.log(">>>>>> parsePostData - currentPostInfo from local storage:", cachedPostInfo);

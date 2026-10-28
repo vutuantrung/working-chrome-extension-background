@@ -33,7 +33,7 @@ export function parseThreadJSONObject(threadsUserInfoStr = ""): ThreadsUserLocal
 export async function storeThreadsProfileData(
     newUsers: ThreadsUserProfileData[] = [],
 ): Promise<ThreadsUserLocalStorageInfo[]> {
-    const localStorageUserInfo = await services.storageServices.getStorageByKeys([THREADS_USER_INFO_KEY]);
+    const localStorageUserInfo = await services.storageService.getStorageByKeys([THREADS_USER_INFO_KEY]);
     const threadsUserInfoStr = localStorageUserInfo[THREADS_USER_INFO_KEY] || "";
     const currentUserInfo = parseThreadJSONObject(threadsUserInfoStr);
     const tmpCurrentUserInfo = [...currentUserInfo];
@@ -52,7 +52,7 @@ export async function storeThreadsProfileData(
         };
         tmpCurrentUserInfo.push(newSavingUser);
     }
-    services.storageServices.setStorageCached({ [THREADS_USER_INFO_KEY]: JSON.stringify(tmpCurrentUserInfo) });
+    services.storageService.setStorageCached({ [THREADS_USER_INFO_KEY]: JSON.stringify(tmpCurrentUserInfo) });
     return tmpCurrentUserInfo;
 }
 
@@ -64,7 +64,7 @@ export function parseThreadsPostsInfo(threadsPostsInfoStr = ""): ThreadsPostLoca
 }
 
 export async function storeThreadsPostData(postsData: ThreadsPostData[] = []): Promise<ThreadsPostLocalStorageInfo[]> {
-    const localStoragePostInfo = await services.storageServices.getStorageByKeys([THREADS_POST_INFO_KEY]);
+    const localStoragePostInfo = await services.storageService.getStorageByKeys([THREADS_POST_INFO_KEY]);
     const threadsPostInfoStr = localStoragePostInfo[THREADS_POST_INFO_KEY] || "";
     const currentPostInfo = parseThreadsPostsInfo(threadsPostInfoStr);
     const tmpCurrentPostInfo = [...currentPostInfo];
@@ -88,6 +88,6 @@ export async function storeThreadsPostData(postsData: ThreadsPostData[] = []): P
         tmpCurrentPostInfo.push(newPostLocalStorageInfo);
     }
 
-    services.storageServices.setStorageCached({ [THREADS_POST_INFO_KEY]: JSON.stringify(tmpCurrentPostInfo) });
+    services.storageService.setStorageCached({ [THREADS_POST_INFO_KEY]: JSON.stringify(tmpCurrentPostInfo) });
     return tmpCurrentPostInfo;
 }

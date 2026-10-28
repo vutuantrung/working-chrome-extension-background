@@ -85,7 +85,7 @@ export async function checkExtensionUpdateAndNotify(): Promise<void> {
       if (!currentVersion || currentVersion === latest.version) return;
 
       const { extensionUpdateNotice } =
-        await services.storageServices.getStorageCachedByKeys(["extensionUpdateNotice"]);
+        await services.storageService.getStorageCachedByKeys(["extensionUpdateNotice"]);
       const lastNotifiedAt = extensionUpdateNotice?.lastNotifiedAt ?? 0;
       const shouldRepeat = Date.now() - lastNotifiedAt >= 60_000;
 
@@ -99,7 +99,7 @@ export async function checkExtensionUpdateAndNotify(): Promise<void> {
         latest.extension_zip_download_link,
       );
 
-      await services.storageServices.setStorageCached({
+      await services.storageService.setStorageCached({
         extensionUpdateNotice: {
           version: currentVersion,
           lastNotifiedAt: Date.now(),

@@ -51,7 +51,7 @@ export async function sendYoutubeCachedData(): Promise<void> {
         }
 
         bgState.cachedYoutubeData = [];
-        services.syncServices.handleSyncExtensionInfo(true);
+        services.syncService.handleSyncExtensionInfo(true);
       }
     },
   });

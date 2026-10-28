@@ -5,8 +5,8 @@ export function storageOnChangedHandler(changes: any, area: string) {
 
     if (area !== "local") return;
 
-    if (!services.storageServices.getStorageCache()) {
-        services.storageServices.setStorageCache({});
+    if (!services.storageService.getStorageCache()) {
+        services.storageService.setStorageCache({});
     }
 
     for (const [k, delta] of Object.entries(changes)) {
@@ -15,11 +15,11 @@ export function storageOnChangedHandler(changes: any, area: string) {
         // Deep merge for settings to preserve nested objects like archive
         if (k === "settings" && typeof newValue === "object" && newValue !== null) {
             // Preserve existing settings and merge new values
-            const existingSettings = services.storageServices.getStorageCache()[k];
+            const existingSettings = services.storageService.getStorageCache()[k];
             const existingArchive = existingSettings?.archive || {};
             const newArchive = newValue.archive || {};
 
-            services.storageServices.getStorageCache()[k] = {
+            services.storageService.getStorageCache()[k] = {
                 ...existingSettings,
                 ...newValue,
                 archive: {
@@ -28,7 +28,7 @@ export function storageOnChangedHandler(changes: any, area: string) {
                 },
             };
         } else {
-            Object.assign(services.storageServices.getStorageCache(), { [k]: newValue });
+            Object.assign(services.storageService.getStorageCache(), { [k]: newValue });
         }
     }
 }

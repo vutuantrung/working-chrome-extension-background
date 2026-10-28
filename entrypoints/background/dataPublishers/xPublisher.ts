@@ -50,7 +50,7 @@ export async function sendXCachedData(): Promise<void> {
         }
 
         bgState.cachedXData = [];
-        services.syncServices.handleSyncExtensionInfo(true);
+        services.syncService.handleSyncExtensionInfo(true);
       }
     },
   });

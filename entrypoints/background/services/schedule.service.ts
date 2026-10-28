@@ -7,7 +7,7 @@ import * as services from "../services";
 
 export interface ScheduleDependencies {
   alarms: Pick<typeof chrome.alarms, "get" | "clear" | "create">;
-  storage: { getStorageCachedByKeys: typeof services.storageServices.getStorageCachedByKeys; setStorageCached: typeof services.storageServices.setStorageCached };
+  storage: { getStorageCachedByKeys: typeof services.storageService.getStorageCachedByKeys; setStorageCached: typeof services.storageService.setStorageCached };
 }
 
 /** Resolve production dependencies at invocation time, not module import time. */
@@ -15,8 +15,8 @@ function defaultScheduleDependencies(): ScheduleDependencies {
   return {
     alarms: { get: alarmService.getAlarm, clear: alarmService.clearAlarm, create: alarmService.createAlarm },
     storage: {
-      getStorageCachedByKeys: services.storageServices.getStorageCachedByKeys,
-      setStorageCached: services.storageServices.setStorageCached
+      getStorageCachedByKeys: services.storageService.getStorageCachedByKeys,
+      setStorageCached: services.storageService.setStorageCached
     },
   };
 }

@@ -6,7 +6,6 @@ import * as services from "../../../services";
 import { FacebookCollectionListKind, FacebookPostData, FacebookPostLocalStorageInfo, ResolvedCollectionPage } from "../types";
 import { findAllKeyValuePairs } from "../commons";
 
-
 /// UTILS
 function parsePayloadRoot(payload: unknown): any | null {
   let root: any = payload;
@@ -507,7 +506,7 @@ export function extractReactionAndCommentCount(data: any) {
 const MAXIMUM_USERS = 30, MAXIMUM_POSTS = 50;
 export const FACEBOOK_POST_INFO_KEY = "facebook_posts_info";
 export const FACEBOOK_USER_INFO_KEY = "facebook_user_info";
-export function parseFacebookPostInfo(facebookPostsOwnersStr: string = ""): FacebookPostLocalStorageInfo[] {
+export function parseToPostLocalStorage(facebookPostsOwnersStr: string = ""): FacebookPostLocalStorageInfo[] {
   if (!facebookPostsOwnersStr) {
     return [];
   }
@@ -531,9 +530,9 @@ export function parseFacebookPostInfo(facebookPostsOwnersStr: string = ""): Face
 }
 
 export async function storeFacebookPostInfo(newGroupPost: FacebookPostData[] = []): Promise<FacebookPostLocalStorageInfo[]> {
-  const localStoragePostOwner = await services.storageServices.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
+  const localStoragePostOwner = await services.storageService.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
   const facebookPostsOwnersStr = localStoragePostOwner[FACEBOOK_POST_INFO_KEY] || "";
-  const currentGroupPosts = parseFacebookPostInfo(facebookPostsOwnersStr);
+  const currentGroupPosts = parseToPostLocalStorage(facebookPostsOwnersStr);
   const tmpCurrentGroupPosts = [...currentGroupPosts];
 
   for (const newPost of newGroupPost) {
@@ -555,9 +554,17 @@ export async function storeFacebookPostInfo(newGroupPost: FacebookPostData[] = [
 
   const updatingPostsString = tmpCurrentGroupPosts
     .map((p) => `${p.entry_rowkey}|${p.post_id}|${p.owner_id}|${p.owner_name}|${p.owner_type}`).join("::");
-  services.storageServices.setStorageCached({ [FACEBOOK_POST_INFO_KEY]: updatingPostsString });
+  services.storageService.setStorageCached({ [FACEBOOK_POST_INFO_KEY]: updatingPostsString });
 
   return tmpCurrentGroupPosts;
+}
+
+export async function getAccountIdFromCookie(): Promise<string | null> {
+  try {
+    const cookie = await services.cookieService.getCookie({ url: "https://www.facebook.com", name: "c_user" });
+    return cookie?.value || null;
+  } catch { }
+  return null;
 }
 
 export function generatePostKey(timestamp: number, uniqueString: string): string | null {

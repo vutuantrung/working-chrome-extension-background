@@ -45,7 +45,7 @@ export function generateKey(timestamp: number, uniqueString: string): string | n
 }
 
 export async function storeTiktokPostInfo(newGroupPost: TiktokPostData[] = []): Promise<TiktokPostLocalStorageInfo[]> {
-  const localStoragePostOwner = await services.storageServices.getStorageByKeys([TIKTOK_POST_INFO_KEY]);
+  const localStoragePostOwner = await services.storageService.getStorageByKeys([TIKTOK_POST_INFO_KEY]);
   const tiktokPostsOwnersStr = localStoragePostOwner[TIKTOK_POST_INFO_KEY] || "";
   const currentGroupPosts = parseTiktokPostInfo(tiktokPostsOwnersStr);
   const tmpCurrentGroupPosts = [...currentGroupPosts];
@@ -71,7 +71,7 @@ export async function storeTiktokPostInfo(newGroupPost: TiktokPostData[] = []): 
   const updatingPostsString = tmpCurrentGroupPosts
     .map((p) => `${p.entry_rowkey}|${p.post_id}|${p.owner_id}|${p.owner_name}`)
     .join("::");
-  services.storageServices.setStorageCached({
+  services.storageService.setStorageCached({
     [TIKTOK_POST_INFO_KEY]: updatingPostsString,
   });
 
@@ -86,7 +86,7 @@ export function parseTiktokUserInfo(tiktokUserInfoStr = ""): TiktokUserLocalStor
 }
 
 export async function storeTiktokUserInfo(newUsers: TiktokUserProfileData[] = []): Promise<TiktokUserLocalStorageInfo[]> {
-  const localStorageUserInfo = await services.storageServices.getStorageByKeys([TIKTOK_USER_INFO_KEY]);
+  const localStorageUserInfo = await services.storageService.getStorageByKeys([TIKTOK_USER_INFO_KEY]);
   const tiktokUserInfoStr = localStorageUserInfo[TIKTOK_USER_INFO_KEY] || "";
   const currentUserInfo = parseTiktokUserInfo(tiktokUserInfoStr);
   const tmpCurrentUserInfo = [...currentUserInfo];
@@ -121,7 +121,7 @@ export async function storeTiktokUserInfo(newUsers: TiktokUserProfileData[] = []
     };
     return user;
   });
-  services.storageServices.setStorageCached({ [TIKTOK_USER_INFO_KEY]: JSON.stringify(updatingUserInfoString) });
+  services.storageService.setStorageCached({ [TIKTOK_USER_INFO_KEY]: JSON.stringify(updatingUserInfoString) });
 
   return updatingUserInfoString;
 }

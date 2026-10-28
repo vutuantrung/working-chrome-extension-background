@@ -30,7 +30,7 @@ export function parseXUserInfo(xUserInfoStr = ""): XUserLocalStorageInfo[] {
 }
 
 export async function storeXProfileData(newUsers: XUserProfileData[] = []): Promise<XUserLocalStorageInfo[]> {
-    const localStorageUserInfo = await services.storageServices.getStorageByKeys([X_USER_INFO_KEY]);
+    const localStorageUserInfo = await services.storageService.getStorageByKeys([X_USER_INFO_KEY]);
     const xUserInfoStr = localStorageUserInfo[X_USER_INFO_KEY] || "";
     const currentUserInfo = parseXUserInfo(xUserInfoStr);
     const tmpCurrentUserInfo = [...currentUserInfo];
@@ -49,6 +49,6 @@ export async function storeXProfileData(newUsers: XUserProfileData[] = []): Prom
         };
         tmpCurrentUserInfo.push(newSavingUser);
     }
-    services.storageServices.setStorageCached({ [X_USER_INFO_KEY]: JSON.stringify(tmpCurrentUserInfo) });
+    services.storageService.setStorageCached({ [X_USER_INFO_KEY]: JSON.stringify(tmpCurrentUserInfo) });
     return tmpCurrentUserInfo;
 }

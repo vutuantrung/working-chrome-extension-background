@@ -50,7 +50,7 @@ export async function sendTiktokCachedData(): Promise<void> {
         }
 
         bgState.cachedTiktokData = [];
-        await services.syncServices.handleSyncExtensionInfo(true);
+        await services.syncService.handleSyncExtensionInfo(true);
       }
     },
   });

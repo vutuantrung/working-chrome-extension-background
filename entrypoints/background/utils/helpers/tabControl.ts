@@ -68,7 +68,7 @@ export async function findDeterministicFacebookTabId(): Promise<number | null> {
 }
 
 export async function getCorrectFacebookTabId(): Promise<number> {
-  const { settings } = await services.storageServices.getStorageCachedByKeys(["settings"]);
+  const { settings } = await services.storageService.getStorageCachedByKeys(["settings"]);
   const isTabSpecific = settings?.isTabSpecific ?? false;
 
   if (isTabSpecific) {
@@ -118,7 +118,7 @@ export async function getCorrectFacebookTabId(): Promise<number> {
           ...settings,
           firstFacebookTabId: fbTabId,
         };
-        await services.storageServices.setStorageCached({
+        await services.storageService.setStorageCached({
           settings: updatedSettings,
         });
 

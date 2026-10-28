@@ -1,29 +1,22 @@
-import { chromeApi } from "@/entrypoints/background/infrastructure/chrome-api/chrome-api";
 import { FacebookGroupJoinedData, Result } from "../types";
+import { getAccountIdFromCookie } from "./utils";
 
 export async function parseDataJoinedGroup(payload: any): Promise<Result<{ fbGroupJoined: FacebookGroupJoinedData[] }>> {
     try {
-        const edgesDataJoinedGroup =
+        const edges =
             payload?.["data"]?.["viewer"]?.["groups_tab"]?.["tab_groups_list"]?.["edges"] ||
             payload?.["data"]?.["viewer"]?.["all_joined_groups"]?.["tab_groups_list"]?.["edges"];
 
-        if (!Array.isArray(edgesDataJoinedGroup)) {
+        if (!Array.isArray(edges)) {
             return { ok: false, error: new Error("No joined groups found") };
         }
-        let accountId = "";
-        
-        try{
-            const cookie = await chromeApi.cookies.get({ url: "https://www.facebook.com", name: "c_user" });
-            accountId = cookie?.value || "";
-        }
-        catch {}
-
-        const fbGroupJoined: FacebookGroupJoinedData[] = [];
-        for (const e of edgesDataJoinedGroup) {
+        const accountId = await getAccountIdFromCookie();
+        const joinedGroups: FacebookGroupJoinedData[] = [];
+        for (const e of edges) {
             const groupId = e?.["node"]?.["id"];
             if (!groupId) continue;
 
-            fbGroupJoined.push({
+            joinedGroups.push({
                 id: groupId,
                 entry_rowkey: groupId,
                 docType: "JoinedGroup",
@@ -31,12 +24,12 @@ export async function parseDataJoinedGroup(payload: any): Promise<Result<{ fbGro
                 name: e?.["node"]?.["name"] || "",
                 channel_name: "facebook",
                 url: e?.["node"]?.["url"] || "",
-                account_id: accountId,
+                account_id: accountId || "",
                 crawled_time: Date.now(),
             });
         }
 
-        return { ok: true, data: { fbGroupJoined } };
+        return { ok: true, data: { fbGroupJoined: joinedGroups } };
     } catch (error: any) {
         console.error(
             "Error (Facebook Groups data parser)",

@@ -120,7 +120,7 @@ export async function waitForUserInfoDescription(maxWaitMs: number): Promise<{ f
   let lastParsed: any = undefined;
 
   while (Date.now() - startedAt < maxWaitMs) {
-    const { pendingUserInfo } = (await services.storageServices.getStorageCachedByKeys(["pendingUserInfo"])) || {};
+    const { pendingUserInfo } = (await services.storageService.getStorageCachedByKeys(["pendingUserInfo"])) || {};
     const parsed = pendingUserInfo?.parsed;
     if (parsed) lastParsed = parsed;
     if (hasUserDescription(parsed)) return { found: true, info: parsed };
@@ -135,7 +135,7 @@ export async function waitForUserInfoCollectReady(maxWaitMs: number): Promise<Re
   let lastFiltered: Record<string, any> | null = null;
 
   while (Date.now() - startedAt < maxWaitMs) {
-    const { pendingUserInfo } = (await services.storageServices.getStorageCachedByKeys(["pendingUserInfo"])) || {};
+    const { pendingUserInfo } = (await services.storageService.getStorageCachedByKeys(["pendingUserInfo"])) || {};
     let parsed = pendingUserInfo?.parsed;
     if (!parsed && pendingUserInfo?.raw) {
       try {
