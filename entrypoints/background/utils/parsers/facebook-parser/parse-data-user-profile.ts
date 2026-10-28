@@ -3,10 +3,9 @@ import {
     extractProfileOwnerCandidate,
     normalizeFieldKey,
     normalizeGenderLabel,
-    normalizePlaceText
+    normalizePlaceText,
 } from "./utils";
 import { FacebookUserData, Result } from "../types";
-
 
 export function parseDataUserProfile(payload: any): Result<FacebookUserData> {
     try {
@@ -22,10 +21,7 @@ export function parseDataUserProfile(payload: any): Result<FacebookUserData> {
         const header = dataUser?.profile_header_renderer;
         const topRow = header?.user?.header_top_row || header?.header_top_row;
         const profileUser = topRow?.profile_user;
-        const u =
-            header?.user ||
-            profileUser ||
-            dataUser;
+        const u = header?.user || profileUser || dataUser;
         const profileOwner = extractProfileOwnerCandidate(payload);
         const deriveNameFromTruncation = (text: any): string | undefined => {
             if (typeof text !== "string") return undefined;
@@ -193,7 +189,6 @@ export function parseDataUserProfile(payload: any): Result<FacebookUserData> {
         return { ok: false, error: new Error("Failed to parse Facebook user data") };
     }
 }
-
 // DEPRECATED
 // export function parseDataUserProfile(payload: any): Result<{ fbU: string }> {
 //     try {

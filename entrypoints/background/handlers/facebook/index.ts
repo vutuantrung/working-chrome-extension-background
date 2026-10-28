@@ -1,5 +1,4 @@
 import { handleFbGroupInfo } from "./group-info";
-import { handleFbUserInfo } from "./user-info";
 import { handleFbImageInfo } from "./image-info";
 import { handleFbPostInfo } from "./post-info";
 import { handleFbCommentInfo } from "./comment-info";
@@ -7,17 +6,13 @@ import { handleFbReactionInfo } from "./reaction-info";
 import { handleFbProfileInfo } from "./profile-info";
 import { handleFbFollowInfo } from "./follow-info";
 import { handleFbFriendInfo } from "./friend-info";
+import { handleFbUserInfo } from "./user-info";
 
-export {
-    extractFacebookUserIdAndName,
-    normalizeFacebookUserInfoMap,
-} from "./user-info-map";
 export {
     clearFacebookFollowStagingState,
     flushFacebookFollowStaging,
     hasFacebookFollowRecordsInQueue,
-    refreshPendingFollowsFromUserInfoMap,
-    scheduleFacebookFollowFlush,
+    refreshPendingFollowsFromUserInfoMap
 } from "./follow-info";
 export {
     clearFacebookFriendStagingState,

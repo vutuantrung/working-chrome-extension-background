@@ -1,12 +1,12 @@
+import * as services from "../../services";
 import {
   ParseType,
   FacebookUserFriendData,
   FacebookDataType,
 } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import { normalizeFacebookUserInfoMap } from "./user-info-map";
-import * as services from "../../services";
 import { decodeUnicodeEscapes } from "../../utils/parsers/facebook-parser/utils";
+import { normalizeFacebookUserInfoMap } from "../../utils/parsers/facebook-parser/user-info-map";
 
 const FB_FRIEND_FLUSH_IMMEDIATE_LIMIT = 30;
 const FB_FRIEND_FLUSH_DEBOUNCE_MS = 10_000;
@@ -25,14 +25,12 @@ function isFriendRecord(record: unknown): boolean {
   return (
     !!record &&
     typeof record === "object" &&
-    String((record as { docType?: string }).docType || "").toLowerCase() ===
-    "friend"
-  );
+    String((record as { docType?: string }).docType || "").toLowerCase() === "friend"
+  )
 }
 
-function getPrimaryCollectionOwner(
-  map: Record<string, FacebookFriendCollectionOwnerEntry>,
-): { id: string; name: string } | null {
+function getPrimaryCollectionOwner(map: Record<string, FacebookFriendCollectionOwnerEntry>)
+  : { id: string; name: string } | null {
   const owners = Object.values(map);
   if (!owners.length) return null;
   const last = owners[owners.length - 1];
@@ -131,9 +129,7 @@ function appendRowsToKnownCollection(
   return true;
 }
 
-function flattenCollectionRows(
-  map: Record<string, FacebookFriendCollectionOwnerEntry>,
-): FacebookUserFriendData[] {
+function flattenCollectionRows(map: Record<string, FacebookFriendCollectionOwnerEntry>): FacebookUserFriendData[] {
   let merged: FacebookUserFriendData[] = [];
   for (const entry of Object.values(map)) {
     if (entry.rows?.length) {
@@ -151,18 +147,10 @@ function clearCollectionRowBuffers(
   }
 }
 
-export async function clearFacebookFriendStagingState(
-  cachedFacebookData: FacebookDataType[],
-): Promise<void> {
-  const cached = await services.storageServices.getStorageCachedByKeys([
-    FB_COLLECTION_OWNER_MAP_KEY,
-  ]);
-  const collectionOwnerMap = normalizeCollectionOwnerMap(
-    cached[FB_COLLECTION_OWNER_MAP_KEY] as Record<
-      string,
-      FacebookFriendCollectionOwnerEntry
-    >,
-  );
+export async function clearFacebookFriendStagingState(cachedFacebookData: FacebookDataType[]): Promise<void> {
+  const cached = await services.storageServices.getStorageCachedByKeys([FB_COLLECTION_OWNER_MAP_KEY]);
+  const collectionOwnerMapRaw = cached[FB_COLLECTION_OWNER_MAP_KEY];
+  const collectionOwnerMap = normalizeCollectionOwnerMap(collectionOwnerMapRaw);
   clearCollectionRowBuffers(collectionOwnerMap);
 
   await services.storageServices.setStorageCached({
@@ -181,26 +169,18 @@ export async function clearFacebookFriendStagingState(
   );
 }
 
-export function hasFacebookFriendRecordsInQueue(
-  records: FacebookDataType[],
-): boolean {
+export function hasFacebookFriendRecordsInQueue(records: FacebookDataType[]): boolean {
   return records.some(isFriendRecord);
 }
 
 async function loadPendingFriends(): Promise<FacebookUserFriendData[]> {
-  const cached = await services.storageServices.getStorageCachedByKeys([
-    FB_PENDING_FRIEND_KEY,
-  ]);
+  const cached = await services.storageServices.getStorageCachedByKeys([FB_PENDING_FRIEND_KEY]);
   const pending = cached[FB_PENDING_FRIEND_KEY];
   return Array.isArray(pending) ? [...pending] : [];
 }
 
-async function savePendingFriends(
-  rows: FacebookUserFriendData[],
-): Promise<void> {
-  await services.storageServices.setStorageCached({
-    [FB_PENDING_FRIEND_KEY]: rows,
-  });
+async function savePendingFriends(rows: FacebookUserFriendData[]): Promise<void> {
+  await services.storageServices.setStorageCached({ [FB_PENDING_FRIEND_KEY]: rows });
 }
 
 export async function flushFacebookFriendStaging(

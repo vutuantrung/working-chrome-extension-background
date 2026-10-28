@@ -1,7 +1,7 @@
-import * as sidePanelService from "../../services/side-panel.service";
+import * as services from "../../services";
 
 export function actionOnClickedHandler(tab: chrome.tabs.Tab) {
     if (tab.windowId !== undefined) {
-        sidePanelService.openSidePanel(tab.windowId);
+        services.sidePanelService.openSidePanel(tab.windowId);
     }
 }

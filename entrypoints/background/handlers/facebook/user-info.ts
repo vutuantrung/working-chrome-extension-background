@@ -1,10 +1,9 @@
+import * as services from "../../services";
+import * as helpers from "../../utils/helpers";
 import { FacebookUserData, ParseType } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
 import { refreshPendingFollowsFromUserInfoMap } from "./follow-info";
 import { refreshPendingFriendsFromUserInfoMap } from "./friend-info";
-import { seedCollectionMapsFromProfile } from "./register-profile-collections";
-import * as services from "../../services";
-import * as helpers from "../../utils/helpers";
 
 function buildFacebookUserInfoMapEntry(identity: { id: string; name: string; }): Record<string, string> {
     return { [identity.id]: identity.name };
@@ -20,11 +19,7 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const { data } = dt;
     const crawledUser = data as FacebookUserData[];
     const crawledUserData = crawledUser[0];
-    console.log(
-        "[FB Interceptor] Found userInfo:",
-        crawledUserData?.id,
-        crawledUserData?.name,
-    );
+    console.log("[FB Interceptor] Found userInfo:", crawledUserData?.id, crawledUserData?.name);
 
     const identity = { id: crawledUserData.id, name: crawledUserData.name };
 
@@ -56,7 +51,8 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const nextItem = helpers.userInfo.buildPendingUserInfoItem(JSON.stringify(filteredIncoming), filteredIncoming);
     const nextList = [nextItem];
 
-    const { followMap: seedFollowMap, friendMap: seedFriendMap } = seedCollectionMapsFromProfile(crawledUserData, identity.id, identity.name);
+    const seedFollowMap = crawledUserData.followMap || {};
+    const seedFriendMap = crawledUserData.friendMap || {};
 
     const existingMaps = await services.storageServices.getStorageCachedByKeys([
         "facebook_follow_collection_owner_map",

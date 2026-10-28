@@ -1,6 +1,3 @@
-import * as actionService from "../../services/action.service";
-import * as tabService from "../../services/tab.service";
-import * as runtimeService from "../../services/runtime.service";
 import { Message } from "../../types/types";
 import {
   bootstrapExistingFacebookTabs,
@@ -30,7 +27,7 @@ import {
   handleFetchJoinGroupResponse,
   handleReportJoinGroupResponse,
   handleFetchJoinGroupPreparationData
-} from "../facebook/facebookMessageHandlers";
+} from "../facebook/external-message";
 import * as services from "../../services";
 import * as helpers from "../../utils/helpers";
 import { HandlerContext } from "../../types/handle";
@@ -92,7 +89,7 @@ async function handleBodyDataIntercepted(
     let tabUrl = "",
       isProfileTab = false;
     try {
-      const tab = await tabService.getTab(senderTabId);
+      const tab = await services.tabService.getTab(senderTabId);
       isProfileTab = helpers.userInfo.isLikelyProfilePageUrl(tab?.url || "");
       tabUrl = tab?.url || "";
     } catch {
@@ -270,7 +267,7 @@ export function runTimeOnMessageHandler(
         .then(({ settings }) => {
           if (settings?.openingDevtoolsTabId === sender.tab?.id) {
             setTimeout(() => {
-              tabService.sendTabMessage(
+              services.tabService.sendTabMessage(
                 sender?.tab!.id as any,
                 {
                   platform: "facebook",
@@ -278,7 +275,7 @@ export function runTimeOnMessageHandler(
                   tabId: sender.tab?.id,
                 },
                 (response: any) => {
-                  void runtimeService.getRuntimeLastError();
+                  void services.runtimeService.getRuntimeLastError();
                 },
               );
             }, 1000);
@@ -287,7 +284,7 @@ export function runTimeOnMessageHandler(
     }
 
     if (message.name === "clickAboutButton" && sender.tab?.id) {
-      tabService.sendTabMessage(
+      services.tabService.sendTabMessage(
         sender?.tab!.id as any,
         {
           type: "CLICK_ABOUT_BUTTON",
@@ -295,13 +292,13 @@ export function runTimeOnMessageHandler(
           tabId: sender.tab?.id,
         },
         (response: any) => {
-          void runtimeService.getRuntimeLastError();
+          void services.runtimeService.getRuntimeLastError();
         },
       );
     }
 
     if (message.name === "clickTranscriptButton" && sender.tab?.id) {
-      tabService.sendTabMessage(
+      services.tabService.sendTabMessage(
         sender?.tab!.id as any,
         {
           type: "CLICK_TRANSCRIPT_BUTTON",
@@ -309,7 +306,7 @@ export function runTimeOnMessageHandler(
           tabId: sender.tab?.id,
         },
         (response: any) => {
-          void runtimeService.getRuntimeLastError();
+          void services.runtimeService.getRuntimeLastError();
         },
       );
     }
@@ -393,7 +390,7 @@ export function runTimeOnMessageHandler(
 
 export async function runTimeOnInstalledHandler(details: chrome.runtime.InstalledDetails): Promise<void> {
   console.log("Extension installed/updated", details);
-  bgState.manifests = runtimeService.getManifest();
+  bgState.manifests = services.runtimeService.getManifest();
 
   if (details.reason === "install") {
   } else if (details.reason === "update") {
@@ -410,8 +407,8 @@ export async function runTimeOnInstalledHandler(details: chrome.runtime.Installe
     }
   }
 
-  actionService.setBadgeText({ text: "0" });
-  actionService.setBadgeBackgroundColor({ color: "#0000FF" });
+  services.actionService.setBadgeText({ text: "0" });
+  services.actionService.setBadgeBackgroundColor({ color: "#0000FF" });
 
   try {
     await bootstrapExistingFacebookTabs();

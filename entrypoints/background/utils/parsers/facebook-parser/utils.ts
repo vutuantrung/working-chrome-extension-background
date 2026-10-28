@@ -3,8 +3,47 @@
 // ===============================================
 import SparkMD5 from "spark-md5";
 import * as services from "../../../services";
-import { FacebookPostData, FacebookPostLocalStorageInfo } from "../types";
+import { FacebookCollectionListKind, FacebookPostData, FacebookPostLocalStorageInfo, ResolvedCollectionPage } from "../types";
 
+
+/// UTILS
+export function findParentNode(root: any, key: string): any | null {
+  if (typeof root !== 'object' || root === null) {
+    return null;
+  }
+  for (let k in root) {
+    let child = root[k];
+    if (child && typeof child === 'object' && child.hasOwnProperty(key)) {
+      return child;
+    }
+    let found = findParentNode(child, key);
+    if (found) return found;
+  }
+  return null;
+}
+
+export function findAllKeyValuePairs(jsonObject: any, key: string): { key: string; value: any }[] {
+  let results: { key: string; value: any }[] = [];
+  for (const [k, v] of Object.entries(jsonObject)) {
+    if (k === key) {
+      results.push({ key: k, value: v });
+    }
+    if (typeof v === "object" && v !== null) {
+      results = results.concat(findAllKeyValuePairs(v, key));
+    }
+  }
+  return results;
+}
+
+export function isMeaningfulValue(value: any): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "boolean") return true;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value).length > 0;
+  return false;
+}
 
 export function decodeUnicodeEscapes(value: string): string {
   if (typeof value !== "string" || !value) return "";
@@ -30,30 +69,54 @@ export function readTrimmedString(v: any): string {
   return "";
 }
 
+export function normalizePlaceText(s: any): string | undefined {
+  if (typeof s !== "string") return undefined;
+  const t = s.trim();
+  if (!t) return undefined;
+  // Common patterns from tiles:
+  // - "Lives in Hanoi, Vietnam" -> "Hanoi, Vietnam"
+  // - "From Mai Châu" -> "Mai Châu"
+  // Also handle Vietnamese common phrases.
+  return t
+    .replace(/^lives in\s+/i, "")
+    .replace(/^from\s+/i, "")
+    .replace(/^sống\s+tại\s+/i, "")
+    .replace(/^đến\s+từ\s+/i, "")
+    .trim();
+}
+
+export function normalizeFieldKey(k: any): string | undefined {
+  if (typeof k !== "string") return undefined;
+  const t = k.trim();
+  if (!t) return undefined;
+  // Common cases:
+  // - "CURRENT_CITY" -> "current_city"
+  // - "current_city" -> "current_city"
+  // - "home_town" -> "home_town"
+  return t.toLowerCase();
+}
+
+function md5HexFromUtf8(input: string): string {
+  const encoded = new TextEncoder().encode(input);
+  const buffer = encoded.buffer.slice(
+    encoded.byteOffset,
+    encoded.byteOffset + encoded.byteLength
+  );
+  return SparkMD5.ArrayBuffer.hash(buffer);
+}
+
+function md5PrefixDigits(value: string, digits: number): string {
+  const md5HexString = md5HexFromUtf8(value);
+  return BigInt("0x" + md5HexString)
+    .toString()
+    .slice(0, digits);
+}
+
+/// PLATFORM TOOLS
 export function deriveArticleId(postId: string): string {
   if (typeof postId !== "string" || !postId) return "";
   const lastUnderscore = postId.lastIndexOf("_");
   return lastUnderscore >= 0 ? postId.slice(lastUnderscore + 1) : "";
-}
-
-export function stripFacebookAntiCsrfPrefix(s: string): string {
-  if (typeof s !== "string") return "";
-  const trimmed = s.trim();
-  if (trimmed.startsWith("for (;;);")) {
-    return trimmed.replace(/^for \(;;\);/, "");
-  }
-  return trimmed;
-}
-
-export function safeJsonParse(s: string): any | null {
-  if (typeof s !== "string") return null;
-  const trimmed = stripFacebookAntiCsrfPrefix(s);
-  if (!trimmed) return null;
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return null;
-  }
 }
 
 export function normalizeGenderLabel(value: any): string | undefined {
@@ -86,33 +149,6 @@ export function deriveUsernameFromUrl(url: any): string | undefined {
     const m = url.match(/facebook\.com\/(?:profile\.php\?id=)?([^/?#]+)/i);
     return m?.[1] ? String(m[1]) : undefined;
   }
-}
-
-export function normalizePlaceText(s: any): string | undefined {
-  if (typeof s !== "string") return undefined;
-  const t = s.trim();
-  if (!t) return undefined;
-  // Common patterns from tiles:
-  // - "Lives in Hanoi, Vietnam" -> "Hanoi, Vietnam"
-  // - "From Mai Châu" -> "Mai Châu"
-  // Also handle Vietnamese common phrases.
-  return t
-    .replace(/^lives in\s+/i, "")
-    .replace(/^from\s+/i, "")
-    .replace(/^sống\s+tại\s+/i, "")
-    .replace(/^đến\s+từ\s+/i, "")
-    .trim();
-}
-
-export function normalizeFieldKey(k: any): string | undefined {
-  if (typeof k !== "string") return undefined;
-  const t = k.trim();
-  if (!t) return undefined;
-  // Common cases:
-  // - "CURRENT_CITY" -> "current_city"
-  // - "current_city" -> "current_city"
-  // - "home_town" -> "home_town"
-  return t.toLowerCase();
 }
 
 function pickProfileOwnerName(owner: any): string | undefined {
@@ -172,44 +208,6 @@ export function extractProfileOwnerCandidate(root: any): { id?: string; name?: s
   return null;
 }
 
-export function findParentNode(root: any, key: string): any | null {
-  if (typeof root !== 'object' || root === null) {
-    return null;
-  }
-  for (let k in root) {
-    let child = root[k];
-    if (child && typeof child === 'object' && child.hasOwnProperty(key)) {
-      return child;
-    }
-    let found = findParentNode(child, key);
-    if (found) return found;
-  }
-  return null;
-}
-
-export function findAllKeyValuePairs(jsonObject: any, key: string): { key: string; value: any }[] {
-  let results: { key: string; value: any }[] = [];
-  for (const [k, v] of Object.entries(jsonObject)) {
-    if (k === key) {
-      results.push({ key: k, value: v });
-    }
-    if (typeof v === "object" && v !== null) {
-      results = results.concat(findAllKeyValuePairs(v, key));
-    }
-  }
-  return results;
-}
-
-export function isMeaningfulValue(value: any): boolean {
-  if (value === null || value === undefined) return false;
-  if (typeof value === "string") return value.trim().length > 0;
-  if (typeof value === "number") return Number.isFinite(value);
-  if (typeof value === "boolean") return true;
-  if (Array.isArray(value)) return value.length > 0;
-  if (typeof value === "object") return Object.keys(value).length > 0;
-  return false;
-}
-
 export function mergeUserInfoFields(base: any, patch: any) {
   const out = { ...(base || {}) };
   if (!patch || typeof patch !== "object") return out;
@@ -240,7 +238,7 @@ export function mergeUserInfoFields(base: any, patch: any) {
   return out;
 }
 
-type VideoGridRenderer = {
+type FacebookVideoGridRenderer = {
   video: {
     permalink_url: string;
     height?: number;
@@ -254,9 +252,9 @@ type VideoGridRenderer = {
   };
 };
 
-type MediaData = {
+type FacebookMediaData = {
   id: string;
-  video_grid_renderer: VideoGridRenderer;
+  video_grid_renderer: FacebookVideoGridRenderer;
   viewer_image?: {
     uri: string;
     height?: number;
@@ -273,11 +271,11 @@ type MediaData = {
   permalink_url?: string;
 };
 
-type AttachmentData = {
-  media: MediaData;
+type FacebookAttachmentData = {
+  media: FacebookMediaData;
   styles?: {
     attachment: {
-      media: MediaData & {
+      media: FacebookMediaData & {
         comet_photo_attachment_resolution_renderer?: {
           uri: string;
           height?: number;
@@ -299,7 +297,7 @@ type AttachmentData = {
   };
 };
 
-type FBShortsStory = {
+type FacebookShortsStory = {
   short_form_video_context?: {
     playback_video?: {
       thumbnailImage: { uri: string };
@@ -320,20 +318,20 @@ type FBShortsStory = {
   ];
 };
 
-type StyleInfo = {
+type FacebookStyleInfo = {
   __typename: string;
-  fb_shorts_story?: FBShortsStory;
+  fb_shorts_story?: FacebookShortsStory;
 };
 
-type ReelAttachmentData = {
+type FacebookReelAttachmentData = {
   styles: {
     attachment: {
-      style_infos: StyleInfo[];
+      style_infos: FacebookStyleInfo[];
     };
   };
 };
 
-type ExtractedData = {
+type FacebookExtractedData = {
   entry_id: string;
   type: string;
   description: string;
@@ -348,7 +346,7 @@ type ExtractedData = {
   thumbnails?: string;
 };
 
-export function extractDataFromVideoSubAttachment(data: { media: MediaData }): ExtractedData {
+export function extractDataFromVideoSubAttachment(data: { media: FacebookMediaData }): FacebookExtractedData {
   return {
     entry_id: data.media.id,
     type: "video",
@@ -365,7 +363,7 @@ export function extractDataFromVideoSubAttachment(data: { media: MediaData }): E
   };
 }
 
-export function extractDataFromPhotoSubAttachment(data: { media: MediaData }): ExtractedData {
+export function extractDataFromPhotoSubAttachment(data: { media: FacebookMediaData }): FacebookExtractedData {
   return {
     entry_id: "",
     type: "photo",
@@ -381,7 +379,7 @@ export function extractDataFromPhotoSubAttachment(data: { media: MediaData }): E
   };
 }
 
-export function extractDataFromVideoAttachment(data: AttachmentData): ExtractedData {
+export function extractDataFromVideoAttachment(data: FacebookAttachmentData): FacebookExtractedData {
   const media = data.styles?.attachment.media;
   return {
     entry_id: "",
@@ -398,7 +396,7 @@ export function extractDataFromVideoAttachment(data: AttachmentData): ExtractedD
   };
 }
 
-export function extractDataFromPhotoAttachment(data: AttachmentData): ExtractedData | undefined {
+export function extractDataFromPhotoAttachment(data: FacebookAttachmentData): FacebookExtractedData | undefined {
   const photoObj =
     data?.styles?.attachment?.media
       ?.comet_photo_attachment_resolution_renderer ||
@@ -421,7 +419,7 @@ export function extractDataFromPhotoAttachment(data: AttachmentData): ExtractedD
   };
 }
 
-export function extractDataFromReelAttachment(data: ReelAttachmentData): ExtractedData | undefined {
+export function extractDataFromReelAttachment(data: FacebookReelAttachmentData): FacebookExtractedData | undefined {
   const styleInfo = data.styles.attachment.style_infos.find(
     (e) => e.__typename === "FBShortsShareAttachmentStyleInfo",
   );
@@ -449,7 +447,7 @@ export function extractDataFromReelAttachment(data: ReelAttachmentData): Extract
   };
 }
 
-export function extractDataFromProfileMediaAttachment(data: AttachmentData): ExtractedData {
+export function extractDataFromProfileMediaAttachment(data: FacebookAttachmentData): FacebookExtractedData {
   return {
     entry_id: "",
     type: "share",
@@ -512,8 +510,8 @@ export function parseFacebookPostInfo(facebookPostsOwnersStr: string = ""): Face
   }
   return facebookPostsOwnersStr
     .split("::")
-    .map((s) => {
-      const [postEntryRowkey, postId, ownerId, ownerName, ownerType] = s
+    .map((str) => {
+      const [postEntryRowkey, postId, ownerId, ownerName, ownerType] = str
         .trim()
         .split("|");
       if (!postEntryRowkey || !postId || !ownerId || !ownerName || !ownerType)
@@ -559,26 +557,7 @@ export async function storeFacebookPostInfo(newGroupPost: FacebookPostData[] = [
   return tmpCurrentGroupPosts;
 }
 
-function md5HexFromUtf8(input: string): string {
-  const encoded = new TextEncoder().encode(input);
-  const buffer = encoded.buffer.slice(
-    encoded.byteOffset,
-    encoded.byteOffset + encoded.byteLength
-  );
-  return SparkMD5.ArrayBuffer.hash(buffer);
-}
-
-function md5PrefixDigits(value: string, digits: number): string {
-  const md5HexString = md5HexFromUtf8(value);
-  return BigInt("0x" + md5HexString)
-    .toString()
-    .slice(0, digits);
-}
-
-export function generatePostKey(
-  timestamp: number,
-  uniqueString: string
-): string | null {
+export function generatePostKey(timestamp: number, uniqueString: string): string | null {
   if (uniqueString === "") return null;
 
   // Match Python logic exactly:
@@ -599,10 +578,7 @@ export function generatePostKey(
   return null;
 }
 
-export function generateCommentKey(
-  timestamp: number,
-  uniqueString: string
-): string | null {
+export function generateCommentKey(timestamp: number, uniqueString: string): string | null {
   return generatePostKey(timestamp, uniqueString);
 }
 
@@ -614,7 +590,7 @@ export function generateReactionKey(uniqueString: string): string | null {
   return reactionRowKey.toString();
 }
 
-export type FbFormattedText = {
+export type FacebookFormattedText = {
   text: string;
   delight_ranges?: any[];
   image_ranges?: any[];
@@ -624,7 +600,7 @@ export type FbFormattedText = {
   color_ranges?: any[];
 };
 
-function normalizeFormattedText(input: any): FbFormattedText | null {
+function normalizeFormattedText(input: any): FacebookFormattedText | null {
   if (typeof input === "string") {
     return { text: input };
   }
@@ -639,7 +615,7 @@ function normalizeFormattedText(input: any): FbFormattedText | null {
   if (!textValue) return null;
 
   const src = typeof input.text === "object" ? input.text : input;
-  const pick = (key: keyof FbFormattedText) =>
+  const pick = (key: keyof FacebookFormattedText) =>
     Array.isArray((src as any)[key]) ? (src as any)[key] : undefined;
 
   return {
@@ -653,14 +629,12 @@ function normalizeFormattedText(input: any): FbFormattedText | null {
   };
 }
 
-function hasFormatting(rich: FbFormattedText): boolean {
+function hasFormatting(rich: FacebookFormattedText): boolean {
   return (
     (Array.isArray(rich.delight_ranges) && rich.delight_ranges.length > 0) ||
     (Array.isArray(rich.image_ranges) && rich.image_ranges.length > 0) ||
-    (Array.isArray(rich.inline_style_ranges) &&
-      rich.inline_style_ranges.length > 0) ||
-    (Array.isArray(rich.aggregated_ranges) &&
-      rich.aggregated_ranges.length > 0) ||
+    (Array.isArray(rich.inline_style_ranges) && rich.inline_style_ranges.length > 0) ||
+    (Array.isArray(rich.aggregated_ranges) && rich.aggregated_ranges.length > 0) ||
     (Array.isArray(rich.ranges) && rich.ranges.length > 0) ||
     (Array.isArray(rich.color_ranges) && rich.color_ranges.length > 0)
   );
@@ -669,7 +643,7 @@ function hasFormatting(rich: FbFormattedText): boolean {
 function pushFormattedText(
   input: any,
   lines: string[],
-  rich: FbFormattedText[],
+  rich: FacebookFormattedText[],
 ) {
   const normalized = normalizeFormattedText(input);
   if (!normalized) return;
@@ -679,8 +653,8 @@ function pushFormattedText(
   rich.push({ ...normalized, text });
 }
 
-function dedupeRichText(richLines: FbFormattedText[]): FbFormattedText[] {
-  const map = new Map<string, FbFormattedText>();
+function dedupeRichText(richLines: FacebookFormattedText[]): FacebookFormattedText[] {
+  const map = new Map<string, FacebookFormattedText>();
   const order: string[] = [];
   for (const entry of richLines) {
     const text = entry.text.trim();
@@ -762,4 +736,167 @@ function isLikelyDescriptionText(text: string): boolean {
   const hasPhone = digits.length >= 8;
 
   return hasLineBreak || hasEmail || hasBooking || hasPhone;
+}
+
+function detectCollectionListKind(meta: {
+  name?: string;
+  url?: string;
+  tabKey?: string;
+  edges?: unknown[];
+}): FacebookCollectionListKind | null {
+  const tabKey = readTrimmedString(meta.tabKey).toLowerCase();
+  if (tabKey === "friends_all") return "friends";
+  if (tabKey === "followers") return "followers";
+  if (tabKey === "following") return "following";
+
+  const name = readTrimmedString(meta.name).toLowerCase();
+  const url = readTrimmedString(meta.url).toLowerCase();
+
+  if (
+    name.includes("đang theo dõi") ||
+    name.includes("dang theo doi") ||
+    url.includes("/following")
+  ) {
+    return "following";
+  }
+  if (
+    name.includes("người theo dõi") ||
+    name.includes("nguoi theo doi") ||
+    url.includes("/followers")
+  ) {
+    return "followers";
+  }
+  if (
+    name.includes("bạn bè") ||
+    name.includes("ban be") ||
+    url.includes("/friends")
+  ) {
+    return "friends";
+  }
+
+  if (Array.isArray(meta.edges) && meta.edges.length > 0) {
+    for (const edge of meta.edges) {
+      const node = (edge as any)?.node;
+      if (!node) continue;
+
+      const actionsRendererType = readTrimmedString(node.actions_renderer?.__typename);
+
+      if (actionsRendererType.includes("FriendsList")) {
+        return "friends";
+      }
+    }
+  }
+
+  return null;
+}
+
+export function resolveCollectionPageFromPayload(payload: {
+  data?: {
+    node?: Record<string, unknown>;
+    user?: { id?: string }
+  };
+}): ResolvedCollectionPage | null {
+  const node = payload?.data?.node;
+  if (!node || typeof node !== "object") return null;
+
+  if (node.__typename === "TimelineAppCollection") {
+    const collectionId = readTrimmedString(node.id);
+    const edges = Array.isArray((node.pageItems as { edges?: unknown[] } | undefined)?.edges)
+      ? (node.pageItems as { edges: unknown[] }).edges
+      : [];
+    if (!collectionId || !edges.length) return null;
+
+    const name = readTrimmedString(node.name);
+    const url = readTrimmedString(node.url);
+    const kind = detectCollectionListKind({ name, url, edges }) || ("following" as FacebookCollectionListKind);
+
+    return { collectionId, edges, kind };
+  }
+
+  if (node.__typename !== "TimelineAppSection") return null;
+
+  const navNodes = Array.isArray((node.nav_collections as { nodes?: unknown[] } | undefined)?.nodes)
+    ? (node.nav_collections as { nodes: unknown[] }).nodes
+    : [];
+
+  const navKindById = new Map<string, FacebookCollectionListKind>();
+  for (const nav of navNodes) {
+    const n = nav as { id?: string; name?: string; url?: string };
+    const id = readTrimmedString(n?.id);
+    const kind = detectCollectionListKind({
+      name: readTrimmedString(n?.name),
+      url: readTrimmedString(n?.url),
+    });
+    if (id && kind) navKindById.set(id, kind);
+  }
+
+  const collections = Array.isArray((node.all_collections as { nodes?: unknown[] } | undefined)?.nodes)
+    ? (node.all_collections as { nodes: unknown[] }).nodes
+    : [];
+
+  for (const c of collections) {
+    const wrapper = c as {
+      id?: string;
+      tab_key?: string;
+      style_renderer?: {
+        collection?: {
+          id?: string;
+          name?: string;
+          url?: string;
+          pageItems?: { edges?: unknown[] };
+        };
+      };
+    };
+    const inner = wrapper?.style_renderer?.collection;
+    const edges = Array.isArray(inner?.pageItems?.edges)
+      ? inner.pageItems.edges
+      : [];
+    if (!edges.length) continue;
+
+    const collectionId = readTrimmedString(inner?.id) || readTrimmedString(wrapper?.id);
+    if (!collectionId) continue;
+
+    const kind =
+      navKindById.get(collectionId) ||
+      navKindById.get(readTrimmedString(wrapper?.id)) ||
+      detectCollectionListKind({
+        tabKey: readTrimmedString(wrapper?.tab_key),
+        name: readTrimmedString(inner?.name),
+        url: readTrimmedString(inner?.url),
+        edges,
+      });
+
+    if (!kind) continue;
+
+    return { collectionId, edges, kind };
+  }
+
+  return null;
+}
+
+export function extractListPersonFromEdge(edge: unknown): {
+  id: string;
+  name: string;
+  url: string;
+  avatar: string;
+} | null {
+  const node = (edge as { node?: Record<string, unknown> })?.node;
+  if (!node) return null;
+
+  const id =
+    readTrimmedString((node.node as { id?: string } | undefined)?.id) ||
+    readTrimmedString((node.actions_renderer as { profile_actions?: { profile_owner?: { id?: string } }[]; })?.profile_actions?.[0]?.profile_owner?.id);
+  if (!id) return null;
+
+  const name =
+    readTrimmedString((node.title as { text?: string } | undefined)?.text) ||
+    readTrimmedString((node.actions_renderer as { profile_actions?: { profile_owner?: { name?: string } }[]; })?.profile_actions?.[0]?.profile_owner?.name);
+
+  const url =
+    readTrimmedString(node.url) ||
+    readTrimmedString((node.node as { url?: string })?.url);
+
+  const avatar = readTrimmedString((node.image_v2 as { uri?: string } | undefined)?.uri);
+
+  return { id, name, url, avatar };
 }

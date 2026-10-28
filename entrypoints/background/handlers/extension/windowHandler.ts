@@ -1,9 +1,8 @@
-import * as tabService from "../../services/tab.service";
-import * as windowService from "../../services/window.service";
+import * as services from "../../services";
 import { handleMaybeFacebookTab } from "./tabHandler";
 
 export async function windowOnFocusChangedHandler(windowId: number) {
-    if (windowService.isWindowClosed(windowId)) return;
-    const [activeTab] = await tabService.queryTabs({ active: true, windowId });
+    if (services.windowService.isWindowClosed(windowId)) return;
+    const [activeTab] = await services.tabService.queryTabs({ active: true, windowId });
     if (activeTab?.id) await handleMaybeFacebookTab(activeTab.id);
 }

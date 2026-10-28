@@ -1,10 +1,6 @@
 import { FacebookCollectionListKind, FacebookUserFollowData, Result } from "../types";
 import { extractFacebookUserIdAndName } from "./user-info-map";
-import {
-  extractListPersonFromEdge,
-  resolveCollectionPageFromPayload
-} from "./collection-list-utils";
-import { readTrimmedString, decodeUnicodeEscapes } from "./utils";
+import { readTrimmedString, decodeUnicodeEscapes, resolveCollectionPageFromPayload, extractListPersonFromEdge } from "./utils";
 
 
 function buildFollowRow(

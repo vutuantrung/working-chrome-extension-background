@@ -1,5 +1,3 @@
-import * as tabService from "../../services/tab.service";
-import * as runtimeService from "../../services/runtime.service";
 import { bgState } from "../../state";
 import { isSupportedPlatformUrl } from "../../utils/tools";
 import { DefaultValues, State } from "../../utils/constants";
@@ -63,8 +61,8 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      tabService.sendTabMessage(tabId, getFbProfileIdMsgData, (response) => {
-        const err = runtimeService.getRuntimeLastError();
+      services.tabService.sendTabMessage(tabId, getFbProfileIdMsgData, (response) => {
+        const err = services.runtimeService.getRuntimeLastError();
         if (err) {
           if (err.message?.includes("Receiving end does not exist")) {
             console.debug(
@@ -94,8 +92,8 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      tabService.sendTabMessage(tabId, injectFbLabelingRules, (response) => {
-        const err = runtimeService.getRuntimeLastError();
+      services.tabService.sendTabMessage(tabId, injectFbLabelingRules, (response) => {
+        const err = services.runtimeService.getRuntimeLastError();
         if (err) {
           console.warn(
             "[tabsOnUpdatedHandler] Failed to send ENHANCE_SPAN message:",
@@ -116,8 +114,8 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      tabService.sendTabMessage(tabId, msgData, (response) => {
-        const err = runtimeService.getRuntimeLastError();
+      services.tabService.sendTabMessage(tabId, msgData, (response) => {
+        const err = services.runtimeService.getRuntimeLastError();
         if (err) {
           if (err.message?.includes("Receiving end does not exist")) {
             console.debug(
@@ -198,7 +196,7 @@ export async function tabsOnUpdatedHandler(
   }
 
   try {
-    await tabService.getTab(runningTaskInfo.tabId);
+    await services.tabService.getTab(runningTaskInfo.tabId);
   } catch (error) {
     runningTaskInfo.state = State.TaskState.CANCELED;
     runningTaskInfo.result = `Canceled. Reason: Tab with id ${runningTaskInfo.tabId} not found`;
@@ -228,8 +226,8 @@ export async function tabsOnUpdatedHandler(
       // Instead of injecting TS files by path (which won't exist at runtime),
       // simply send a message to the tab and let the content script listener pick it up.
       try {
-        tabService.sendTabMessage(dtsTabId, runningTaskInfo, () => {
-          const err = runtimeService.getRuntimeLastError();
+        services.tabService.sendTabMessage(dtsTabId, runningTaskInfo, () => {
+          const err = services.runtimeService.getRuntimeLastError();
           if (err) {
             console.warn(
               "[tabsOnUpdatedHandler] sendMessage error:",
@@ -316,7 +314,7 @@ export async function tabsOnRemovedHandler(tabId: number) {
 // ========================================
 export async function handleMaybeFacebookTab(tabId: any) {
   try {
-    const tab = await tabService.getTab(tabId);
+    const tab = await services.tabService.getTab(tabId);
     const url = tab.url || "";
     if (!isSupportedPlatformUrl(url)) return;
 

@@ -1,11 +1,7 @@
 import { Message } from "../../types/types";
 import * as helpers from "../../utils/helpers";
 import * as services from "../../services";
-import {
-  isLikelyPlaceholderFacebookName,
-  parseFacebookNameFromHtml,
-  getStartDayTimestamp
-} from "../../utils/tools";
+import { isLikelyPlaceholderFacebookName, parseFacebookNameFromHtml, getStartDayTimestamp } from "../../utils/tools";
 import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 export async function handleGetFacebookAccount(message: Message, sendResponse: (resp: any) => void): Promise<void> {

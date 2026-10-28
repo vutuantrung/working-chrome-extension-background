@@ -1,21 +1,13 @@
-import * as actionService from "../../services/action.service";
-import * as downloadService from "../../services/download.service";
-import * as tabService from "../../services/tab.service";
-import * as runtimeService from "../../services/runtime.service";
-import * as alarmService from "../../services/alarm.service";
 import { bgState } from "../../state";
 import { Message, Settings, Archive } from "../../types/types";
-import { UserInfoPublishStatus } from "../../types/types";
 import { Constants, DefaultValues, State } from "../../utils/constants";
 import { delayMs } from "../../utils/tools";
-import { sendFacebookUserData } from "../../dataPublishers/facebookPublisher";
 import {
   bootstrapExistingFacebookTabs,
   cleanupFacebookTabs,
 } from "../../scriptInjection";
 import * as services from "../../services";
 import * as helpers from "../../utils/helpers";
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 // ========================================
 // INTERNAL HELPERS
@@ -243,8 +235,8 @@ export async function handleInitializeAfterLogin(
       }),
     });
 
-    await alarmService.clearAlarm(Constants.SETTINGS_SYNC_ALARM);
-    alarmService.createAlarm(Constants.SETTINGS_SYNC_ALARM, {
+    await services.alarmService.clearAlarm(Constants.SETTINGS_SYNC_ALARM);
+    services.alarmService.createAlarm(Constants.SETTINGS_SYNC_ALARM, {
       delayInMinutes: 2,
       periodInMinutes: 2,
     });
@@ -320,7 +312,7 @@ export async function handleClearDataAfterLogout(
 
     // Clear ALL alarms (MV3-safe): periodic, scheduleTask_*, sendFacebookPostData, etc.
     await new Promise<void>((resolve) => {
-      void alarmService.clearAllAlarms().then(() => resolve());
+      void services.alarmService.clearAllAlarms().then(() => resolve());
     });
 
     setTimeout(() => {
@@ -329,8 +321,8 @@ export async function handleClearDataAfterLogout(
 
     services.proxyServices.clearProxy();
 
-    actionService.setBadgeText({ text: "0" });
-    actionService.setBadgeBackgroundColor({ color: "#0000FF" });
+    services.actionService.setBadgeText({ text: "0" });
+    services.actionService.setBadgeBackgroundColor({ color: "#0000FF" });
 
     if (!skipCookies) {
       await helpers.cookie.clearSocialPlatformCookies();
@@ -365,8 +357,8 @@ export async function handleClearDataAfterLogout(
       "youtube_profiles_info",
     ]);
 
-    actionService.setBadgeText({ text: "0" });
-    actionService.setBadgeBackgroundColor({ color: "#0000FF" });
+    services.actionService.setBadgeText({ text: "0" });
+    services.actionService.setBadgeBackgroundColor({ color: "#0000FF" });
 
     console.log("[handleClearDataAfterLogout] Cleanup completed successfully");
 
@@ -394,16 +386,16 @@ export async function handleStartPeriodicCheck(
 ) {
   console.log("[handleStartPeriodicCheck] Starting periodic check alarm...");
   try {
-    const existingAlarm = await alarmService.getAlarm("periodicCheck");
+    const existingAlarm = await services.alarmService.getAlarm("periodicCheck");
     const periodicTimeCheck = 3;
     const shouldRecreate =
       !existingAlarm || existingAlarm.periodInMinutes !== periodicTimeCheck;
 
     if (shouldRecreate) {
       if (existingAlarm) {
-        await alarmService.clearAlarm("periodicCheck");
+        await services.alarmService.clearAlarm("periodicCheck");
       }
-      alarmService.createAlarm("periodicCheck", {
+      services.alarmService.createAlarm("periodicCheck", {
         delayInMinutes: 0.5,
         periodInMinutes: periodicTimeCheck,
       });
@@ -442,10 +434,10 @@ export async function handleSetBadgeText(
 ): Promise<void> {
   let badgeValue = Number(message.inputs.badgeData);
   if (!Number.isFinite(badgeValue) || badgeValue < 0) badgeValue = 0;
-  actionService.setBadgeText({
+  services.actionService.setBadgeText({
     text: badgeValue.toString(),
   });
-  actionService.setBadgeBackgroundColor({ color: "#0000FF" });
+  services.actionService.setBadgeBackgroundColor({ color: "#0000FF" });
 
   if (sendResponse) {
     sendResponse({ success: true });
@@ -492,11 +484,11 @@ export async function handleCancelTask(
     // Ask the content script (if any) to stop this task loop immediately.
     if (typeof task.tabId === "number" && task.tabId > 0) {
       try {
-        tabService.sendTabMessage(
+        services.tabService.sendTabMessage(
           task.tabId,
           { type: "STOP_TASK", taskId },
           () => {
-            void runtimeService.getRuntimeLastError();
+            void services.runtimeService.getRuntimeLastError();
           },
         );
       } catch { }
@@ -537,7 +529,7 @@ export async function handleDownloadImage(
   sendResponse?: (resp: any) => void,
 ): Promise<void> {
   const { url, fileName = "extImgDownload.jpg" } = message.inputs;
-  await downloadService.download({
+  await services.downloadService.download({
     url,
     filename: fileName,
     conflictAction: "uniquify",
@@ -654,7 +646,7 @@ export async function handleChangeTabUrl(
     }
 
     await services.storageServices.setStorageCached({ taskList: storageTaskList });
-    tabService.updateTab(parseInt(message.inputs.tabId), {
+    services.tabService.updateTab(parseInt(message.inputs.tabId), {
       url: message.inputs.url,
     });
   }

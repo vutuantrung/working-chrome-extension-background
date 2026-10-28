@@ -1,12 +1,12 @@
+import * as services from "../../services";
 import {
   ParseType,
   FacebookUserFollowData,
   FacebookDataType,
 } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import { normalizeFacebookUserInfoMap } from "./user-info-map";
-import * as services from "../../services";
 import { decodeUnicodeEscapes } from "../../utils/parsers/facebook-parser/utils";
+import { normalizeFacebookUserInfoMap } from "../../utils/parsers/facebook-parser/user-info-map";
 
 const FB_FOLLOW_FLUSH_IMMEDIATE_LIMIT = 30;
 const FB_FOLLOW_FLUSH_DEBOUNCE_MS = 10_000;
@@ -227,15 +227,9 @@ function clearCollectionRowBuffers(
 
 /** Clear pending follow buffer and in-memory follow queue after publish. Keeps user/collection maps. */
 export async function clearFacebookFollowStagingState(cachedFacebookData: FacebookDataType[]): Promise<void> {
-  const cached = await services.storageServices.getStorageCachedByKeys([
-    FB_COLLECTION_OWNER_MAP_KEY,
-  ]);
-  const collectionOwnerMap = normalizeCollectionOwnerMap(
-    cached[FB_COLLECTION_OWNER_MAP_KEY] as Record<
-      string,
-      FacebookCollectionOwnerEntry
-    >,
-  );
+  const cached = await services.storageServices.getStorageCachedByKeys([FB_COLLECTION_OWNER_MAP_KEY]);
+  const cachedCollectionOwnerMap = cached[FB_COLLECTION_OWNER_MAP_KEY] as Record<string, FacebookCollectionOwnerEntry>;
+  const collectionOwnerMap = normalizeCollectionOwnerMap(cachedCollectionOwnerMap);
   clearCollectionRowBuffers(collectionOwnerMap);
 
   await services.storageServices.setStorageCached({
@@ -332,12 +326,8 @@ function scheduleFacebookFollowFlushInternal(
   );
 }
 
-export function scheduleFacebookFollowFlush(
-  ctx: Pick<
-    HandlerContext,
-    "cachedFacebookData" | "sendFacebookCachedData" | "debounce"
-  >,
-): void {
+function scheduleFacebookFollowFlush(ctx: Pick<HandlerContext, "cachedFacebookData" | "sendFacebookCachedData" | "debounce">)
+  : void {
   void (async () => {
     const pending = await loadPendingFollows();
     scheduleFacebookFollowFlushInternal(ctx, pending.length);
@@ -345,22 +335,12 @@ export function scheduleFacebookFollowFlush(
 }
 
 /** Re-resolve follower names from map after profile header is captured. */
-export async function refreshPendingFollowsFromUserInfoMap(
-  ctx: Pick<
-    HandlerContext,
-    "cachedFacebookData" | "sendFacebookCachedData" | "debounce"
-  >,
-): Promise<void> {
+export async function refreshPendingFollowsFromUserInfoMap(ctx: Pick<HandlerContext, "cachedFacebookData" | "sendFacebookCachedData" | "debounce">): Promise<void> {
   const pending = await loadPendingFollows();
   if (!pending.length) return;
 
-  const cachedMaps = await services.storageServices.getStorageCachedByKeys([
-    FB_USER_NAME_MAP_KEY,
-    FB_COLLECTION_OWNER_MAP_KEY,
-  ]);
-  const userNameMap = normalizeFacebookUserInfoMap(
-    cachedMaps[FB_USER_NAME_MAP_KEY] as Record<string, string> | undefined,
-  );
+  const cachedMaps = await services.storageServices.getStorageCachedByKeys([FB_USER_NAME_MAP_KEY, FB_COLLECTION_OWNER_MAP_KEY]);
+  const userNameMap = normalizeFacebookUserInfoMap(cachedMaps[FB_USER_NAME_MAP_KEY] as Record<string, string> | undefined);
   const collectionOwnerMap = normalizeCollectionOwnerMap(
     cachedMaps[FB_COLLECTION_OWNER_MAP_KEY] as Record<
       string,

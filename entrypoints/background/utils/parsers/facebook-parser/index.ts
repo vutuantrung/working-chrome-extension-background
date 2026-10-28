@@ -19,6 +19,7 @@ import { parseDataReaction } from "./parse-data-reaction";
 import { parseDataGroupHover } from "./parse-data-group";
 import { parseDataFollow } from "./parse-data-follow";
 import { parseDataFriend } from "./parse-data-friend";
+import { parseDataFriendFollowMap } from "./parse-data-follow-friend-map";
 
 export async function parseFacebookData(dataString: string): Promise<{
     userData: FacebookUserData[];
@@ -102,9 +103,15 @@ export async function parseFacebookData(dataString: string): Promise<{
 
         //*** CHECK IF DATA IS PROFILE COMET HEADER (user id + name) ***//
         {
-            const result = parseDataUserProfile(tmpDataJSONValue);
-            if (result.ok) {
-                dataArray.userData.push(result.data);
+            const userProfileParseResult = parseDataUserProfile(tmpDataJSONValue);
+            const friendFollowParseResult = parseDataFriendFollowMap(tmpDataJSONValue);
+            if (userProfileParseResult.ok) {
+                const userProfileData = userProfileParseResult.data;
+                if (friendFollowParseResult.ok) {
+                    userProfileData.followMap = friendFollowParseResult.data.followMap;
+                    userProfileData.friendMap = friendFollowParseResult.data.friendMap;
+                }
+                dataArray.userData.push(userProfileData);
 
                 dataStringArr[i] = null as any;
                 continue;
@@ -113,9 +120,9 @@ export async function parseFacebookData(dataString: string): Promise<{
 
         //*** CHECK IF DATA IS REACTION INFO ***//
         {
-            const result = await parseDataReaction(tmpDataJSONValue);
-            if (result.ok) {
-                dataArray.reactionData.push(...result.data);
+            const reactionParseResult = await parseDataReaction(tmpDataJSONValue);
+            if (reactionParseResult.ok) {
+                dataArray.reactionData.push(...reactionParseResult.data);
 
                 dataStringArr[i] = null as any;
                 continue;
@@ -124,9 +131,9 @@ export async function parseFacebookData(dataString: string): Promise<{
 
         //*** CHECK IF DATA IS FRIEND LIST ***//
         {
-            const result = parseDataFriend(tmpDataJSONValue);
-            if (result.ok) {
-                dataArray.friendData.push(...result.data);
+            const friendParseResult = parseDataFriend(tmpDataJSONValue);
+            if (friendParseResult.ok) {
+                dataArray.friendData.push(...friendParseResult.data);
 
                 dataStringArr[i] = null as any;
                 continue;
@@ -135,9 +142,9 @@ export async function parseFacebookData(dataString: string): Promise<{
 
         //*** CHECK IF DATA IS FOLLOW / FOLLOWERS INFO ***//
         {
-            const result = parseDataFollow(tmpDataJSONValue);
-            if (result.ok) {
-                dataArray.followData.push(...result.data);
+            const followParseResult = parseDataFollow(tmpDataJSONValue);
+            if (followParseResult.ok) {
+                dataArray.followData.push(...followParseResult.data);
 
                 dataStringArr[i] = null as any;
                 continue;
@@ -146,9 +153,9 @@ export async function parseFacebookData(dataString: string): Promise<{
 
         //*** CHECK IF DATA IS JOINED GROUP INFO ***//
         {
-            const result = await parseDataJoinedGroup(tmpDataJSONValue);
-            if (result.ok) {
-                dataArray.groupData.push(...result.data.fbGroupJoined);
+            const joinedGroupParseResult = await parseDataJoinedGroup(tmpDataJSONValue);
+            if (joinedGroupParseResult.ok) {
+                dataArray.groupData.push(...joinedGroupParseResult.data.fbGroupJoined);
 
                 dataStringArr[i] = null as any;
                 continue;
@@ -157,9 +164,9 @@ export async function parseFacebookData(dataString: string): Promise<{
 
         //*** CHECK IF DATA IS COMMENT INFO ***//
         {
-            const result = await parseDataComment(tmpDataJSONValue);
-            if (result.ok) {
-                dataArray.commentData.push(...result.data);
+            const commentParseResult = await parseDataComment(tmpDataJSONValue);
+            if (commentParseResult.ok) {
+                dataArray.commentData.push(...commentParseResult.data);
 
                 dataStringArr[i] = null as any;
                 continue;
@@ -197,11 +204,11 @@ export async function parseFacebookData(dataString: string): Promise<{
                 attachementType = "text";
             }
 
-            const result = await parseDataPost(tmpDataJSONValue, attachementType);
-            if (result.ok) {
-                dataArray.postData.push(...result.data.postDataArray);
-                dataArray.imageData.push(...result.data.imageDataArray);
-                dataArray.commentData.push(...result.data.commentDataArray);
+            const postParseResult = await parseDataPost(tmpDataJSONValue, attachementType);
+            if (postParseResult.ok) {
+                dataArray.postData.push(...postParseResult.data.postDataArray);
+                dataArray.imageData.push(...postParseResult.data.imageDataArray);
+                dataArray.commentData.push(...postParseResult.data.commentDataArray);
 
                 dataStringArr[i] = null as any;
                 continue;
@@ -210,9 +217,9 @@ export async function parseFacebookData(dataString: string): Promise<{
 
         //*** CHECK IF DATA GROUP HOVER ***//
         {
-            const result = await parseDataGroupHover(tmpDataJSONValue);
-            if (result.ok) {
-                dataArray.profileData.push(result.data);
+            const groupHoverParseResult = await parseDataGroupHover(tmpDataJSONValue);
+            if (groupHoverParseResult.ok) {
+                dataArray.profileData.push(groupHoverParseResult.data);
 
                 dataStringArr[i] = null as any;
                 continue;

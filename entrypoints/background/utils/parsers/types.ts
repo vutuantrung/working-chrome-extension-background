@@ -228,6 +228,20 @@ export type XDataType =
   | XUserFollowData;
 
 // Facebook
+export type FacebookCollectionOwnerEntry = {
+  id: string;
+  name?: string;
+  list_kind?: string;
+  rows?: FacebookUserFollowData[];
+};
+
+export type FacebookFriendCollectionOwnerEntry = {
+  id: string;
+  name?: string;
+  list_kind?: string;
+  rows?: FacebookUserFriendData[];
+};
+
 export type FacebookCollectionListKind = "following" | "followers" | "friends";
 
 export type ProfileTabCollectionRef = {
@@ -378,6 +392,8 @@ export type FacebookUserData = {
   work?: string;
   description?: string;
   docType: string;
+  followMap?: Record<string, FacebookCollectionOwnerEntry>;
+  friendMap?: Record<string, FacebookFriendCollectionOwnerEntry>;
 }
 export type FacebookUserFollowData = {
   follow_id: string;
