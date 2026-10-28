@@ -1,4 +1,4 @@
-import { readTrimmedString } from "./utils";
+import { readTrimmedString, extractFacebookUserIdAndName } from "./utils";
 import {
     FacebookCollectionListKind,
     FacebookCollectionOwnerEntry,
@@ -6,7 +6,6 @@ import {
     ProfileTabCollectionRef,
     Result
 } from "../types";
-import { extractFacebookUserIdAndName } from "./user-info-map";
 
 function detectCollectionListKind(meta: {
     name?: string;

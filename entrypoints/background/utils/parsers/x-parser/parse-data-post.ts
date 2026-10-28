@@ -1,4 +1,4 @@
-import { findAllKeyValuePairs } from "../facebook-parser/utils";
+import { findAllKeyValuePairs } from "../commons";
 import { Result, XAttachment, XCommentData, XPostData } from "../types";
 import { generateKey } from "./utils";
 

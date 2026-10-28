@@ -1,7 +1,7 @@
-import { findAllKeyValuePairs } from "../facebook-parser/utils";
 import { generateKey, parseThreadsPostsInfo, THREADS_POST_INFO_KEY } from "./utils";
 import { Result, ThreadsAttachment, ThreadsCommentData, ThreadsPostData, ThreadsPostLocalStorageInfo } from "../types";
 import * as services from "../../../services";
+import { findAllKeyValuePairs } from "../commons";
 
 async function parseThreadsDataRecursively(
     payload: any,

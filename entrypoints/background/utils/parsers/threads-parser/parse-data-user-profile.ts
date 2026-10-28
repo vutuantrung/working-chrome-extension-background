@@ -1,8 +1,7 @@
-import { findAllKeyValuePairs } from "../facebook-parser/utils";
 import * as services from "../../../services";
-import { parseThreadsUserInfo, THREADS_USER_INFO_KEY } from "./utils";
+import { parseThreadJSONObject, storeThreadsProfileData, THREADS_USER_INFO_KEY } from "./utils";
 import { Result, ThreadsUserFollowData, ThreadsUserLocalStorageInfo, ThreadsUserProfileData } from "../types";
-import { storeThreadsProfileData } from "./utils";
+import { findAllKeyValuePairs } from "../commons";
 
 function parseFollow(
     followerUser: Partial<ThreadsUserProfileData> | ThreadsUserLocalStorageInfo,
@@ -116,7 +115,7 @@ export async function parseDataUserProfile(payload: any): Promise<Result<{
             if (isFollowerUrlMatch || isFollowingUrlMatch) {
                 const localStorageUserProfile = await services.storageServices.getStorageByKeys([THREADS_USER_INFO_KEY]);
                 const threadsUserInfoStr = localStorageUserProfile[THREADS_USER_INFO_KEY] || "";
-                const threadsUserInfoArr = parseThreadsUserInfo(threadsUserInfoStr);
+                const threadsUserInfoArr = parseThreadJSONObject(threadsUserInfoStr);
                 onPageUserData = threadsUserInfoArr.find((u) => u.profile_id.replace("t", "") === onPageUserId?.replace("t", ""));
 
                 if (!onPageUserData) {

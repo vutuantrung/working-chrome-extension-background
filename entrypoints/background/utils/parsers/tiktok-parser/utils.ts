@@ -1,11 +1,11 @@
 import SparkMD5 from "spark-md5";
+import * as services from "../../../services";
 import {
   TiktokPostData,
   TiktokPostLocalStorageInfo,
   TiktokUserLocalStorageInfo,
   TiktokUserProfileData,
 } from "../types";
-import * as services from "../../../services";
 
 const MAXIMUM_USERS = 30, MAXIMUM_POSTS = 50;
 export const TIKTOK_POST_INFO_KEY = "tiktok_posts_info";

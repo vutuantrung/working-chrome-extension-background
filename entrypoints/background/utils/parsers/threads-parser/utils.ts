@@ -23,7 +23,7 @@ export function generateKey(timestamp: number, uniqueString: string): string | n
     return null;
 }
 
-export function parseThreadsUserInfo(threadsUserInfoStr = ""): ThreadsUserLocalStorageInfo[] {
+export function parseThreadJSONObject(threadsUserInfoStr = ""): ThreadsUserLocalStorageInfo[] {
     if (!threadsUserInfoStr) {
         return [];
     }
@@ -35,7 +35,7 @@ export async function storeThreadsProfileData(
 ): Promise<ThreadsUserLocalStorageInfo[]> {
     const localStorageUserInfo = await services.storageServices.getStorageByKeys([THREADS_USER_INFO_KEY]);
     const threadsUserInfoStr = localStorageUserInfo[THREADS_USER_INFO_KEY] || "";
-    const currentUserInfo = parseThreadsUserInfo(threadsUserInfoStr);
+    const currentUserInfo = parseThreadJSONObject(threadsUserInfoStr);
     const tmpCurrentUserInfo = [...currentUserInfo];
     for (const user of newUsers) {
         const index = tmpCurrentUserInfo.findIndex((u) => u.profile_id === user.profile_id && u.username === user.username);

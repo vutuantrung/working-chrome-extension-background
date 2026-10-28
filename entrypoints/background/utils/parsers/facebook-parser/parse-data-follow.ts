@@ -1,7 +1,11 @@
 import { FacebookCollectionListKind, FacebookUserFollowData, Result } from "../types";
-import { extractFacebookUserIdAndName } from "./user-info-map";
-import { readTrimmedString, decodeUnicodeEscapes, resolveCollectionPageFromPayload, extractListPersonFromEdge } from "./utils";
-
+import {
+  readTrimmedString,
+  decodeUnicodeEscapes,
+  extractFacebookUserIdAndName,
+  extractListPersonFromEdge,
+  resolveCollectionPageFromPayload,
+} from "./utils";
 
 function buildFollowRow(
   kind: FacebookCollectionListKind,
@@ -64,9 +68,7 @@ function buildFollowRow(
   };
 }
 
-export function parseDataFollow(
-  payload: any,
-): Result<FacebookUserFollowData[]> {
+export function parseDataFollow(payload: any): Result<FacebookUserFollowData[]> {
   try {
     const resolved = resolveCollectionPageFromPayload(payload);
     if (!resolved) {

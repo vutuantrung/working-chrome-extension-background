@@ -3,10 +3,9 @@ import {
   ParseType,
   FacebookUserFollowData,
   FacebookDataType,
-} from "@/entrypoints/background/utils/parsers/types";
+} from "../../utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import { decodeUnicodeEscapes } from "../../utils/parsers/facebook-parser/utils";
-import { normalizeFacebookUserInfoMap } from "../../utils/parsers/facebook-parser/user-info-map";
+import { decodeUnicodeEscapes, normalizeFacebookUserInfoMap } from "../../utils/parsers/facebook-parser/utils";
 
 const FB_FOLLOW_FLUSH_IMMEDIATE_LIMIT = 30;
 const FB_FOLLOW_FLUSH_DEBOUNCE_MS = 10_000;
@@ -34,9 +33,7 @@ function isFollowRecord(record: unknown): boolean {
   );
 }
 
-function getPrimaryCollectionOwner(
-  map: Record<string, FacebookCollectionOwnerEntry>,
-): { id: string; name: string } | null {
+function getPrimaryCollectionOwner(map: Record<string, FacebookCollectionOwnerEntry>): { id: string; name: string } | null {
   const owners = Object.values(map);
   if (!owners.length) return null;
   const last = owners[owners.length - 1];
@@ -60,9 +57,7 @@ function mergePendingFollows(
   return Array.from(byKey.values());
 }
 
-function normalizeCollectionOwnerMap(
-  raw: Record<string, FacebookCollectionOwnerEntry> | null | undefined,
-): Record<string, FacebookCollectionOwnerEntry> {
+function normalizeCollectionOwnerMap(raw: Record<string, FacebookCollectionOwnerEntry> | null | undefined): Record<string, FacebookCollectionOwnerEntry> {
   if (!raw || typeof raw !== "object") return {};
   const out: Record<string, FacebookCollectionOwnerEntry> = {};
   for (const [collectionId, entry] of Object.entries(raw)) {
@@ -85,9 +80,7 @@ function resolveFollowRowFromMaps(
   collectionOwnerMap: Record<string, FacebookCollectionOwnerEntry>,
 ): FacebookUserFollowData {
   const next = { ...row };
-  const owner =
-    (collectionId && collectionOwnerMap[collectionId]) ||
-    getPrimaryCollectionOwner(collectionOwnerMap);
+  const owner = (collectionId && collectionOwnerMap[collectionId]) || getPrimaryCollectionOwner(collectionOwnerMap);
   const followers = isFollowersList(next);
 
   if (followers) {
@@ -161,10 +154,7 @@ function alignFollowRowToCollectionKind(
   return { ...row, source_type: "followers" };
 }
 
-function getProfileOwnerForFollowRow(
-  row: FacebookUserFollowData,
-  userNameMap: Record<string, string>,
-): { id: string; name: string } {
+function getProfileOwnerForFollowRow(row: FacebookUserFollowData, userNameMap: Record<string, string>): { id: string; name: string } {
   if (isFollowersList(row)) {
     const id = row.followed_id;
     const name = row.followed_name || (id ? userNameMap[id] || "" : "");
@@ -205,9 +195,7 @@ function appendRowsToKnownCollection(
   return true;
 }
 
-function flattenCollectionRows(
-  map: Record<string, FacebookCollectionOwnerEntry>,
-): FacebookUserFollowData[] {
+function flattenCollectionRows(map: Record<string, FacebookCollectionOwnerEntry>): FacebookUserFollowData[] {
   let merged: FacebookUserFollowData[] = [];
   for (const entry of Object.values(map)) {
     if (entry.rows?.length) {
@@ -217,9 +205,7 @@ function flattenCollectionRows(
   return merged;
 }
 
-function clearCollectionRowBuffers(
-  map: Record<string, FacebookCollectionOwnerEntry>,
-): void {
+function clearCollectionRowBuffers(map: Record<string, FacebookCollectionOwnerEntry>): void {
   for (const entry of Object.values(map)) {
     entry.rows = [];
   }
@@ -374,8 +360,6 @@ export const handleFbFollowInfo = async (
   dt: ParseType,
   ctx: HandlerContext,
 ) => {
-  const { cachedFacebookData, sendFacebookCachedData, debounce } = ctx;
-
   const crawledFollowData = dt.data as FacebookUserFollowData[];
   if (!Array.isArray(crawledFollowData) || !crawledFollowData.length) {
     console.log("[FB Follow Trace][handleFbFollowInfo] skip: empty dt.data");

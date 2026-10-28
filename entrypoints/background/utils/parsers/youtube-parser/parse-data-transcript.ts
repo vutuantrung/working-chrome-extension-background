@@ -1,10 +1,8 @@
-import { findAllKeyValuePairs } from "../facebook-parser/utils";
 import { Result, YoutubePostData, YoutubeTranscriptData } from "../types";
 import { findByKey, parseTimestampToSeconds } from "./utils";
+import { findAllKeyValuePairs } from "../commons";
 
-export async function parseTranscriptData(
-    payload: string,
-): Promise<Result<YoutubePostData>> {
+export async function parseTranscriptData(payload: string): Promise<Result<YoutubePostData>> {
     try {
         const data = JSON.parse(payload);
         const videoId = findByKey(data, "videoId");
@@ -30,26 +28,26 @@ export async function parseTranscriptData(
     }
 }
 
-function convertToYoutubeTranscriptData(items: {value: any}[]): YoutubeTranscriptData[] {
-  const result = [];
+function convertToYoutubeTranscriptData(items: { value: any }[]): YoutubeTranscriptData[] {
+    const result = [];
 
-  for (let i = 0; i < items.length; i++) {
-    const current = items[i].value;
-    const start = parseTimestampToSeconds(current.timestamp);
+    for (let i = 0; i < items.length; i++) {
+        const current = items[i].value;
+        const start = parseTimestampToSeconds(current.timestamp);
 
-    let duration = 0;
-    if (i < items.length - 1) {
-      const next = items[i + 1].value;
-      const nextStart = parseTimestampToSeconds(next.timestamp);
-      duration = nextStart - start;
+        let duration = 0;
+        if (i < items.length - 1) {
+            const next = items[i + 1].value;
+            const nextStart = parseTimestampToSeconds(next.timestamp);
+            duration = nextStart - start;
+        }
+
+        result.push({
+            start,
+            duration,
+            text: current.simpleText,
+        });
     }
 
-    result.push({
-      start,
-      duration,
-      text: current.simpleText,
-    });
-  }
-
-  return result;
+    return result;
 }

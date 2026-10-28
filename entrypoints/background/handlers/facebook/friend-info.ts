@@ -5,8 +5,7 @@ import {
   FacebookDataType,
 } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import { decodeUnicodeEscapes } from "../../utils/parsers/facebook-parser/utils";
-import { normalizeFacebookUserInfoMap } from "../../utils/parsers/facebook-parser/user-info-map";
+import { decodeUnicodeEscapes, normalizeFacebookUserInfoMap } from "../../utils/parsers/facebook-parser/utils";
 
 const FB_FRIEND_FLUSH_IMMEDIATE_LIMIT = 30;
 const FB_FRIEND_FLUSH_DEBOUNCE_MS = 10_000;
@@ -29,8 +28,7 @@ function isFriendRecord(record: unknown): boolean {
   )
 }
 
-function getPrimaryCollectionOwner(map: Record<string, FacebookFriendCollectionOwnerEntry>)
-  : { id: string; name: string } | null {
+function getPrimaryCollectionOwner(map: Record<string, FacebookFriendCollectionOwnerEntry>): { id: string; name: string } | null {
   const owners = Object.values(map);
   if (!owners.length) return null;
   const last = owners[owners.length - 1];
@@ -226,11 +224,7 @@ function scheduleFacebookFriendFlushInternal(
     return;
   }
 
-  debounce(
-    scheduleFlush,
-    FB_FRIEND_FLUSH_DEBOUNCE_MS,
-    "fb_friend_flush_debounce",
-  );
+  debounce(scheduleFlush, FB_FRIEND_FLUSH_DEBOUNCE_MS, "fb_friend_flush_debounce");
 }
 
 export async function refreshPendingFriendsFromUserInfoMap(

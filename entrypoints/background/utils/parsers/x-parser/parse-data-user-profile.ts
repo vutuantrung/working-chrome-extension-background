@@ -1,6 +1,6 @@
-import { findAllKeyValuePairs } from "../facebook-parser/utils";
 import { Result, XUserFollowData, XUserLocalStorageInfo, XUserProfileData } from "../types";
 import { parseXUserInfo, storeXProfileData, X_USER_INFO_KEY } from "./utils";
+import { findAllKeyValuePairs } from "../commons";
 import * as services from "../../../services";
 
 function parseProfile(dataJSON: any): XUserProfileData | null {

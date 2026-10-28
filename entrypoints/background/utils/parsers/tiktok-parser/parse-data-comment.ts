@@ -1,10 +1,6 @@
-import { Result, TiktokCommentData } from "../types";
-import {
-  parseTiktokPostInfo,
-  TIKTOK_POST_INFO_KEY,
-  generateKey,
-} from "./utils";
 import * as services from "../../../services";
+import { Result, TiktokCommentData } from "../types";
+import { parseTiktokPostInfo, TIKTOK_POST_INFO_KEY, generateKey } from "./utils";
 
 export async function parseDataComment(
   dataArr: { data: any; getMethod: string }[] = [],

@@ -9,7 +9,6 @@ import {
     FacebookUserData,
     FacebookUserFollowData,
     FacebookUserFriendData,
-    FacebookUserProfileData,
 } from "../types";
 import { parseDataJoinedGroup } from "./parse-data-joined-group";
 import { parseDataPost } from "./parse-data-post";

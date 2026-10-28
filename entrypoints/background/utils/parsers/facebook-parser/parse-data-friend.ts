@@ -1,10 +1,11 @@
 import { FacebookUserFriendData, Result } from "../types";
-import { extractFacebookUserIdAndName } from "./user-info-map";
 import {
+  readTrimmedString,
+  decodeUnicodeEscapes,
+  extractFacebookUserIdAndName,
   extractListPersonFromEdge,
-  resolveCollectionPageFromPayload,
-} from "./collection-list-utils";
-import { readTrimmedString, decodeUnicodeEscapes } from "./utils";
+  resolveCollectionPageFromPayload
+} from "./utils";
 
 function buildFriendRow(
   listPerson: { id: string; name: string; url: string; avatar: string },
@@ -42,8 +43,7 @@ function buildFriendRow(
   };
 }
 
-export function parseDataFriend(payload: any)
-  : Result<FacebookUserFriendData[]> {
+export function parseDataFriend(payload: any): Result<FacebookUserFriendData[]> {
   try {
     const resolved = resolveCollectionPageFromPayload(payload);
     if (!resolved) {

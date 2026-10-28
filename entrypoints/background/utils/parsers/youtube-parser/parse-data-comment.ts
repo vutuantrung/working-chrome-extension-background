@@ -1,7 +1,7 @@
+import * as services from "../../../services";
+import { findAllKeyValuePairs } from "../commons";
 import { Result, YoutubeCommentData, YoutubePostData } from "../types";
 import { findByKey, generateKey, parseVietnameseRelativeTime, parseYoutubePostsInfo, YOUTUBE_POST_INFO_KEY } from "./utils";
-import { findAllKeyValuePairs } from "../facebook-parser/utils";
-import * as services from "../../../services";
 
 export async function parseCommentData(payload: string)
     : Promise<Result<{

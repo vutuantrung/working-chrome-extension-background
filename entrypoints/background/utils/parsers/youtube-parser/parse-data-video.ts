@@ -1,4 +1,4 @@
-import { findAllKeyValuePairs } from "../facebook-parser/utils";
+import { findAllKeyValuePairs } from "../commons";
 import { Result, YoutubeImageData, YoutubePostData } from "../types";
 import { findByKey, generateKey, parseVietnameseRelativeTime, parseVietnameseViewCount, storeYoutubePostData } from "./utils";
 
@@ -15,7 +15,7 @@ export function parsePostData(
 
     try {
         switch (pathName) {
-            case "/": 
+            case "/":
                 parseHomeDate(payload, postArray, imageArray)
                 break;
             case "/youtubei/v1/browse":
@@ -29,7 +29,7 @@ export function parsePostData(
                 break;
         }
 
-        storeYoutubePostData(postArray).catch(() => {})
+        storeYoutubePostData(postArray).catch(() => { })
 
         return {
             ok: true,
@@ -53,10 +53,10 @@ function normalizeRichItemRenderer(richItemRenderer: any) {
     const authorPart = metadata.metadata.contentMetadataViewModel.metadataRows[0].metadataParts[0].text;
     const authorInfo = authorPart.commandRuns?.[0].onTap.innertubeCommand.browseEndpoint;
     const videoInfo = metadata.metadata.contentMetadataViewModel.metadataRows?.[1].metadataParts;
-    
+
     let viewCount = 0;
     let publishedTime = 0
-    if(Array.isArray(videoInfo) && videoInfo.length === 2) {
+    if (Array.isArray(videoInfo) && videoInfo.length === 2) {
         const [viewCountText, publishedText] = videoInfo;
         viewCount = parseVietnameseViewCount(viewCountText.text.content) ?? 0;
         publishedTime = parseVietnameseRelativeTime(publishedText.text.content) ?? 0;
@@ -76,7 +76,7 @@ function normalizeRichItemRenderer(richItemRenderer: any) {
         updated_time: publishedTime,
         owner_id: authorInfo?.browseId,
         owner_name: authorPart.content,
-        author_id: authorInfo?.browseId, 
+        author_id: authorInfo?.browseId,
         author_name: authorPart.content,
         view_count: viewCount,
         reaction_count: 0,
@@ -98,7 +98,7 @@ function normalizeRichItemRenderer(richItemRenderer: any) {
     }
 
     const thumbnail = findByKey(richItemRenderer, "thumbnailViewModel")?.image?.sources?.[0];
-    if(thumbnail) {
+    if (thumbnail) {
         post.attachments = [{
             url: thumbnail.url,
             width: thumbnail.width,
@@ -131,7 +131,7 @@ function normalizeVideoRenderer(videoRenderer: any) {
     const entryRowKey = generateKey(authorInfo?.navigationEndpoint.browseEndpoint.browseId, videoRenderer.videoId);
     const viewCount = parseVietnameseViewCount(videoRenderer.viewCountText.simpleText) ?? 0;
     const publishedTime = parseVietnameseRelativeTime(videoRenderer.publishedTimeText.simpleText) ?? 0;
-    
+
     const post: YoutubePostData = {
         entry_rowkey: entryRowKey,
         url: `https://www.youtube.com/watch?v=${videoRenderer.videoId}`,
@@ -167,7 +167,7 @@ function normalizeVideoRenderer(videoRenderer: any) {
     };
 
     const thumbnail = findByKey(videoRenderer, "thumbnails")?.[0];
-    if(thumbnail) {
+    if (thumbnail) {
         post.attachments = [{
             url: thumbnail.url,
             width: thumbnail.width,
@@ -210,7 +210,7 @@ function parseHomeDate(
             if (match) {
                 const data = JSON.parse(match[1]);
                 const richItemRenderers = findAllKeyValuePairs(data, "richItemRenderer");
-                richItemRenderers.forEach(({value}) => {
+                richItemRenderers.forEach(({ value }) => {
                     const { post, image } = normalizeRichItemRenderer(value);
                     postArray.push(post);
                     image && imageArray.push(image);
@@ -226,19 +226,19 @@ function parseHomeContinuationData(
     imageArray: YoutubeImageData[],
     parsedItemRenderers?: any[],
 ) {
-    if(parsedItemRenderers?.length) {
+    if (parsedItemRenderers?.length) {
         parsedItemRenderers.forEach((item: any) => {
             try {
                 const { post, image } = normalizeRichItemRenderer(item);
                 postArray.push(post);
                 image && imageArray.push(image);
-            } catch (_) {}
+            } catch (_) { }
         });
         return;
     }
 
     const data = JSON.parse(jsonStr);
-    const {appendContinuationItemsAction, reloadContinuationItemsCommand} = data.onResponseReceivedActions[0];
+    const { appendContinuationItemsAction, reloadContinuationItemsCommand } = data.onResponseReceivedActions[0];
     const richItemRenderers =
         (appendContinuationItemsAction?.continuationItems ?? reloadContinuationItemsCommand?.continuationItems?.[0].richShelfRenderer.contents)
             .filter((item: any) => item.hasOwnProperty("richItemRenderer"))
@@ -248,7 +248,7 @@ function parseHomeContinuationData(
             const { post, image } = normalizeRichItemRenderer(item);
             postArray.push(post);
             image && imageArray.push(image);
-        } catch (_) {}
+        } catch (_) { }
     });
 }
 
@@ -259,12 +259,12 @@ function parseSearchData(
 ) {
     const data = JSON.parse(jsonStr);
     const videoRenderers = findAllKeyValuePairs(data, "videoRenderer");
-    videoRenderers.forEach(({value}) => {
+    videoRenderers.forEach(({ value }) => {
         try {
             const { post, image } = normalizeVideoRenderer(value);
             postArray.push(post);
             image && imageArray.push(image);
-        } catch (_) {}
+        } catch (_) { }
     });
 }
 
@@ -274,18 +274,18 @@ function parseGetWatchData(
     imageArray: YoutubeImageData[],
 ) {
     const data = JSON.parse(jsonStr);
-    if(!Array.isArray(data)) return;
+    if (!Array.isArray(data)) return;
 
     const playerResponse = data.find(item => item.hasOwnProperty("playerResponse"))?.playerResponse
-    if(!playerResponse) return;
+    if (!playerResponse) return;
 
-    const {videoDetails, microformat} = playerResponse;
-    const {playerMicroformatRenderer} = microformat;
+    const { videoDetails, microformat } = playerResponse;
+    const { playerMicroformatRenderer } = microformat;
 
     const thumbnail = playerMicroformatRenderer?.thumbnail?.thumbnails?.[0];
 
     const tags: any[] = [];
-    if(Array.isArray(videoDetails?.keywords)) {
+    if (Array.isArray(videoDetails?.keywords)) {
         videoDetails.keywords.forEach((keyword: string) => {
             tags.push({
                 name: keyword,
@@ -298,7 +298,7 @@ function parseGetWatchData(
 
     const entryRowKey = generateKey(videoDetails.channelId, videoDetails.videoId);
     const publishedTime = new Date(playerMicroformatRenderer.publishDate).getTime();
-    
+
     const post: YoutubePostData = {
         entry_rowkey: entryRowKey,
         url: playerMicroformatRenderer.canonicalUrl,

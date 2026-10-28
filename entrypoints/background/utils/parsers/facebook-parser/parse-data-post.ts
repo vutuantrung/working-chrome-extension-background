@@ -1,7 +1,7 @@
+import { findAllKeyValuePairs } from "../commons";
 import { FacebookAttachment, FacebookCommentData, FacebookImageData, FacebookPostData, Result } from "../types";
 import {
   deriveArticleId,
-  findAllKeyValuePairs,
   extractDataFromPhotoAttachment,
   extractDataFromPhotoSubAttachment,
   extractDataFromProfileMediaAttachment,
