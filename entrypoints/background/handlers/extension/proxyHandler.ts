@@ -11,7 +11,7 @@ export function onProxyErrorHandler(details: any) {
         // Only mark error when proxy is actually in fixed_servers mode.
         const proxyApi: any = chromeApi?.proxy?.settings;
         if (!proxyApi?.get) {
-            services.proxyService.setProxyHealth({
+            services.proxyService.storeProxyData({
                 state: "error",
                 updatedAt: now,
                 lastErrorAt: now,
@@ -27,7 +27,7 @@ export function onProxyErrorHandler(details: any) {
             const value = current?.value;
             if (value?.mode !== "fixed_servers") return;
 
-            services.proxyService.setProxyHealth({
+            services.proxyService.storeProxyData({
                 state: "error",
                 updatedAt: now,
                 lastErrorAt: now,

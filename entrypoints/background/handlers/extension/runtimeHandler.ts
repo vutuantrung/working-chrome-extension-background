@@ -57,16 +57,9 @@ import * as threadsHandlers from "../threads";
 import * as youtubeHandlers from "../youtube";
 import * as evidenCollectionHandlers from "../eviden-collection";
 
-async function handleBodyDataIntercepted(
-  message: any,
-  sender: chrome.runtime.MessageSender,
-  sendResponse?: (resp: any) => void,
-): Promise<void> {
+async function handleBodyDataIntercepted(message: any, sender: chrome.runtime.MessageSender, sendResponse?: (resp: any) => void): Promise<void> {
   try {
-    console.debug(
-      "[App Interceptor] Received intercepted data from tab",
-      sender.tab?.id,
-    );
+    console.debug("[App Interceptor] Received intercepted data from tab", sender.tab?.id);
     const senderTabId = sender.tab?.id;
 
     if (!senderTabId) {
@@ -79,15 +72,12 @@ async function handleBodyDataIntercepted(
 
     const allowedTabId = await helpers.tabControl.getCorrectFacebookTabId();
     if (!allowedTabId || allowedTabId === -1) {
-      console.warn(
-        "[App Interceptor] No valid allowed tab for current mode - ignoring data",
-      );
+      console.warn("[App Interceptor] No valid allowed tab for current mode - ignoring data");
       sendResponse?.({ ok: false, message: "No valid allowed tab" });
       return;
     }
 
-    let tabUrl = "",
-      isProfileTab = false;
+    let tabUrl = "", isProfileTab = false;
     try {
       const tab = await services.tabService.getTab(senderTabId);
       isProfileTab = helpers.userInfo.isLikelyProfilePageUrl(tab?.url || "");
@@ -223,21 +213,12 @@ async function handleBodyDataIntercepted(
   }
 }
 
-export function runTimeOnMessageHandler(
-  message: Message,
-  sender: chrome.runtime.MessageSender,
-  sendResponse: (response?: any) => void,
-): boolean {
+export function runTimeOnMessageHandler(message: Message, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean {
 
   if (message.type === "GET_MY_TAB_ID") {
     sendResponse?.({ success: true, tabId: sender.tab?.id });
     return false;
   }
-
-  // if (message.type === "AUTO_BLOCK_NOTIFICATION") {
-  //   blockNotificationPopup();
-  //   return false;
-  // }
 
   if (message.type === "ENSURE_FB_INTERCEPTOR") {
     const tabId = sender.tab?.id;
@@ -377,11 +358,7 @@ export function runTimeOnMessageHandler(
   };
 
   dispatch().catch((err) => {
-    console.error(
-      "[runTimeOnMessageHandler] Unhandled error for",
-      message.type,
-      err,
-    );
+    console.error("[runTimeOnMessageHandler] Unhandled error for", message.type, err);
     sendResponse?.({ success: false, error: String(err) });
   });
 

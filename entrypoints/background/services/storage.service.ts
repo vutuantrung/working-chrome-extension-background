@@ -2,24 +2,12 @@ import * as services from ".";
 import * as helpers from "../utils/helpers";
 import { isValidArrayAct } from "../utils/tools";
 import { Archive, Settings, StorageData } from "../types/types";
-import type { StoragePort } from "../contracts/storage.port";
-import { chromeStorageAdapter } from "../infrastructure/chrome-api/chrome-storage.adapter";
 import { DefaultValues } from "../utils/constants";
+import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 
-/** @deprecated Prefer StoragePort from contracts/storage.port. */
-export type LocalStorageAdapter = StoragePort;
-
-let currentStorageAdapter: LocalStorageAdapter | undefined;
 let storageCache: StorageData = {};
 let storageInFlight: Promise<StorageData> | null = null;
 
-function storage(): LocalStorageAdapter {
-    return currentStorageAdapter ?? chromeStorageAdapter;
-}
-export function setStorageAdapter(adapter?: LocalStorageAdapter): void {
-    currentStorageAdapter = adapter;
-    clearStorageCache();
-}
 export function getStorageCache(): StorageData {
     return storageCache;
 }
@@ -28,7 +16,7 @@ export function setStorageCache(value: StorageData): void {
 }
 
 export async function getStorageByKeys(keys: string[]): Promise<Record<string, any>> {
-    return storage().get(keys);
+    return chromeApi.storage.local.get(keys);
 }
 
 export async function getStorageCachedByKeys(keys: string[]): Promise<StorageData> {
@@ -58,7 +46,7 @@ export async function getStorageCachedByKeys(keys: string[]): Promise<StorageDat
 
     const fetchArg = isValidArrayAct(keys) ? keys : undefined;
 
-    storageInFlight = storage().get(fetchArg)
+    storageInFlight = chromeApi.storage.local.get(fetchArg)
         .then((vals) => {
             if (storageCache) {
                 Object.assign(storageCache, vals);
@@ -81,86 +69,18 @@ export async function getStorageCachedByKeys(keys: string[]): Promise<StorageDat
 
 export async function setStorageCached(patchObj: Record<string, any>): Promise<void> {
     if (storageCache) Object.assign(storageCache, patchObj);
-    await storage().set(patchObj);
+    await chromeApi.storage.local.set(patchObj);
 }
 
 /** Remove persistent keys and invalidate the in-memory cache. */
 export async function removeStorageByKeys(keys: string[]): Promise<void> {
-    await storage().remove(keys);
+    await chromeApi.storage.local.remove(keys);
     for (const key of keys) delete (storageCache as Record<string, any>)[key];
 }
 
 export function clearStorageCache() {
     storageCache = {};
     storageInFlight = null;
-}
-
-export async function handleUpdateArchive(message: any, sendResponse?: (resp: any) => void) {
-    try {
-        const storageData = await storage().get(["settings"]);
-        const currentSettings: any = storageData.settings || DefaultValues.SETTINGS_DATA;
-
-        const updatedArchive: Archive = {
-            ...(currentSettings.archive || {}),
-            ...message.inputs.updateArchive,
-        };
-        const updatedSettings: Settings = {
-            ...currentSettings,
-            archive: updatedArchive,
-        };
-
-        clearStorageCache();
-
-        await storage().set({ settings: updatedSettings });
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const verification = await storage().get(["settings"]);
-
-        const archiveKeys = Object.keys(updatedArchive);
-        const savedArchiveKeys = Object.keys((verification.settings as any)?.archive || {});
-        const allKeysSaved = archiveKeys.every((key) =>
-            savedArchiveKeys.includes(key),
-        );
-
-        if (!allKeysSaved) {
-            console.error("Expected keys:", archiveKeys);
-            console.error("Saved keys:", savedArchiveKeys);
-        }
-
-        if (sendResponse) {
-            sendResponse({
-                success: allKeysSaved,
-                archive: (verification.settings as any)?.archive,
-                error: allKeysSaved ? null : "Archive keys mismatch",
-            });
-        }
-    } catch (error) {
-        console.error("[handleUpdateArchive] ===== ERROR =====");
-        console.error("[handleUpdateArchive] Error:", error);
-        if (sendResponse) {
-            sendResponse({
-                success: false,
-                error: error instanceof Error ? error.message : String(error),
-            });
-        }
-    }
-}
-
-export async function handleUpdateSettings(message: any, sendResponse?: (resp: any) => void) {
-    const { settings: storageSettings } = await getStorageCachedByKeys(["settings"]);
-    const updatedSettingsInputs = helpers.tabControl.normalizeTabSpecificSetting(
-        message.inputs?.updateSetting || {},
-    );
-
-    const updatedSettings = {
-        ...storageSettings,
-        ...updatedSettingsInputs,
-    };
-    await storage().set({ settings: updatedSettings });
-    if (sendResponse) {
-        sendResponse({ success: true });
-    }
 }
 
 export async function handleGetSettings(message: any, sendResponse: (resp: any) => void) {
@@ -196,7 +116,7 @@ export async function handleSetSettings(message: any, sendResponse?: (resp: any)
 
         clearStorageCache();
 
-        await storage().set({ settings: updatedSettings });
+        await chromeApi.storage.local.set({ settings: updatedSettings });
 
         console.log("[handleSetSettings] Settings saved successfully");
 
@@ -220,6 +140,74 @@ export async function handleSetSettings(message: any, sendResponse?: (resp: any)
         }
     } catch (error) {
         console.error("[handleSetSettings] Error:", error);
+        if (sendResponse) {
+            sendResponse({
+                success: false,
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+}
+
+export async function handleUpdateSettings(message: any, sendResponse?: (resp: any) => void) {
+    const { settings: storageSettings } = await getStorageCachedByKeys(["settings"]);
+    const updatedSettingsInputs = helpers.tabControl.normalizeTabSpecificSetting(
+        message.inputs?.updateSetting || {},
+    );
+
+    const updatedSettings = {
+        ...storageSettings,
+        ...updatedSettingsInputs,
+    };
+    await chromeApi.storage.local.set({ settings: updatedSettings });
+    if (sendResponse) {
+        sendResponse({ success: true });
+    }
+}
+
+export async function handleUpdateArchive(message: any, sendResponse?: (resp: any) => void) {
+    try {
+        const storageData = await chromeApi.storage.local.get(["settings"]);
+        const currentSettings: any = storageData.settings || DefaultValues.SETTINGS_DATA;
+
+        const updatedArchive: Archive = {
+            ...(currentSettings.archive || {}),
+            ...message.inputs.updateArchive,
+        };
+        const updatedSettings: Settings = {
+            ...currentSettings,
+            archive: updatedArchive,
+        };
+
+        clearStorageCache();
+
+        await chromeApi.storage.local.set({ settings: updatedSettings });
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const verification = await chromeApi.storage.local.get(["settings"]);
+
+        const archiveKeys = Object.keys(updatedArchive);
+        const savedArchiveKeys = Object.keys((verification.settings as any)?.archive || {});
+        const allKeysSaved = archiveKeys.every((key) =>
+            savedArchiveKeys.includes(key),
+        );
+
+        if (!allKeysSaved) {
+            console.error("Expected keys:", archiveKeys);
+            console.error("Saved keys:", savedArchiveKeys);
+        }
+
+        if (sendResponse) {
+            sendResponse({
+                success: allKeysSaved,
+                archive: (verification.settings as any)?.archive,
+                error: allKeysSaved ? null : "Archive keys mismatch",
+            });
+        }
+    } catch (error) {
+        console.error("[handleUpdateArchive] ===== ERROR =====");
+        console.error("[handleUpdateArchive] Error:", error);
         if (sendResponse) {
             sendResponse({
                 success: false,

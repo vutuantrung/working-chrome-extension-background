@@ -1,18 +1,61 @@
-import { EffectiveProxySource, PersonaFacebookAccount, ProxyEndpoint } from "../../types/types";
+import { EffectiveProxySource, PersonaFacebookAccount, ProxyAuthCredentials, ProxyEndpoint } from "../../types/types";
+import { readTrimmedString } from "../tools";
 import { encryptCookieString } from "./cookie";
 
 export function isActiveProxy(proxy: unknown): boolean {
   if (!proxy || typeof proxy !== "object") return false;
   const p = proxy as Record<string, unknown>;
   if (Object.keys(p).length === 0) return false;
-  // active field is optional — if absent we treat it as active (persona proxies
-  // often omit it). Only reject when explicitly false.
+  // active field is optional — if absent we treat it as active (persona proxies often omit it).
+  // Only reject when explicitly false.
   if (p.active === false) return false;
   const host = typeof p.host === "string" ? p.host.trim() : "";
   const port = p.port;
   return (
     !!host && port !== undefined && port !== null && String(port).trim() !== ""
   );
+}
+
+export function extractProxyAuthCredentials(proxyLike: any): ProxyAuthCredentials | null {
+  if (!proxyLike || typeof proxyLike !== "object") return null;
+
+  const candidates: Array<{ u: any; p: any }> = [
+    { u: proxyLike.username, p: proxyLike.password },
+    { u: proxyLike.user, p: proxyLike.pass },
+    { u: proxyLike.user, p: proxyLike.password },
+    { u: proxyLike.login, p: proxyLike.password },
+    { u: proxyLike.proxy_username, p: proxyLike.proxy_password },
+    { u: proxyLike.proxyUser, p: proxyLike.proxyPass },
+    { u: proxyLike.usr, p: proxyLike.pwd },
+    { u: proxyLike.auth?.username, p: proxyLike.auth?.password },
+    { u: proxyLike.credentials?.username, p: proxyLike.credentials?.password },
+  ];
+
+  for (const c of candidates) {
+    const username = readTrimmedString(c.u);
+    const password = readTrimmedString(c.p);
+    if (username && password) return { username, password };
+  }
+
+  const urlRaw = readTrimmedString(
+    proxyLike.url ||
+    proxyLike.proxy_url ||
+    proxyLike.proxyUrl ||
+    proxyLike.proxy,
+  );
+  if (urlRaw) {
+    try {
+      const withScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(urlRaw)
+        ? urlRaw
+        : `http://${urlRaw}`;
+      const u = new URL(withScheme);
+      const username = readTrimmedString(decodeURIComponent(u.username || ""));
+      const password = readTrimmedString(decodeURIComponent(u.password || ""));
+      if (username && password) return { username, password };
+    } catch { }
+  }
+
+  return null;
 }
 
 export function extractPersonaProxy(persona: unknown): Record<string, unknown> {

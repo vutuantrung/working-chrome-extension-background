@@ -1,9 +1,8 @@
 import * as services from "../services";
 import * as helpers from "../utils/helpers";
-import { Message, ProxyAuthCredentials, ProxyHealth, Settings } from "../types/types";
+import { Message, ProxyHealth, Settings } from "../types/types";
 import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
 import { DefaultValues, Constants } from "../utils/constants";
-import { readTrimmedString } from "../utils/tools";
 
 interface Proxy {
     host: string;
@@ -14,12 +13,16 @@ let lastProxyErrorWriteAt = 0;
 export function getLastProxyErrorWriteAt(): number { return lastProxyErrorWriteAt; }
 export function setLastProxyErrorWriteAt(value: number): void { lastProxyErrorWriteAt = value; }
 
+export function getProxySettings() {
+    return chromeApi.proxy.settings;
+}
+
 export function clearProxy(): void {
     chromeApi.proxy.settings.clear({ scope: "regular" }, () => {
         console.log("Proxy cleared.");
     });
 
-    setProxyHealth({
+    storeProxyData({
         state: "ok",
         updatedAt: Date.now(),
         reason: "proxy_cleared",
@@ -59,7 +62,7 @@ export function setProxy(httpProxy?: Proxy, httpsProxy?: Proxy) {
         console.log("Proxy is/are set");
     });
 
-    setProxyHealth({
+    storeProxyData({
         state: "ok",
         updatedAt: Date.now(),
         reason: "proxy_set",
@@ -68,19 +71,20 @@ export function setProxy(httpProxy?: Proxy, httpsProxy?: Proxy) {
         lastErrorAt: undefined,
     });
 
-    try { Promise.resolve(handleProxyHealthCheck()).catch(() => { }); }
+    try { Promise.resolve(checkProxyStatus()).catch(() => { }); }
     catch { }
 }
 
-export function getCachedProxyHealth(): ProxyHealth | undefined {
+function getCachedProxyHealth(): ProxyHealth | undefined {
     try {
-        return (services.storageService.getStorageCache() as any)?.proxyHealth as ProxyHealth | undefined;
+        const storage = services.storageService.getStorageCache();
+        return (storage as any)?.proxyHealth as ProxyHealth | undefined;
     } catch {
         return undefined;
     }
 }
 
-export function setProxyHealth(patch: Partial<ProxyHealth>) {
+export function storeProxyData(patch: Partial<ProxyHealth>) {
     try {
         const prev = getCachedProxyHealth();
         const now = Date.now();
@@ -92,7 +96,7 @@ export function setProxyHealth(patch: Partial<ProxyHealth>) {
             consecutiveFailures: prev?.consecutiveFailures ?? 0,
             ...patch,
         };
-        void services.storageService.setStorageCached({ proxyHealth: next }).catch(() => {});
+        void services.storageService.setStorageCached({ proxyHealth: next }).catch(() => { });
 
         // Keep cache in sync even if storage event is delayed.
         const cache = services.storageService.getStorageCache();
@@ -102,26 +106,20 @@ export function setProxyHealth(patch: Partial<ProxyHealth>) {
     } catch { }
 }
 
-export async function handleProxyHealthCheck() {
+export async function checkProxyStatus(): Promise<void> {
     const startedAt = Date.now();
-    const getProxyValue = async (): Promise<chrome.proxy.ProxyConfig | null> => {
-        const proxySettings = chromeApi.proxy.settings;
-        if (!proxySettings) return null;
 
-        return new Promise((resolve) => {
-            proxySettings.get({ incognito: false }, (details) => {
-                resolve(details?.value ?? null);
-            });
-        });
-    };
+    const proxySettings = services.proxyService.getProxySettings();
+    if (!proxySettings) return;
 
-    const proxyValue = await getProxyValue();
+    const details = await proxySettings.get({ incognito: false });
+    const proxyValue = details?.value ?? null;
     const prevHealth = getCachedProxyHealth();
     const prevFailures = prevHealth?.consecutiveFailures ?? 0;
 
     // If proxy isn't active, keep state as OK (Restart button won't show anyway because proxy won't match).
     if (!proxyValue || proxyValue.mode !== "fixed_servers") {
-        setProxyHealth({
+        storeProxyData({
             state: "ok",
             updatedAt: Date.now(),
             lastOkAt: Date.now(),
@@ -134,6 +132,8 @@ export async function handleProxyHealthCheck() {
         return;
     }
 
+
+    // Set up an abort controller to timeout the fetch request after 7 seconds.
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 7000);
     // Must be allowed by extension_pages CSP (connect-src) and host_permissions.
@@ -149,7 +149,7 @@ export async function handleProxyHealthCheck() {
         const ok = resp && resp.status >= 200 && resp.status < 400;
 
         if (ok) {
-            setProxyHealth({
+            storeProxyData({
                 state: "ok",
                 updatedAt: Date.now(),
                 lastOkAt: Date.now(),
@@ -168,26 +168,20 @@ export async function handleProxyHealthCheck() {
                 reason: "alarm_check_bad_status",
                 details: { url: Constants.FB_WEB_FAVICON, status: resp?.status, durationMs },
                 error: `HTTP ${resp?.status}`,
-            } satisfies Partial<ProxyHealth>;
+            };
 
             // Avoid false positives (e.g. transient errors right after applying proxy).
             // Only enter hard error state after 2 consecutive failures.
             if (consecutiveFailures < 2) {
-                setProxyHealth({
+                storeProxyData({
                     ...basePatch,
                     state: "ok",
                     reason: "alarm_check_bad_status_soft",
                 });
 
-                setTimeout(() => {
-                    try { void handleProxyHealthCheck(); }
-                    catch { }
-                }, 5000);
+                setTimeout(() => { try { void checkProxyStatus(); } catch { } }, 5000);
             } else {
-                setProxyHealth({
-                    ...basePatch,
-                    state: "error",
-                });
+                storeProxyData({ ...basePatch, state: "error" });
             }
         }
     } catch (err) {
@@ -200,67 +194,22 @@ export async function handleProxyHealthCheck() {
             reason: "alarm_check_failed",
             details: { url: Constants.FB_WEB_FAVICON, durationMs },
             error: err instanceof Error ? err.message : String(err),
-        } satisfies Partial<ProxyHealth>;
+        };
 
         if (consecutiveFailures < 2) {
-            setProxyHealth({
+            storeProxyData({
                 ...basePatch,
                 state: "ok",
                 reason: "alarm_check_failed_soft",
             });
 
-            setTimeout(() => {
-                try { void handleProxyHealthCheck(); }
-                catch { }
-            }, 5000);
+            setTimeout(() => { try { void checkProxyStatus(); } catch { } }, 5000);
         } else {
-            setProxyHealth({
-                ...basePatch,
-                state: "error",
-            });
+            storeProxyData({ ...basePatch, state: "error" });
         }
     } finally {
         clearTimeout(timeoutId);
     }
-}
-
-export function onProxyErrorHandler(details: any) {
-    const now = Date.now();
-    // Throttle storage writes to avoid spam.
-    if (now - lastProxyErrorWriteAt < 3000) return;
-    lastProxyErrorWriteAt = now;
-
-    try {
-        // Only mark error when proxy is actually in fixed_servers mode.
-        const proxyApi: any = chromeApi?.proxy?.settings;
-        if (!proxyApi?.get) {
-            setProxyHealth({
-                state: "error",
-                updatedAt: now,
-                lastErrorAt: now,
-                consecutiveFailures: 2,
-                error: details?.error,
-                details,
-                reason: "proxy_error",
-            });
-            return;
-        }
-
-        proxyApi.get({ incognito: false }, (current: any) => {
-            const value = current?.value;
-            if (value?.mode !== "fixed_servers") return;
-
-            setProxyHealth({
-                state: "error",
-                updatedAt: now,
-                lastErrorAt: now,
-                consecutiveFailures: 2,
-                error: details?.error,
-                details,
-                reason: "proxy_error",
-            });
-        });
-    } catch { }
 }
 
 export async function handleProxy(message: Message, sendResponse: (resp: any) => void) {
@@ -268,6 +217,7 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
         const { extension_proxy: proxyConfig } = message.inputs;
         const settingsFromProxy: Partial<Settings> = {};
         console.log("[handleProxy] proxyConfig:", proxyConfig);
+
         if (helpers.proxy.isActiveProxy(proxyConfig)) {
             settingsFromProxy.proxy = "manual";
             settingsFromProxy.proxyOption = "manual";
@@ -326,44 +276,3 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
     }
 }
 
-export function extractProxyAuthCredentials(proxyLike: any): ProxyAuthCredentials | null {
-    if (!proxyLike || typeof proxyLike !== "object") return null;
-
-    const candidates: Array<{ u: any; p: any }> = [
-        { u: proxyLike.username, p: proxyLike.password },
-        { u: proxyLike.user, p: proxyLike.pass },
-        { u: proxyLike.user, p: proxyLike.password },
-        { u: proxyLike.login, p: proxyLike.password },
-        { u: proxyLike.proxy_username, p: proxyLike.proxy_password },
-        { u: proxyLike.proxyUser, p: proxyLike.proxyPass },
-        { u: proxyLike.usr, p: proxyLike.pwd },
-        { u: proxyLike.auth?.username, p: proxyLike.auth?.password },
-        { u: proxyLike.credentials?.username, p: proxyLike.credentials?.password },
-    ];
-
-    for (const c of candidates) {
-        const username = readTrimmedString(c.u);
-        const password = readTrimmedString(c.p);
-        if (username && password) return { username, password };
-    }
-
-    const urlRaw = readTrimmedString(
-        proxyLike.url ||
-        proxyLike.proxy_url ||
-        proxyLike.proxyUrl ||
-        proxyLike.proxy,
-    );
-    if (urlRaw) {
-        try {
-            const withScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(urlRaw)
-                ? urlRaw
-                : `http://${urlRaw}`;
-            const u = new URL(withScheme);
-            const username = readTrimmedString(decodeURIComponent(u.username || ""));
-            const password = readTrimmedString(decodeURIComponent(u.password || ""));
-            if (username && password) return { username, password };
-        } catch { }
-    }
-
-    return null;
-}

@@ -1,4 +1,5 @@
 import * as services from "../../services";
+import * as helpers from "../../utils/helpers";
 
 export function webRequestOnAuthRequiredHandler(
     details: any,
@@ -17,10 +18,10 @@ export function webRequestOnAuthRequiredHandler(
     ]).then((result) => {
         const { activeProxy, extensionProxy, personaProxy, settings } = result;
         const creds =
-            services.proxyService.extractProxyAuthCredentials(activeProxy) ||
-            services.proxyService.extractProxyAuthCredentials(extensionProxy) ||
-            services.proxyService.extractProxyAuthCredentials(personaProxy) ||
-            services.proxyService.extractProxyAuthCredentials((settings as any)?.proxy);
+            helpers.proxy.extractProxyAuthCredentials(activeProxy) ||
+            helpers.proxy.extractProxyAuthCredentials(extensionProxy) ||
+            helpers.proxy.extractProxyAuthCredentials(personaProxy) ||
+            helpers.proxy.extractProxyAuthCredentials((settings as any)?.proxy);
 
         if (creds && callback) {
             callback({ authCredentials: creds });

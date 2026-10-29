@@ -16,7 +16,7 @@ import { checkExtensionUpdateAndNotify } from "../../updateChecker";
 export async function alarmsOnAlarmHandler(alarm: chrome.alarms.Alarm) {
   try {
     if (alarm.name === Constants.PROXY_HEALTH_CHECK_ALARM) {
-      await services.proxyService.handleProxyHealthCheck();
+      await services.proxyService.checkProxyStatus();
       return;
     }
 
