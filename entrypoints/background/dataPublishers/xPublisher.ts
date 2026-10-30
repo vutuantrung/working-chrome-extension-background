@@ -1,6 +1,6 @@
+import * as services from "../services";
 import { bgState } from "../state";
 import { _runKafkaPublish } from "./kafkaPublisher";
-import * as services from "../services";
 import { XPostData } from "@/entrypoints/background/utils/parsers/types";
 import { Constants, DefaultValues } from "../utils/constants";
 

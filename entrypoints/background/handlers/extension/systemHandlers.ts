@@ -591,6 +591,8 @@ export async function handleScriptExecuteResult(
 
   const updateArchive = currentSettingsInputs.updateArchive;
   if (updateArchive) {
+
+    const currentSettings: any = localUpdating?.settings ?? storageSettings;
     const updatedArchive: Archive = {
       ...(storageSettings?.archive || {}),
       ...updateArchive,
@@ -646,9 +648,9 @@ export async function handleChangeTabUrl(
     }
 
     await services.storageService.setStorageCached({ taskList: storageTaskList });
-    services.tabService.updateTab(parseInt(message.inputs.tabId), {
-      url: message.inputs.url,
-    });
+    services.tabService.updateTab(
+      parseInt(message.inputs.tabId),
+      { url: message.inputs.url });
   }
   if (sendResponse) {
     sendResponse({ success: true });

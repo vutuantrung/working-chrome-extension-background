@@ -1,4 +1,4 @@
-import { runTimeOnMessageHandler, runTimeOnInstalledHandler } from "./runtimeHandler";
+import { createRunTimeOnInstalledHandler, createRunTimeOnMessageHandler } from "./runtimeHandler";
 import { actionOnClickedHandler } from "./clickHandler";
 import { tabsOnUpdatedHandler, tabsOnRemovedHandler, tabsOnActivatedHandler } from "./tabHandler";
 import { alarmsOnAlarmHandler } from "./alarmHandler";
@@ -9,8 +9,8 @@ import { onProxyErrorHandler } from './proxyHandler';
 
 export {
     actionOnClickedHandler,
-    runTimeOnMessageHandler,
-    runTimeOnInstalledHandler,
+    createRunTimeOnMessageHandler,
+    createRunTimeOnInstalledHandler,
     tabsOnUpdatedHandler,
     tabsOnRemovedHandler,
     tabsOnActivatedHandler,

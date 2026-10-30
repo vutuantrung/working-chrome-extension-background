@@ -1,8 +1,10 @@
 import * as services from "./services";
+import { createApplicationServices } from "./bootstrap";
 import * as extensionHandlers from "./handlers/extension";
 import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 import { browser } from "wxt/browser";
 import { Constants } from "./utils/constants";
+import { ApplicationServices } from "./application-services";
 
 
 // ========================================
@@ -13,7 +15,11 @@ export default defineBackground(() => {
 
   // Initialize only in browser context (not in WXT dev shadow environment)
   if (import.meta.env.BROWSER) {
-    initializeBackgroundServices();
+
+    const services = createApplicationServices();
+
+
+    initializeBackgroundServices(services);
     initializeState();
   }
 });
@@ -49,7 +55,7 @@ function initializeState() {
 // ========================================
 // INITIALIZATION
 // ========================================
-function initializeBackgroundServices() {
+function initializeBackgroundServices(applicationServices: ApplicationServices) {
   console.log("Initializing background services...");
 
   // Register all Chrome API event listeners
@@ -62,8 +68,8 @@ function initializeBackgroundServices() {
   // ========================================
   // RUNTIME HANDLERS
   // ========================================
-  chromeApi.runtime.onMessage.addListener(extensionHandlers.runTimeOnMessageHandler);
-  chromeApi.runtime.onInstalled.addListener(extensionHandlers.runTimeOnInstalledHandler);
+  chromeApi.runtime.onMessage.addListener(extensionHandlers.createRunTimeOnMessageHandler(applicationServices));
+  chromeApi.runtime.onInstalled.addListener(extensionHandlers.createRunTimeOnInstalledHandler(applicationServices));
 
 
   // ========================================

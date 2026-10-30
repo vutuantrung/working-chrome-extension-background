@@ -1,16 +1,17 @@
 import * as helpers from "../../utils/helpers";
-import * as tabService from "../../services/tab.service";
-import * as sidePanelService from "../../services/side-panel.service";
-import * as runtimeService from "../../services/runtime.service";
+import * as services from "../../services";
 import { Message, Screenshot } from "../../types/types";
-import { storageServices } from "../../services";
+import { ApplicationServices } from "../../application-services";
 
-export function handleCaptureScreenshot(sendResponse: (resp: any) => void) {
-  tabService.captureVisibleTab(
+export function handleCaptureScreenshot(
+  applicationServices: ApplicationServices,
+  sendResponse: (resp: any) => void) {
+  applicationServices.tab?.captureVisibleTab(
     { format: "png" },
     (dataUrl) => {
-      if (runtimeService.getRuntimeLastError()) {
-        sendResponse({ error: runtimeService.getRuntimeLastError().message });
+      const error = services.runtimeService.getRuntimeLastError();
+      if (error) {
+        sendResponse({ error: error.message });
       } else {
         sendResponse({ dataUrl });
       }
@@ -21,15 +22,15 @@ export function handleCaptureScreenshot(sendResponse: (resp: any) => void) {
 export async function handleScreenshotCropped(message: Message, sendResponse: (resp: any) => void) {
   const { dataUrl, caseId, windowId } = message;
 
-  sidePanelService.openSidePanel(windowId).catch(console.error)
+  services.sidePanelService.openSidePanel(windowId).catch(console.error)
 
   const storageKey = helpers.evidenStudio.getCaseStorageKey(caseId);
   const timestamp = Date.now();
   const entry: Screenshot = { dataUrl, timestamp };
 
-  const data = await storageServices.getStorageByKeys([storageKey]);
+  const data = await services.storageService.getStorageByKeys([storageKey]);
   const list = [...((data[storageKey] ?? []) as typeof entry[]), entry];
-  await storageServices.setStorageCached({
+  await services.storageService.setStorageCached({
     [storageKey]: list,
     lastUnsavedProfileCase: { id: caseId, timestamp },
   });

@@ -56,6 +56,7 @@ import * as xHandlers from "../x";
 import * as threadsHandlers from "../threads";
 import * as youtubeHandlers from "../youtube";
 import * as evidenCollectionHandlers from "../eviden-collection";
+import { ApplicationServices } from "../../application-services";
 
 async function handleBodyDataIntercepted(message: any, sender: chrome.runtime.MessageSender, sendResponse?: (resp: any) => void): Promise<void> {
   try {
@@ -213,7 +214,20 @@ async function handleBodyDataIntercepted(message: any, sender: chrome.runtime.Me
   }
 }
 
-export function runTimeOnMessageHandler(message: Message, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean {
+export function createRunTimeOnMessageHandler(services: ApplicationServices) {
+  return (
+    message: Message,
+    sender: chrome.runtime.MessageSender,
+    sendResponse: (response?: any) => void
+  ): boolean => runTimeOnMessageHandlerInternal(services, message, sender, sendResponse)
+}
+
+export function runTimeOnMessageHandlerInternal(
+  applicationServices: ApplicationServices,
+  message: Message,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response?: any) => void
+): boolean {
 
   if (message.type === "GET_MY_TAB_ID") {
     sendResponse?.({ success: true, tabId: sender.tab?.id });
@@ -237,12 +251,7 @@ export function runTimeOnMessageHandler(message: Message, sender: chrome.runtime
   }
 
   if (message.type === "CONTENT_READY") {
-    console.log(
-      "[CONTENT_READY] Content script loaded:",
-      message.name,
-      "on tab",
-      sender.tab?.id,
-    );
+    console.log("[CONTENT_READY] Content script loaded:", message.name, "on tab", sender.tab?.id);
     if (message.name === "getFbProfileId" && sender.tab?.id) {
       services.storageService.getStorageCachedByKeys(["settings"])
         .then(({ settings }) => {
@@ -346,7 +355,7 @@ export function runTimeOnMessageHandler(message: Message, sender: chrome.runtime
       case "DOWNLOAD_IMAGE":
         return handleDownloadImage(message, sendResponse);
       case "CAPTURE_SCREENSHOT":
-        return evidenCollectionHandlers.handleCaptureScreenshot(sendResponse);
+        return evidenCollectionHandlers.handleCaptureScreenshot(applicationServices, sendResponse);
       case "SCREENSHOT_CROPPED":
         return evidenCollectionHandlers.handleScreenshotCropped(message, sendResponse);
       default:
@@ -365,9 +374,18 @@ export function runTimeOnMessageHandler(message: Message, sender: chrome.runtime
   return true;
 }
 
-export async function runTimeOnInstalledHandler(details: chrome.runtime.InstalledDetails): Promise<void> {
+export function createRunTimeOnInstalledHandler(applicationServices: ApplicationServices) {
+  return (
+    details: chrome.runtime.InstalledDetails
+  ) => runTimeOnInstalledHandlerInternal(applicationServices, details);
+}
+
+export async function runTimeOnInstalledHandlerInternal(
+  applicationServices: ApplicationServices,
+  details: chrome.runtime.InstalledDetails
+): Promise<void> {
   console.log("Extension installed/updated", details);
-  bgState.manifests = services.runtimeService.getManifest();
+  bgState.manifests = applicationServices.runtime?.getManifest();
 
   if (details.reason === "install") {
   } else if (details.reason === "update") {
@@ -384,8 +402,8 @@ export async function runTimeOnInstalledHandler(details: chrome.runtime.Installe
     }
   }
 
-  services.actionService.setBadgeText({ text: "0" });
-  services.actionService.setBadgeBackgroundColor({ color: "#0000FF" });
+  applicationServices.action?.setBadgeText({ text: "0" });
+  applicationServices.action?.setBadgeBackgroundColor({ color: "#0000FF" });
 
   try {
     await bootstrapExistingFacebookTabs();

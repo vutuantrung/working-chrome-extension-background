@@ -189,9 +189,7 @@ export async function handleUpdateArchive(message: any, sendResponse?: (resp: an
 
         const archiveKeys = Object.keys(updatedArchive);
         const savedArchiveKeys = Object.keys((verification.settings as any)?.archive || {});
-        const allKeysSaved = archiveKeys.every((key) =>
-            savedArchiveKeys.includes(key),
-        );
+        const allKeysSaved = archiveKeys.every((key) => savedArchiveKeys.includes(key));
 
         if (!allKeysSaved) {
             console.error("Expected keys:", archiveKeys);

@@ -7,9 +7,7 @@ interface Proxy {
 }
 
 export class ChromeProxyService implements IProxyService {
-    constructor() {
-
-    }
+    constructor() { }
     handleProxy(message: Message, sendResponse: (resp: any) => void): Promise<void> {
         throw new Error("Method not implemented.");
     }
