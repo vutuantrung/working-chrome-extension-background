@@ -7,6 +7,7 @@ import { BrowserApplicationSidePanelApi } from "./services/side-panel.api";
 import { BrowserApplicationTabApi } from "./services/tab.api";
 import { BrowserApplicationCookieApi } from "./services/cookie.api";
 import { BrowserApplicationActionApi } from "./services/action.api";
+import { BrowserApplicationStorageApi } from "./services/storage.api";
 
 
 export interface ApplicationServices {
@@ -20,4 +21,5 @@ export interface ApplicationServices {
     alarm?: BrowserApplicationAlarmApi;
     download?: BrowserApplicationDownloadApi;
     window?: BrowserApplicationWindowApi;
+    storage?: BrowserApplicationStorageApi;
 }

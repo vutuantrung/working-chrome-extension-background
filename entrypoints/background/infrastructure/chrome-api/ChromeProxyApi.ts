@@ -5,7 +5,7 @@ export class ChromeProxyApi implements IBrowserProxyApi {
     constructor() { }
 
     getProxySettings() {
-        const settings = chrome.proxy.settings;
+        const settings = chrome.proxy.settings as any;
         // Todo: Match with Proxy settings defined in application
         return settings;
     }
