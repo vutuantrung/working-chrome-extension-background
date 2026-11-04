@@ -1,11 +1,9 @@
-export interface IDownloadService {
-    download(options: chrome.downloads.DownloadOptions): Promise<string>;
-}
+import { BrowserApplicationDownloadApi } from "./download.api";
 
-export class DownloadService implements IDownloadService {
-    constructor() { }
+export class DownloadService {
+    constructor(private browserDownloadApi: BrowserApplicationDownloadApi) { }
 
-    download(options: chrome.downloads.DownloadOptions): Promise<string> {
-        throw new Error("Method not implemented.");
+    getBrowserApi() {
+        return this.browserDownloadApi;
     }
 }

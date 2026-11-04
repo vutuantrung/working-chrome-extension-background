@@ -1,11 +1,9 @@
-export interface IWindowService {
-    isWindowClosed(windowId: number): boolean;
-}
+import { IBrowserWindowApi } from "./window.api";
 
-export class WindowService implements IWindowService {
-    constructor() { }
+export class WindowService {
+    constructor(private browserWindowApi: IBrowserWindowApi) { }
 
-    isWindowClosed(windowId: number): boolean {
-        throw new Error("Method not implemented.");
+    getBrowserApi() {
+        return this.browserWindowApi;
     }
 }

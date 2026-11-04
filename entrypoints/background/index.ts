@@ -2,7 +2,6 @@ import * as services from "./services";
 import { createApplicationServices } from "./bootstrap";
 import * as extensionHandlers from "./handlers/extension";
 import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
-import { browser } from "wxt/browser";
 import { Constants } from "./utils/constants";
 import { ApplicationServices } from "./application-services";
 
@@ -11,15 +10,12 @@ import { ApplicationServices } from "./application-services";
 // WXT BACKGROUND ENTRY POINT
 // ========================================
 export default defineBackground(() => {
-  console.log("Hello background!", { id: browser.runtime.id });
-
   // Initialize only in browser context (not in WXT dev shadow environment)
   if (import.meta.env.BROWSER) {
 
-    const services = createApplicationServices();
+    const applicationServices = createApplicationServices();
 
-
-    initializeBackgroundServices(services);
+    initializeBackgroundServices(applicationServices);
     initializeState();
   }
 });

@@ -1,9 +1,9 @@
-import * as services from ".";
-import * as helpers from "../utils/helpers";
-import { isValidArrayAct } from "../utils/tools";
-import { Archive, Settings, StorageData } from "../types/types";
-import { DefaultValues } from "../utils/constants";
-import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
+import * as services from "..";
+import * as helpers from "../../utils/helpers";
+import { isValidArrayAct } from "../../utils/tools";
+import { Archive, Settings, StorageData } from "../../types/types";
+import { DefaultValues } from "../../utils/constants";
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 let storageCache: StorageData = {};
 let storageInFlight: Promise<StorageData> | null = null;

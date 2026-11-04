@@ -1,23 +1,23 @@
-import type { ProxyService } from "./services/proxy.services";
-import type { RuntimeService } from "./services/runtime.services";
-import type { ActionService } from "./services/action.services";
-import type { AlarmService } from "./services/alarm.services";
-import type { CookieService } from "./services/cookie.services";
-import type { DownloadService } from "./services/download.services";
-import type { SidePanelService } from "./services/side-panel.services";
-import type { WindowService } from "./services/window.services";
-import type { TabService } from "./services/tab.services";
+import { BrowserApplicationAlarmApi } from "./services/alarm.api";
+import { BrowserApplicationDownloadApi } from "./services/download.api";
+import { BrowserApplicationWindowApi } from "./services/window.api";
+import { BrowserApplicationProxyApi } from "./services/proxy.api";
+import { BrowserApplicationRuntimeApi } from "./services/runtime.api";
+import { BrowserApplicationSidePanelApi } from "./services/side-panel.api";
+import { BrowserApplicationTabApi } from "./services/tab.api";
+import { BrowserApplicationCookieApi } from "./services/cookie.api";
+import { BrowserApplicationActionApi } from "./services/action.api";
 
 
 export interface ApplicationServices {
     // each service need to be optional and initialized based on the browser environment and priority
-    proxy?: ProxyService;
-    runtime?: RuntimeService;
-    action?: ActionService;
-    alarm?: AlarmService;
-    cookie?: CookieService;
-    download?: DownloadService;
-    sidePanel?: SidePanelService;
-    window?: WindowService;
-    tab?: TabService;
+    proxy?: BrowserApplicationProxyApi;
+    runtime?: BrowserApplicationRuntimeApi;
+    tab?: BrowserApplicationTabApi;
+    sidePanel?: BrowserApplicationSidePanelApi;
+    cookie?: BrowserApplicationCookieApi;
+    action?: BrowserApplicationActionApi;
+    alarm?: BrowserApplicationAlarmApi;
+    download?: BrowserApplicationDownloadApi;
+    window?: BrowserApplicationWindowApi;
 }

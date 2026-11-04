@@ -1,8 +1,8 @@
-import * as services from "../services";
-import * as helpers from "../utils/helpers";
-import { Message, ProxyHealth, Settings } from "../types/types";
-import { chromeApi } from "../infrastructure/chrome-api/chrome-api";
-import { DefaultValues, Constants } from "../utils/constants";
+import * as services from "..";
+import * as helpers from "../../utils/helpers";
+import { Message, ProxyHealth, Settings } from "../../types/types";
+import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
+import { DefaultValues, Constants } from "../../utils/constants";
 
 interface Proxy {
     host: string;
@@ -275,4 +275,3 @@ export async function handleProxy(message: Message, sendResponse: (resp: any) =>
         }
     }
 }
-

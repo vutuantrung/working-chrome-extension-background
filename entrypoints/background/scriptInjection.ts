@@ -2,7 +2,10 @@ import { isSupportedPlatformUrl } from "./utils/tools";
 import { Constants, State } from "./utils/constants";
 import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 
-export async function ensureFacebookProfileIdBootstrapInstalled(tabId: number, options?: { force?: boolean }): Promise<{ injected: boolean }> {
+export async function ensureFacebookProfileIdBootstrapInstalled(
+  tabId: number,
+  options?: { force?: boolean }
+): Promise<{ injected: boolean }> {
   try {
     const bootstrapToken = options?.force ? String(Date.now()) : "default";
     await chromeApi.scripting.executeScript({

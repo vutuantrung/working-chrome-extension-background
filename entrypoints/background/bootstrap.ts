@@ -1,7 +1,7 @@
-import { ProxyService } from "./services/proxy.services";
-import { ChromeProxyService } from "./infrastructure/chrome-api/ChromeProxyService";
-import { TabService } from "./services/tab.services";
-import { ChromeTabService } from "./infrastructure/chrome-api/ChromeTabService";
+import { ChromeProxyApi } from "./infrastructure/chrome-api/ChromeProxyApi";
+import { ChromeTabApi } from "./infrastructure/chrome-api/ChromeTabApi";
+import { BrowserApplicationProxyApi } from "./services/proxy.api";
+import { BrowserApplicationTabApi } from "./services/tab.api";
 
 import type { ApplicationServices } from "./application-services";
 
@@ -16,22 +16,17 @@ function detectBrowser(): string {
 export function createApplicationServices(): ApplicationServices {
     const currentBrowser = detectBrowser();
 
-    let browserProxyService = undefined;
-    let applicationProxyService = undefined;
-    let browserTabService = undefined;
-    let applicationTabService = undefined;
+    let applicationProxyApi = undefined;
+    let applicationTabApi = undefined;
     if (currentBrowser === "chrome") {
         // Proxy
-        browserProxyService = new ChromeProxyService();
-        applicationProxyService = new ProxyService(browserProxyService);
-
+        applicationProxyApi = new BrowserApplicationProxyApi(new ChromeProxyApi());
         // Tab
-        browserTabService = new ChromeTabService();
-        applicationTabService = new TabService(browserTabService);
+        applicationTabApi = new BrowserApplicationTabApi(new ChromeTabApi());
     }
 
     return {
-        proxy: applicationProxyService,
-        tab: applicationTabService
+        proxy: applicationProxyApi,
+        tab: applicationTabApi
     };
 }

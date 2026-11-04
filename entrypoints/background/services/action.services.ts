@@ -1,16 +1,9 @@
-export interface IActionService {
-    setBadgeText(details: any): Promise<void>;
-    setBadgeBackgroundColor(details: any): Promise<void>;
-}
+import { BrowserApplicationActionApi } from "./action.api";
 
 export class ActionService {
-    constructor() { }
+    constructor(private chromeApi: BrowserApplicationActionApi) { }
 
-    setBadgeText(details: any): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
-
-    setBadgeBackgroundColor(details: any): Promise<void> {
-        throw new Error("Method not implemented.");
+    getBroserApi() {
+        return this.chromeApi;
     }
 }

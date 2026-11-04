@@ -61,7 +61,7 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      services.tabService.sendTabMessage(tabId, getFbProfileIdMsgData, (response) => {
+      services.tabService.sendTabMessage(tabId, getFbProfileIdMsgData, (response: any) => {
         const err = services.runtimeService.getRuntimeLastError();
         if (err) {
           if (err.message?.includes("Receiving end does not exist")) {
@@ -92,7 +92,7 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      services.tabService.sendTabMessage(tabId, injectFbLabelingRules, (response) => {
+      services.tabService.sendTabMessage(tabId, injectFbLabelingRules, (response: any) => {
         const err = services.runtimeService.getRuntimeLastError();
         if (err) {
           console.warn(
@@ -114,7 +114,7 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      services.tabService.sendTabMessage(tabId, msgData, (response) => {
+      services.tabService.sendTabMessage(tabId, msgData, (response: any) => {
         const err = services.runtimeService.getRuntimeLastError();
         if (err) {
           if (err.message?.includes("Receiving end does not exist")) {

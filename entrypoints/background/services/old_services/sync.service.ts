@@ -1,15 +1,15 @@
-import * as services from "../services";
-import * as helpers from "../utils/helpers";
-import { DefaultValues } from "../utils/constants";
+import * as services from "..";
+import * as helpers from "../../utils/helpers";
+import { DefaultValues } from "../../utils/constants";
 import {
   getSocialAccountsByPersona,
   getProxyInfo,
   getExtensionConfigInfo
-} from "../infrastructure/api/user.api";
-import { bgState } from "../state";
-import { Constants } from "../utils/constants";
+} from "../../infrastructure/api/user.api";
+import { bgState } from "../../state";
+import { Constants } from "../../utils/constants";
 import { FacebookGroupJoinedData } from "@/entrypoints/background/utils/parsers/types";
-import { sendFacebookJoinedGroupsCachedData, sendFacebookPendingGroupsCachedData } from "../dataPublishers/facebookPublisher";
+import { sendFacebookJoinedGroupsCachedData, sendFacebookPendingGroupsCachedData } from "../../dataPublishers/facebookPublisher";
 
 
 export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promise<void> {
@@ -38,9 +38,7 @@ export async function handleSyncExtensionInfo(hasSyncActivity?: boolean): Promis
             const response = await getSocialAccountsByPersona(selectedPersonaId);
             const rawAccounts: any[] = Array.isArray(response?.data)
               ? response.data
-              : Array.isArray(response)
-                ? response
-                : [];
+              : Array.isArray(response) ? response : [];
 
             if (rawAccounts.length) {
               const normalized = rawAccounts.map((a) => ({ ...a, platform: a.platform === "twitter" ? "x" : a.platform }));

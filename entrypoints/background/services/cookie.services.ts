@@ -1,11 +1,9 @@
-export interface ICookieService {
-    getCookie(details: { url: string; name: string; storeId?: string }): Promise<chrome.cookies.Cookie | undefined>;
-}
+import { BrowserApplicationCookieApi } from "./cookie.api";
 
-export class CookieService implements ICookieService {
-    constructor() { }
+export class CookieService {
+    constructor(private chromeApi: BrowserApplicationCookieApi) { }
 
-    getCookie(details: { url: string; name: string; storeId?: string }): Promise<chrome.cookies.Cookie | undefined> {
-        throw new Error("Method not implemented.");
+    getBroserApi() {
+        return this.chromeApi;
     }
 }

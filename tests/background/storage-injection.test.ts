@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { installChromeMock } from "./mocks/chrome";
-import { clearStorageCache, getStorageByKeys, getStorageCachedByKeys, getStorageCache, setStorageAdapter, setStorageCached } from "../../entrypoints/background/services/storage.service";
+import { clearStorageCache, getStorageByKeys, getStorageCachedByKeys, getStorageCache, setStorageAdapter, setStorageCached } from "../../entrypoints/background/services/old_services/storage.service";
 
 afterEach(() => { setStorageAdapter(); vi.unstubAllGlobals(); });
 

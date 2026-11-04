@@ -1,14 +1,9 @@
-export interface IRuntimeService {
-    getRuntimeLastError(): Error | null;
-    getManifest(): any;
-}
+import { IBrowserRuntimeApi } from "./runtime.api";
 
 export class RuntimeService {
-    constructor() { }
-    getRuntimeLastError(): Error | null {
-        throw new Error("Method not implemented.");
-    }
-    getManifest(): any {
-        throw new Error("Method not implemented.");
+    constructor(private browserRuntimeApi: IBrowserRuntimeApi) { }
+
+    getBrowserApi() {
+        return this.browserRuntimeApi;
     }
 }

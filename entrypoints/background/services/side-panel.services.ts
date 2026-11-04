@@ -1,11 +1,9 @@
-export interface ISidePanelService {
-    openSidePanel(windowId: number): Promise<void>;
-}
+import { ISidePanelApi } from "./side-panel.api";
 
-export class SidePanelService implements ISidePanelService {
-    constructor() { }
+export class SidePanelService {
+    constructor(private browserSidePanelApi: ISidePanelApi) { }
 
-    openSidePanel(windowId: number): Promise<void> {
-        throw new Error("Method not implemented.");
+    getBrowserApi() {
+        return this.browserSidePanelApi;
     }
 }

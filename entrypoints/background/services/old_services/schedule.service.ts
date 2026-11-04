@@ -1,8 +1,8 @@
-import * as services from "../services";
-import { Activity } from "../types/types";
-import { parseDelayAndPeriodInMinutes } from "../utils/tools";
-import { getExtensionConfigInfo } from "../infrastructure/api/source-member.api";
-import type { User } from "../types/types";
+import * as services from "..";
+import { Activity } from "../../types/types";
+import { parseDelayAndPeriodInMinutes } from "../../utils/tools";
+import { getExtensionConfigInfo } from "../../infrastructure/api/source-member.api";
+import type { User } from "../../types/types";
 
 export async function handleUpdateScheduleActivities(scheduledActivities: Activity[]): Promise<void> {
   if (!Array.isArray(scheduledActivities)) return;
