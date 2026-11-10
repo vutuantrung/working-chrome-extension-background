@@ -1,11 +1,11 @@
 import { FacebookGroupJoinedData, ParseType } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 export const handleFbGroupInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
+        applicationServices,
         cachedFacebookData,
-        facebookJoinedGroupsData: joinedGroups,
+        facebookJoinedGroupsData,
         saveFacebookGroupData,
         debounce,
         MAXIMUM_RECORD_ARCHIVED,
@@ -22,7 +22,7 @@ export const handleFbGroupInfo = async (dt: ParseType, ctx: HandlerContext) => {
     );
     if (!Array.isArray(crawledGroupsData) || !crawledGroupsData.length) return;
 
-    joinedGroups.splice(0, joinedGroups.length, ...crawledGroupsData);
+    facebookJoinedGroupsData.splice(0, facebookJoinedGroupsData.length, ...crawledGroupsData);
 
     debounce(saveFacebookGroupData, {}, MAXIMUM_TIME_WAIT_SECOND);
 
@@ -32,7 +32,7 @@ export const handleFbGroupInfo = async (dt: ParseType, ctx: HandlerContext) => {
         await sendFacebookCachedData();
     } else {
         console.log("[Facebook Interceptor] Scheduling send in", MAXIMUM_TIME_WAIT_SECOND, "seconds");
-        chromeApi.alarms.create(SEND_FACEBOOK_DATA_ALARM, {
+        applicationServices.alarm?.getBrowserApi().create(SEND_FACEBOOK_DATA_ALARM, {
             delayInMinutes: Math.max(0.05, MAXIMUM_TIME_WAIT_SECOND / 60),
         });
     }

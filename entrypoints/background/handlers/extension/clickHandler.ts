@@ -1,7 +1,12 @@
-import * as services from "../../services";
+import { ApplicationServices } from "../../application-services";
+import { Tab } from "../../services/tab.api";
 
-export function actionOnClickedHandler(tab: chrome.tabs.Tab) {
+export function createActionOnClickedHandler(applicationServices: ApplicationServices) {
+    return (tab: Tab) => actionOnClickedHandler(applicationServices, tab);
+}
+
+function actionOnClickedHandler(applicationServices: ApplicationServices, tab: Tab) {
     if (tab.windowId !== undefined) {
-        services.sidePanelService.openSidePanel(tab.windowId);
+        applicationServices.sidePanel?.getBrowserApi().openSidePanel(tab.windowId);
     }
 }

@@ -9,15 +9,13 @@ import { handleFbFriendInfo } from "./friend-info";
 import { handleFbUserInfo } from "./user-info";
 
 export {
-    clearFacebookFollowStagingState,
-    flushFacebookFollowStaging,
-    hasFacebookFollowRecordsInQueue,
+    // hasFacebookFollowRecordsInQueue,
     refreshPendingFollowsFromUserInfoMap
 } from "./follow-info";
 export {
-    clearFacebookFriendStagingState,
-    flushFacebookFriendStaging,
-    hasFacebookFriendRecordsInQueue,
+    // clearFacebookFriendStagingState,
+    // flushFacebookFriendStaging,
+    // hasFacebookFriendRecordsInQueue,
     refreshPendingFriendsFromUserInfoMap,
 } from "./friend-info";
 

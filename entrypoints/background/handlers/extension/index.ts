@@ -1,22 +1,23 @@
 import { createRunTimeOnInstalledHandler, createRunTimeOnMessageHandler } from "./runtimeHandler";
-import { actionOnClickedHandler } from "./clickHandler";
-import { tabsOnUpdatedHandler, tabsOnRemovedHandler, tabsOnActivatedHandler } from "./tabHandler";
-import { alarmsOnAlarmHandler } from "./alarmHandler";
-import { storageOnChangedHandler } from "./storageHandler";
-import { windowOnFocusChangedHandler } from './windowHandler';
-import { webRequestOnAuthRequiredHandler } from './webRequestHandler';
-import { onProxyErrorHandler } from './proxyHandler';
+import { createOnProxyErrorHandler } from './proxyHandler';
+import { createAlarmsOnAlarmHandler } from "./alarmHandler";
+
+import { createActionOnClickedHandler } from "./clickHandler";
+import { createTabsOnUpdatedHandler, createTabsOnRemovedHandler, createTabsOnActivatedHandler } from "./tabHandler";
+import { createStorageOnChangedHandler } from "./storageHandler";
+import { createWindowOnFocusChangedHandler } from './windowHandler';
+import { createwebRequestOnAuthRequiredHandler } from './webRequestHandler';
 
 export {
-    actionOnClickedHandler,
+    createActionOnClickedHandler,
     createRunTimeOnMessageHandler,
     createRunTimeOnInstalledHandler,
-    tabsOnUpdatedHandler,
-    tabsOnRemovedHandler,
-    tabsOnActivatedHandler,
-    alarmsOnAlarmHandler,
-    storageOnChangedHandler,
-    windowOnFocusChangedHandler,
-    webRequestOnAuthRequiredHandler,
-    onProxyErrorHandler
+    createOnProxyErrorHandler,
+    createTabsOnUpdatedHandler,
+    createAlarmsOnAlarmHandler,
+    createTabsOnActivatedHandler,
+    createWindowOnFocusChangedHandler,
+    createwebRequestOnAuthRequiredHandler,
+    createTabsOnRemovedHandler,
+    createStorageOnChangedHandler,
 };

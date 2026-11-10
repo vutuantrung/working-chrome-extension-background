@@ -1,9 +1,12 @@
 import { BrowserApplicationActionApi } from "./action.api";
+import { AppService } from "./app.services";
 
-export class ActionService {
-    constructor(private chromeApi: BrowserApplicationActionApi) { }
+export class ActionService extends AppService {
+    constructor(private browserActionApi: BrowserApplicationActionApi) {
+        super();
+    }
 
-    getBroserApi() {
-        return this.chromeApi;
+    getBrowserApi() {
+        return this.browserActionApi;
     }
 }

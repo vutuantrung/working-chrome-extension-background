@@ -1,4 +1,3 @@
-import * as services from "../../services";
 import * as helpers from "../../utils/helpers";
 import { FacebookUserData, ParseType } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
@@ -11,8 +10,9 @@ function buildFacebookUserInfoMapEntry(identity: { id: string; name: string; }):
 
 export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
+        applicationServices,
         debounce,
-        publishFacebookUserInfo,
+        sendFacebookUserData,
         USERINFO_PUBLISH_DEBOUNCE_MS
     } = ctx;
 
@@ -31,10 +31,8 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
 
     const userInfoMap = buildFacebookUserInfoMapEntry(identity);
 
-    const cachedMaps = await services.storageService.getStorageCachedByKeys(["facebook_user_info_map"]);
-    const prevMap = cachedMaps.facebook_user_info_map as
-        | Record<string, string>
-        | undefined;
+    const cachedStorage = await applicationServices.storage?.getStorageCachedByKeys(["facebook_user_info_map"]);
+    const prevMap = cachedStorage?.facebook_user_info_map as Record<string, string> | undefined;
     const prevUserId = prevMap && typeof prevMap === "object"
         ? Object.keys(prevMap).find((k) => k.trim()) || ""
         : "";
@@ -51,14 +49,6 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const nextItem = helpers.userInfo.buildPendingUserInfoItem(JSON.stringify(filteredIncoming), filteredIncoming);
     const nextList = [nextItem];
 
-    const seedFollowMap = crawledUserData.followMap || {};
-    const seedFriendMap = crawledUserData.friendMap || {};
-
-    const existingMaps = await services.storageService.getStorageCachedByKeys([
-        "facebook_follow_collection_owner_map",
-        "facebook_friend_collection_owner_map",
-    ]);
-
     const storagePatch: Record<string, unknown> = {
         pendingUserInfo: nextItem,
         pendingUserInfoList: nextList,
@@ -70,37 +60,38 @@ export const handleFbUserInfo = async (dt: ParseType, ctx: HandlerContext) => {
         },
     };
 
+    const seedFollowMap = crawledUserData.followMap || {};
+    const seedFriendMap = crawledUserData.friendMap || {};
+
     if (switchedProfile) {
         storagePatch.facebook_follow_collection_owner_map = seedFollowMap;
         storagePatch.facebook_friend_collection_owner_map = seedFriendMap;
         storagePatch.facebook_pending_follow_data = [];
         storagePatch.facebook_pending_friend_data = [];
     } else {
-        storagePatch.facebook_follow_collection_owner_map = {
-            ...(existingMaps.facebook_follow_collection_owner_map as object),
-            ...seedFollowMap,
-        };
-        storagePatch.facebook_friend_collection_owner_map = {
-            ...(existingMaps.facebook_friend_collection_owner_map as object),
-            ...seedFriendMap,
-        };
+        const existingMaps = await applicationServices.storage?.getStorageCachedByKeys([
+            "facebook_follow_collection_owner_map",
+            "facebook_friend_collection_owner_map",
+        ]);
+
+        const followMap = existingMaps?.facebook_follow_collection_owner_map ?
+            (existingMaps?.facebook_follow_collection_owner_map as Record<string, unknown>)
+            : {};
+        const friendMap = existingMaps?.facebook_friend_collection_owner_map ?
+            (existingMaps?.facebook_friend_collection_owner_map as Record<string, unknown>)
+            : {};
+
+        storagePatch.facebook_follow_collection_owner_map = { ...followMap, ...seedFollowMap };
+        storagePatch.facebook_friend_collection_owner_map = { ...friendMap, ...seedFriendMap };
     }
 
-    await services.storageService.setStorageCached(storagePatch);
+    await applicationServices.storage?.setStorageCached(storagePatch);
 
     void refreshPendingFollowsFromUserInfoMap(ctx);
     void refreshPendingFriendsFromUserInfoMap(ctx);
 
     debounce(
-        () => {
-            void publishFacebookUserInfo({
-                overrideRaw: nextItem.raw,
-                overrideParsed: nextItem.parsed,
-                overrideId: nextItem.id,
-                overrideTs: nextItem.ts,
-                waitForDescription: false,
-            });
-        },
+        () => { void sendFacebookUserData(); },
         USERINFO_PUBLISH_DEBOUNCE_MS,
         "fb_user_info_auto_publish",
     );

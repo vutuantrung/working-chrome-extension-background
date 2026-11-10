@@ -1,5 +1,3 @@
-import * as services from "../../../services";
-import { parseThreadJSONObject, storeThreadsProfileData, THREADS_USER_INFO_KEY } from "./utils";
 import { Result, ThreadsUserFollowData, ThreadsUserLocalStorageInfo, ThreadsUserProfileData } from "../types";
 import { findAllKeyValuePairs } from "../commons";
 
@@ -68,13 +66,19 @@ function parseProfile(dataJSON: any) {
     return profileData;
 }
 
-export async function parseDataUserProfile(payload: any): Promise<Result<{
+export async function parseDataUserProfile(
+    payload: any,
+    metadata: {
+        threadsUserInfoArr: ThreadsUserLocalStorageInfo[]
+    }
+): Promise<Result<{
     userProfiles: ThreadsUserProfileData[],
     followers: ThreadsUserFollowData[],
+    localStorageNewUser: ThreadsUserProfileData[],
 }>> {
     const userProfileArray: ThreadsUserProfileData[] = [];
     const followDataArray: ThreadsUserFollowData[] = [];
-    const newSavingUser: ThreadsUserProfileData[] = [];
+    const newSavingUsers: ThreadsUserProfileData[] = [];
 
     const userKeyValues: any = findAllKeyValuePairs(payload, "user");
     let userFollowersKeyValues: any[] = []; let isFollowerUrlMatch = false;
@@ -113,11 +117,7 @@ export async function parseDataUserProfile(payload: any): Promise<Result<{
         if (userResultsObjects.length > 0) {
             // 1. get on page user information
             if (isFollowerUrlMatch || isFollowingUrlMatch) {
-                const localStorageUserProfile = await services.storageService.getStorageByKeys([THREADS_USER_INFO_KEY]);
-                const threadsUserInfoStr = localStorageUserProfile[THREADS_USER_INFO_KEY] || "";
-                const threadsUserInfoArr = parseThreadJSONObject(threadsUserInfoStr);
-                onPageUserData = threadsUserInfoArr.find((u) => u.profile_id.replace("t", "") === onPageUserId?.replace("t", ""));
-
+                onPageUserData = metadata.threadsUserInfoArr.find((u) => u.profile_id.replace("t", "") === onPageUserId?.replace("t", ""));
                 if (!onPageUserData) {
                     console.warn("Cannot find on page user profile, followers/following data might be inaccurate:", onPageUserId);
                 }
@@ -149,22 +149,15 @@ export async function parseDataUserProfile(payload: any): Promise<Result<{
                 }
 
                 if (!isFollowerUrlMatch && !isFollowingUrlMatch) {
-                    newSavingUser.push(profileData);
+                    newSavingUsers.push(profileData);
                 }
             }
 
             // store parsed user profile data to local storage and update the user info list
-            await storeThreadsProfileData(newSavingUser);
+            // await storeThreadsProfileData(newSavingUsers);
         }
-
-        // console.log("Total parsed user profiles:", userProfileArray.length);
-        // console.log("Parsed user profile data:", profiles);
-        // console.log("Parsed follow data:", followers);
-
-        // return data
-        // console.log(">>>> Parsed user profile data:", userProfileArray);
-        // console.log(">>>> Parsed follow data:", followDataArray);
-        return { ok: true, data: { userProfiles: userProfileArray, followers: followDataArray } };
+        
+        return { ok: true, data: { userProfiles: userProfileArray, followers: followDataArray, localStorageNewUser: newSavingUsers } };
     } catch (error: any) {
         console.error(
             "Error (Threads User data parser)",

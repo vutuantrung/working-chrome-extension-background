@@ -1,4 +1,4 @@
-import * as services from ".";
+import _ from "lodash";
 import * as helpers from "../utils/helpers";
 
 import { Archive, Settings, StorageData } from "../types/types";
@@ -12,22 +12,23 @@ export class StorageService {
 
     constructor(private browserStorageApi: BrowserApplicationStorageApi) { }
 
+    getBrowserApi() {
+        return this.browserStorageApi;
+    }
+
     getCachedStorage() {
         return this._cachedStorage;
     }
 
     setCachedStorage(newValue: StorageData) {
-        this._cachedStorage = {
-            ...this._cachedStorage,
-            ...newValue
-        }
+        this._cachedStorage = _.merge({}, this._cachedStorage, newValue);
     }
 
     async getStorageByKeys(keys: string[]): Promise<Record<string, any>> {
         return this.browserStorageApi.get(keys);
     }
 
-    async getStorageCachedByKeys(keys: string[]): Promise<StorageData> {
+    async getStorageCachedByKeys(keys: string[]): Promise<Partial<StorageData>> {
         if (this._cachedStorage) {
             if (!keys) {
                 return this._cachedStorage;
@@ -78,11 +79,6 @@ export class StorageService {
         return out;
     }
 
-    async setStorageCached(patchObj: Record<string, any>): Promise<void> {
-        if (this._cachedStorage) Object.assign(this._cachedStorage, patchObj);
-        await this.browserStorageApi.set(patchObj);
-    }
-
     async removeStorageByKeys(keys: string[]): Promise<void> {
         await this.browserStorageApi.remove(keys);
         for (const key of keys) delete (this._cachedStorage as Record<string, any>)[key];
@@ -105,9 +101,7 @@ export class StorageService {
             const { settings: storageSettings } = await this.getStorageCachedByKeys(["settings"]);
 
             const currentSettingsInputs = message.inputs;
-            const normalizedSettingsData = helpers.tabControl.normalizeTabSpecificSetting(
-                currentSettingsInputs?.data || {},
-            );
+            const normalizedSettingsData = helpers.tabControl.normalizeTabSpecificSetting(currentSettingsInputs?.data || {});
             const [sendFacebookPostData] = normalizedSettingsData.apikey
                 ? normalizedSettingsData.apikey.split("|")
                 : [null, null];
@@ -131,20 +125,19 @@ export class StorageService {
 
             console.log("[handleSetSettings] Settings saved successfully");
 
-            const storageProxy = JSON.stringify(storageSettings?.proxy);
-            const updatedProxy = JSON.stringify(normalizedSettingsData.proxy);
-            if (updatedProxy && updatedProxy !== storageProxy) {
-                updatedSettings = { ...updatedSettings, proxy: updatedProxy };
-                const proxyData = JSON.parse(updatedProxy);
-                if (proxyData === "system") {
-                    services.proxyService.clearProxy();
-                } else {
-                    const { http, https } = proxyData;
-                    const httpProxy = http.host && http.port ? http : null;
-                    const httpsProxy = https.host && https.port ? https : null;
-                    services.proxyService.setProxy(httpProxy, httpsProxy);
-                }
-            }
+            // const storageProxy = JSON.stringify(storageSettings?.proxy);
+            // const updatedProxy = JSON.stringify(normalizedSettingsData.proxy);
+            // if (updatedProxy && updatedProxy !== storageProxy) {
+            //     const proxyConfig = JSON.parse(updatedProxy);
+            //     if (proxyConfig === "system") {
+            //         this.browserProxyApi.clear({ scope: "regular" });
+            //     } else {
+            //         const { http, https } = proxyConfig;
+            //         const httpProxy = http.host && http.port ? http : null;
+            //         const httpsProxy = https.host && https.port ? https : null;
+            //         this.browserProxyApi.set(httpProxy, httpsProxy);
+            //     }
+            // }
 
             if (sendResponse) {
                 sendResponse({ success: true });
@@ -162,9 +155,7 @@ export class StorageService {
 
     async handleUpdateSettings(message: any, sendResponse?: (resp: any) => void) {
         const { settings: storageSettings } = await this.getStorageCachedByKeys(["settings"]);
-        const updatedSettingsInputs = helpers.tabControl.normalizeTabSpecificSetting(
-            message.inputs?.updateSetting || {},
-        );
+        const updatedSettingsInputs = helpers.tabControl.normalizeTabSpecificSetting(message.inputs?.updateSetting || {});
 
         const updatedSettings = {
             ...storageSettings,
@@ -174,6 +165,14 @@ export class StorageService {
         if (sendResponse) {
             sendResponse({ success: true });
         }
+    }
+
+    async setStorageCached(patchObj: any): Promise<void> {
+        const allStorageValues = await this.browserStorageApi.get(null);
+        const updatedStorage = _.merge({}, allStorageValues, this._cachedStorage, patchObj);
+        // if (this._cachedStorage) Object.assign(this._cachedStorage, patchObj);
+        this._cachedStorage = updatedStorage;
+        await this.browserStorageApi.set(updatedStorage);
     }
 
     async handleUpdateArchive(message: any, sendResponse?: (resp: any) => void) {

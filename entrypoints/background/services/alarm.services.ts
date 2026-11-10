@@ -1,9 +1,9 @@
 import { BrowserApplicationAlarmApi } from "./alarm.api";
 
 export class AlarmService {
-    constructor(private chromeApi: BrowserApplicationAlarmApi) { }
+    constructor(private browserAlarmApi: BrowserApplicationAlarmApi) { }
 
-    getBroserApi() {
-        return this.chromeApi;
+    getBrowserApi() {
+        return this.browserAlarmApi;
     }
 }

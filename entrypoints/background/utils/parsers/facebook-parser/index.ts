@@ -1,9 +1,10 @@
-import { storeFacebookPostInfo } from "./utils";
+import { FACEBOOK_POST_INFO_KEY, generateReactionKey, parseToPostLocalStorage, REACTION_TYPE_MAP } from "./utils";
 import {
     FacebookCommentData,
     FacebookGroupJoinedData,
     FacebookImageData,
     FacebookPostData,
+    FacebookPostLocalStorageInfo,
     FacebookProfileData,
     FacebookReactionData,
     FacebookUserData,
@@ -19,8 +20,9 @@ import { parseDataGroupHover } from "./parse-data-group";
 import { parseDataFollow } from "./parse-data-follow";
 import { parseDataFriend } from "./parse-data-friend";
 import { parseDataFriendFollowMap } from "./parse-data-follow-friend-map";
+import { ApplicationServices } from "@/entrypoints/background/application-services";
 
-export async function parseFacebookData(dataString: string): Promise<{
+export async function parseFacebookData(dataString: string, applicationServices: ApplicationServices): Promise<{
     userData: FacebookUserData[];
     postData: FacebookPostData[];
     imageData: FacebookImageData[];
@@ -31,9 +33,38 @@ export async function parseFacebookData(dataString: string): Promise<{
     followData: FacebookUserFollowData[];
     friendData: FacebookUserFriendData[];
 }> {
+    const MAXIMUM_POSTS = 50;
+    async function storeFacebookPostInfo(newGroupPost: FacebookPostData[] = []): Promise<FacebookPostLocalStorageInfo[]> {
+        const localStoragePostOwner = await applicationServices.storage?.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
+        const facebookPostsOwnersStr = localStoragePostOwner?.[FACEBOOK_POST_INFO_KEY] || "";
+        const currentGroupPosts = parseToPostLocalStorage(facebookPostsOwnersStr);
+        const tmpCurrentGroupPosts = [...currentGroupPosts];
+
+        for (const newPost of newGroupPost) {
+            const index = tmpCurrentGroupPosts.findIndex((p) => p.post_id === newPost.post_id);
+            if (index !== -1) continue; // Already have this post info -> pass
+
+            if (tmpCurrentGroupPosts.length >= MAXIMUM_POSTS) {
+                tmpCurrentGroupPosts.shift();
+            }
+            const newSavingPosts: FacebookPostLocalStorageInfo = {
+                entry_rowkey: newPost.entry_rowkey,
+                post_id: newPost.post_id.split("_")[1],
+                owner_id: newPost.owner_id,
+                owner_name: newPost.owner_name,
+                owner_type: newPost.owner_type,
+            };
+            tmpCurrentGroupPosts.push(newSavingPosts);
+        }
+
+        const updatingPostsString = tmpCurrentGroupPosts.map((p) => `${p.entry_rowkey}|${p.post_id}|${p.owner_id}|${p.owner_name}|${p.owner_type}`).join("::");
+        applicationServices.storage?.setStorageCached({ [FACEBOOK_POST_INFO_KEY]: updatingPostsString });
+
+        return tmpCurrentGroupPosts;
+    }
+
     const dataStringArr: string[] = [];
     let stringArr = dataString.split("\n");
-
     const dataArray = {
         userData: {} as FacebookUserData[],
         commentData: [] as FacebookCommentData[],
@@ -119,7 +150,9 @@ export async function parseFacebookData(dataString: string): Promise<{
 
         //*** CHECK IF DATA IS REACTION INFO ***//
         {
-            const reactionParseResult = await parseDataReaction(tmpDataJSONValue);
+            const localStoragePostOwner = await applicationServices.storage?.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
+            const cachedPostArray = parseToPostLocalStorage(localStoragePostOwner?.[FACEBOOK_POST_INFO_KEY] || "");
+            const reactionParseResult = await parseDataReaction(tmpDataJSONValue, { cachedPostArray });
             if (reactionParseResult.ok) {
                 dataArray.reactionData.push(...reactionParseResult.data);
 
@@ -154,7 +187,14 @@ export async function parseFacebookData(dataString: string): Promise<{
         {
             const joinedGroupParseResult = await parseDataJoinedGroup(tmpDataJSONValue);
             if (joinedGroupParseResult.ok) {
-                dataArray.groupData.push(...joinedGroupParseResult.data.fbGroupJoined);
+                const cookie = await applicationServices.cookie?.getBrowserApi().get({ url: "https://www.facebook.com", name: "c_user" });
+                const accountId = cookie?.value || "";
+                const appendedAccounttoGroupData = joinedGroupParseResult.data.fbGroupJoined.map((group) => ({
+                    ...group,
+                    account_id: accountId,
+                }));
+
+                dataArray.groupData.push(...appendedAccounttoGroupData);
 
                 dataStringArr[i] = null as any;
                 continue;
@@ -163,7 +203,9 @@ export async function parseFacebookData(dataString: string): Promise<{
 
         //*** CHECK IF DATA IS COMMENT INFO ***//
         {
-            const commentParseResult = await parseDataComment(tmpDataJSONValue);
+            const localStoragePostOwner = await applicationServices.storage?.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
+            const cachedPostArray = parseToPostLocalStorage(localStoragePostOwner?.[FACEBOOK_POST_INFO_KEY] || "");
+            const commentParseResult = await parseDataComment(tmpDataJSONValue, { cachedPostArray });
             if (commentParseResult.ok) {
                 dataArray.commentData.push(...commentParseResult.data);
 

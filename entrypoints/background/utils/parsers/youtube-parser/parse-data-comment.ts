@@ -1,9 +1,20 @@
-import * as services from "../../../services";
 import { findAllKeyValuePairs } from "../commons";
-import { Result, YoutubeCommentData, YoutubePostData } from "../types";
-import { findByKey, generateKey, parseVietnameseRelativeTime, parseYoutubePostsInfo, YOUTUBE_POST_INFO_KEY } from "./utils";
+import {
+    Result,
+    YoutubeCommentData,
+    YoutubePostData,
+    YoutubePostLocalStorageInfo
+} from "../types";
+import {
+    findByKey,
+    generateKey,
+    parseVietnameseRelativeTime
+} from "./utils";
 
-export async function parseCommentData(payload: string)
+export async function parseCommentData(
+    payload: string,
+    metaData: { cachedPostArray: YoutubePostLocalStorageInfo[] }
+)
     : Promise<Result<{
         commentArray: YoutubeCommentData[];
         updatingPost: YoutubePostData | null
@@ -19,12 +30,7 @@ export async function parseCommentData(payload: string)
         }
 
         const postId = findByKey(data, "commentSurfaceEntityPayload")?.publishedTimeCommand.innertubeCommand.watchEndpoint.videoId ?? ""
-
-        const localStoragePostOwner = await services.storageService.getStorageByKeys([YOUTUBE_POST_INFO_KEY]);
-        const youtubePostsCached = localStoragePostOwner[YOUTUBE_POST_INFO_KEY] || "";
-        const youtubePostsCachedArr = parseYoutubePostsInfo(youtubePostsCached);
-
-        const youtubePostById = youtubePostsCachedArr.find(p => p.post_id === postId);
+        const youtubePostById = metaData.cachedPostArray.find(p => p.post_id === postId);
         if (!youtubePostById) {
             console.warn(`post info not found for comments, post id: ${postId}`);
             return { ok: false, error: new Error("Post info not found for comments") };

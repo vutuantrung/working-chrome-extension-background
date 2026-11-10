@@ -88,7 +88,7 @@ export function makeid(length: number): string {
 
 function detectPlatform(url: string | undefined | null): Platform | null {
   if (!url) return null;
-  const platformParterns = Object.entries(Constants.PLATFORM_URL_PATTERNS) as [Platform, RegExp][];
+  const platformParterns = Object.entries(Constants.SUPPORTED_PLATFORM_URL_PATTERNS) as [Platform, RegExp][];
   for (const [platform, re] of platformParterns) {
     // console.log(`>>>>>> detectPlatform - testing platform: ${platform}, url: ${url}`);
     if (re.test(url)) return platform;
@@ -388,4 +388,26 @@ export function deletePropertiesByNames(obj: any, propNames: string[]): void {
       }
     }
   }
+}
+
+export function deepMerge(target: any, ...sources: any) {
+  function isObject(item: any) {
+    return item && typeof item === 'object' && !Array.isArray(item);
+  }
+
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isObject(target) && isObject(source)) {
+    for (const key in source) {
+      if (isObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        deepMerge(target[key], source[key]);
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+
+  return deepMerge(target, ...sources);
 }

@@ -6,6 +6,7 @@ import {
     XDataType,
     YoutubeDataType,
 } from "@/entrypoints/background/utils/parsers/types";
+import { ApplicationServices } from "../application-services";
 
 type SetStorageCachedFn = (data: Record<string, any>) => Promise<void>;
 type DebounceFn = (...args: any[]) => void;
@@ -34,10 +35,10 @@ export type HandlerContext = {
     saveFacebookGroupData: () => Promise<void>;
     // sendFacebookPostData: () => Promise<void>;
     sendFacebookUserData: () => Promise<void>;
-    publishFacebookUserInfo: (options?: PublishFacebookUserInfoOptions) => Promise<{
-        ok: boolean;
-        error?: string;
-    }>;
+    // publishFacebookUserInfo: (options?: PublishFacebookUserInfoOptions) => Promise<{
+    //     ok: boolean;
+    //     error?: string;
+    // }>;
 
     // sendTiktokPostData: () => Promise<void>;
     // sendTiktokCommentData: () => Promise<void>;
@@ -66,4 +67,6 @@ export type HandlerContext = {
     // tiktokPostData: TiktokPostData[];
     // tiktokImagesData: TiktokImageData[];
     // tiktokCommentsData: TiktokCommentData[];
+
+    applicationServices: ApplicationServices;
 };

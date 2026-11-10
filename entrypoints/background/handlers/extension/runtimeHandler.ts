@@ -1,8 +1,4 @@
-import { Message } from "../../types/types";
-import {
-  bootstrapExistingFacebookTabs,
-  ensureFacebookGraphInterceptorInstalled,
-} from "../../scriptInjection";
+import { Message, Settings } from "../../types/types";
 import {
   Constants,
   DefaultValues
@@ -28,7 +24,6 @@ import {
   handleReportJoinGroupResponse,
   handleFetchJoinGroupPreparationData
 } from "../facebook/external-message";
-import * as services from "../../services";
 import * as helpers from "../../utils/helpers";
 import { HandlerContext } from "../../types/handle";
 
@@ -37,17 +32,17 @@ import { debounce } from "../../utils/tools";
 
 import { parseData } from "../../utils/parsers/parser-data";
 // Publisher
-import {
-  sendFacebookCachedData,
-  sendFacebookUserData,
-  saveFacebookUserData,
-  saveFacebookGroupData,
-  publishFacebookUserInfo,
-} from "../../dataPublishers/facebookPublisher";
-import { sendTiktokCachedData } from "../../dataPublishers/tiktokPublisher";
-import { sendXCachedData } from "../../dataPublishers/xPublisher";
-import { sendThreadsCachedData } from "../../dataPublishers/threadsPublisher";
-import { sendYoutubeCachedData } from "../../dataPublishers/youtubePublisher";
+// import {
+//   sendFacebookCachedData,
+//   sendFacebookUserData,
+//   saveFacebookUserData,
+//   saveFacebookGroupData,
+//   publishFacebookUserInfo,
+// } from "../../dataPublishers/facebookPublisher";
+// import { sendTiktokCachedData } from "../../dataPublishers/tiktokPublisher";
+// import { sendXCachedData } from "../../dataPublishers/xPublisher";
+// import { sendThreadsCachedData } from "../../dataPublishers/threadsPublisher";
+// import { sendYoutubeCachedData } from "../../dataPublishers/youtubePublisher";
 
 // Hanlders
 import * as tiktokHandlers from "../tiktok";
@@ -56,9 +51,23 @@ import * as xHandlers from "../x";
 import * as threadsHandlers from "../threads";
 import * as youtubeHandlers from "../youtube";
 import * as evidenCollectionHandlers from "../eviden-collection";
-import { ApplicationServices } from "../../application-services";
 
-async function handleBodyDataIntercepted(message: any, sender: chrome.runtime.MessageSender, sendResponse?: (resp: any) => void): Promise<void> {
+import { ApplicationServices } from "../../application-services";
+import { createPublishFacebookUserData } from "../../dataPublishers/publishFacebookUserData";
+import { createPublishFacebookCachedData } from "../../dataPublishers/publishFacebookCachedData";
+import { createPublishTiktokCachedData } from "../../dataPublishers/publishTiktokCachedData";
+import { createPublishXCachedData } from "../../dataPublishers/publishXCachedData";
+import { createPublishYoutubeCachedData } from "../../dataPublishers/publishYoutubeCachedData";
+import { createPublishThreadsCachedData } from "../../dataPublishers/publishThreadCachedData";
+import { createSaveFacebookUserData } from "../../dataPublishers/saveFacebookUserData";
+import { createSaveFacebookGroupData } from "../../dataPublishers/saveFacebookGroupData";
+
+async function handleBodyDataIntercepted(
+  applicationServices: ApplicationServices,
+  message: any,
+  sender: chrome.runtime.MessageSender,
+  sendResponse?: (resp: any) => void
+): Promise<void> {
   try {
     console.debug("[App Interceptor] Received intercepted data from tab", sender.tab?.id);
     const senderTabId = sender.tab?.id;
@@ -71,8 +80,10 @@ async function handleBodyDataIntercepted(message: any, sender: chrome.runtime.Me
       return;
     }
 
-    const allowedTabId = await helpers.tabControl.getCorrectFacebookTabId();
+    const allowedTabId = await applicationServices.tab?.getSupportedTabs(senderTabId);
     if (!allowedTabId || allowedTabId === -1) {
+      const updatedSettings = { firstFacebookTabId: allowedTabId };
+      await applicationServices.storage?.setStorageCached({ settings: updatedSettings });
       console.warn("[App Interceptor] No valid allowed tab for current mode - ignoring data");
       sendResponse?.({ ok: false, message: "No valid allowed tab" });
       return;
@@ -80,7 +91,7 @@ async function handleBodyDataIntercepted(message: any, sender: chrome.runtime.Me
 
     let tabUrl = "", isProfileTab = false;
     try {
-      const tab = await services.tabService.getTab(senderTabId);
+      const tab = await applicationServices.tab?.getBrowserApi().get(senderTabId);
       isProfileTab = helpers.userInfo.isLikelyProfilePageUrl(tab?.url || "");
       tabUrl = tab?.url || "";
     } catch {
@@ -93,30 +104,37 @@ async function handleBodyDataIntercepted(message: any, sender: chrome.runtime.Me
       return;
     }
 
-    const dataParsed = await parseData(responseText, {
-      requestUrl: requestUrl,
-      tabUrl: tabUrl,
-      postData,
-    });
+    const dataParsed = await parseData(
+      responseText,
+      {
+        requestUrl: requestUrl,
+        tabUrl: tabUrl,
+        postData,
+      },
+      applicationServices);
 
     const context: HandlerContext = {
       senderTabId,
       isProfileTab,
       debounce,
       // facebook
-      saveFacebookUserData: saveFacebookUserData,
-      saveFacebookGroupData: saveFacebookGroupData,
-      sendFacebookUserData: sendFacebookUserData,
-      publishFacebookUserInfo: publishFacebookUserInfo,
-      sendFacebookCachedData: sendFacebookCachedData,
+      saveFacebookUserData: createSaveFacebookUserData(applicationServices),
+      saveFacebookGroupData: createSaveFacebookGroupData(applicationServices),
+      sendFacebookUserData: createPublishFacebookUserData(applicationServices),
+      sendFacebookCachedData: createPublishFacebookCachedData(applicationServices),
+      // publishFacebookUserInfo: publishFacebookUserInfo,
+
       // tiktok
-      sendTiktokCachedData: sendTiktokCachedData,
+      sendTiktokCachedData: createPublishTiktokCachedData(applicationServices),
+
       // threads
-      sendThreadsCachedData: sendThreadsCachedData,
+      sendThreadsCachedData: createPublishThreadsCachedData(applicationServices),
+
       // x
-      sendXCachedData: sendXCachedData,
+      sendXCachedData: createPublishXCachedData(applicationServices),
+
       // youtube
-      sendYoutubeCachedData: sendYoutubeCachedData,
+      sendYoutubeCachedData: createPublishYoutubeCachedData(applicationServices),
 
       MAXIMUM_TIME_WAIT_SECOND: Constants.MAXIMUM_TIME_WAIT_SECOND,
       MAXIMUM_RECORD_ARCHIVED: Constants.MAXIMUM_RECORD_ARCHIVED,
@@ -136,6 +154,8 @@ async function handleBodyDataIntercepted(message: any, sender: chrome.runtime.Me
       cachedThreadsData: bgState.cachedThreadsData,
       cachedFacebookData: bgState.cachedFacebookData,
       cachedYoutubeData: bgState.cachedYoutubeData,
+
+      applicationServices: applicationServices,
     };
 
     for (const dt of dataParsed) {
@@ -173,7 +193,8 @@ async function handleBodyDataIntercepted(message: any, sender: chrome.runtime.Me
         handler = tiktokHandlers.handleTiktokFollowInfo;
 
       // X
-      if (dt.typeName === "XPostData") handler = xHandlers.handleXPostInfo;
+      if (dt.typeName === "XPostData")
+        handler = xHandlers.handleXPostInfo;
       if (dt.typeName === "XAttachmentData")
         handler = xHandlers.handleXImageInfo;
       if (dt.typeName === "XUserProfileData")
@@ -214,15 +235,17 @@ async function handleBodyDataIntercepted(message: any, sender: chrome.runtime.Me
   }
 }
 
-export function createRunTimeOnMessageHandler(services: ApplicationServices) {
+export function createRunTimeOnMessageHandler(
+  applicationServices: ApplicationServices
+) {
   return (
     message: Message,
     sender: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void
-  ): boolean => runTimeOnMessageHandlerInternal(services, message, sender, sendResponse)
+  ): boolean => runTimeOnMessageHandlerInternal(applicationServices, message, sender, sendResponse)
 }
 
-export function runTimeOnMessageHandlerInternal(
+function runTimeOnMessageHandlerInternal(
   applicationServices: ApplicationServices,
   message: Message,
   sender: chrome.runtime.MessageSender,
@@ -241,7 +264,7 @@ export function runTimeOnMessageHandlerInternal(
       return false;
     }
     console.log("[ENSURE_FB_INTERCEPTOR] request from tab", tabId);
-    ensureFacebookGraphInterceptorInstalled(tabId)
+    applicationServices.script?.injectXHRNetworkCapture(tabId)
       .then((result) => sendResponse?.({ ok: true, ...result }))
       .catch((err) => {
         console.warn("[ENSURE_FB_INTERCEPTOR] failed for tab", tabId, err);
@@ -253,11 +276,11 @@ export function runTimeOnMessageHandlerInternal(
   if (message.type === "CONTENT_READY") {
     console.log("[CONTENT_READY] Content script loaded:", message.name, "on tab", sender.tab?.id);
     if (message.name === "getFbProfileId" && sender.tab?.id) {
-      services.storageService.getStorageCachedByKeys(["settings"])
+      applicationServices.storage?.getStorageCachedByKeys(["settings"])
         .then(({ settings }) => {
           if (settings?.openingDevtoolsTabId === sender.tab?.id) {
             setTimeout(() => {
-              services.tabService.sendTabMessage(
+              applicationServices.tab?.getBrowserApi().sendMessage(
                 sender?.tab!.id as any,
                 {
                   platform: "facebook",
@@ -265,7 +288,7 @@ export function runTimeOnMessageHandlerInternal(
                   tabId: sender.tab?.id,
                 },
                 (response: any) => {
-                  void services.runtimeService.getRuntimeLastError();
+                  void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
                 },
               );
             }, 1000);
@@ -274,7 +297,7 @@ export function runTimeOnMessageHandlerInternal(
     }
 
     if (message.name === "clickAboutButton" && sender.tab?.id) {
-      services.tabService.sendTabMessage(
+      applicationServices.tab?.getBrowserApi().sendMessage(
         sender?.tab!.id as any,
         {
           type: "CLICK_ABOUT_BUTTON",
@@ -282,13 +305,13 @@ export function runTimeOnMessageHandlerInternal(
           tabId: sender.tab?.id,
         },
         (response: any) => {
-          void services.runtimeService.getRuntimeLastError();
+          void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
         },
       );
     }
 
     if (message.name === "clickTranscriptButton" && sender.tab?.id) {
-      services.tabService.sendTabMessage(
+      applicationServices.tab?.getBrowserApi().sendMessage(
         sender?.tab!.id as any,
         {
           type: "CLICK_TRANSCRIPT_BUTTON",
@@ -296,7 +319,7 @@ export function runTimeOnMessageHandlerInternal(
           tabId: sender.tab?.id,
         },
         (response: any) => {
-          void services.runtimeService.getRuntimeLastError();
+          void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
         },
       );
     }
@@ -309,55 +332,55 @@ export function runTimeOnMessageHandlerInternal(
     switch (message.type) {
       // FACEBOOK REQUESTS
       case "FETCH_JG_RESPONSE":
-        return handleFetchJoinGroupResponse(message, sendResponse);
+        return handleFetchJoinGroupResponse(applicationServices, message, sendResponse);
       case "FETCH_JG_PREPARATION_DATA":
-        return handleFetchJoinGroupPreparationData(message, sendResponse);
+        return handleFetchJoinGroupPreparationData(applicationServices, message, sendResponse);
       case "REPORT_JG_RESPONSE":
-        return handleReportJoinGroupResponse(message, sendResponse);
+        return handleReportJoinGroupResponse(applicationServices, message, sendResponse);
       case "SEND_ADD_SOURCE_REQUEST":
-        return handleSendAddSourceRequest(message, sendResponse);
+        return handleSendAddSourceRequest(applicationServices, message, sendResponse);
       case "GET_FB_ACCOUNT_CACHE":
-        return handleGetFacebookAccountCache(message, sendResponse);
+        return handleGetFacebookAccountCache(applicationServices, message, sendResponse);
       case "GET_FB_ACCOUNT":
-        return handleGetFacebookAccount(message, sendResponse);
+        return handleGetFacebookAccount(applicationServices, message, sendResponse);
 
       // DATA INTERCEPTED
       case "BODY_DATA_INTERCEPTED":
-        return handleBodyDataIntercepted(message, sender, sendResponse);
+        return handleBodyDataIntercepted(applicationServices, message, sender, sendResponse);
 
       // SYSTEM REQUESTS
       case "SET_SETTINGS":
-        return services.storageService.handleSetSettings(message, sendResponse);
+        return applicationServices.storage?.handleSetSettings(message, sendResponse);
       case "GET_SETTINGS":
-        return services.storageService.handleGetSettings(message, sendResponse);
+        return applicationServices.storage?.handleGetSettings(message, sendResponse);
       case "GET_USERINFO":
-        return handleGetUserInfo(message, sendResponse);
+        return handleGetUserInfo(applicationServices, message, sendResponse);
       case "UPDATE_SETTINGS":
-        return services.storageService.handleUpdateSettings(message, sendResponse);
+        return applicationServices.storage?.handleUpdateSettings(message, sendResponse);
       case "UPDATE_ARCHIVE":
-        return services.storageService.handleUpdateArchive(message, sendResponse);
+        return applicationServices.storage?.handleUpdateArchive(message, sendResponse);
       case "INITIALIZE_AFTER_LOGIN":
-        return handleInitializeAfterLogin(message, sendResponse);
+        return handleInitializeAfterLogin(applicationServices, message, sendResponse);
       case "CLEAR_DATA_AFTER_LOGOUT":
-        return handleClearDataAfterLogout(message, sendResponse);
+        return handleClearDataAfterLogout(applicationServices, message, sendResponse);
       case "SET_PROXY":
-        return services.proxyService.handleProxy(message, sendResponse);
+        return applicationServices.proxy?.handleProxy(message, sendResponse);
       case "SET_BADGE_TEXT":
-        return handleSetBadgeText(message, sendResponse);
+        return handleSetBadgeText(applicationServices, message, sendResponse);
       case "CANCEL_TASK":
-        return handleCancelTask(message, sendResponse);
+        return handleCancelTask(applicationServices, message, sendResponse);
       case "SCRIPT_EXECUTE_RESULT":
-        return handleScriptExecuteResult(message, sender, sendResponse);
+        return handleScriptExecuteResult(applicationServices, message, sender, sendResponse);
       case "CHANGE_TAB_URL":
-        return handleChangeTabUrl(message, sender, sendResponse);
+        return handleChangeTabUrl(applicationServices, message, sender, sendResponse);
       case "START_PERIODIC_CHECK":
-        return handleStartPeriodicCheck(message, sendResponse);
+        return handleStartPeriodicCheck(applicationServices, message, sendResponse);
       case "DOWNLOAD_IMAGE":
-        return handleDownloadImage(message, sendResponse);
+        return handleDownloadImage(applicationServices, message, sendResponse);
       case "CAPTURE_SCREENSHOT":
         return evidenCollectionHandlers.handleCaptureScreenshot(applicationServices, sendResponse);
       case "SCREENSHOT_CROPPED":
-        return evidenCollectionHandlers.handleScreenshotCropped(message, sendResponse);
+        return evidenCollectionHandlers.handleScreenshotCropped(applicationServices, message, sendResponse);
       default:
         console.warn(
           "[runTimeOnMessageHandler] Unhandled message type:",
@@ -380,33 +403,33 @@ export function createRunTimeOnInstalledHandler(applicationServices: Application
   ) => runTimeOnInstalledHandlerInternal(applicationServices, details);
 }
 
-export async function runTimeOnInstalledHandlerInternal(
+async function runTimeOnInstalledHandlerInternal(
   applicationServices: ApplicationServices,
   details: chrome.runtime.InstalledDetails
 ): Promise<void> {
   console.log("Extension installed/updated", details);
-  bgState.manifests = applicationServices.runtime?.getManifest();
+  bgState.manifests = applicationServices.runtime?.getBrowserApi().getManifest();
 
   if (details.reason === "install") {
   } else if (details.reason === "update") {
-    const { settings } = await services.storageService.getStorageCachedByKeys(["settings"]);
-    if (settings) {
+    const cachedStorage = await applicationServices.storage?.getStorageCachedByKeys(["settings"]);
+    if (cachedStorage?.settings) {
       const mergedSettings = {
         ...DefaultValues.SETTINGS_DATA,
-        ...settings,
-        archive: settings.archive || {},
+        ...cachedStorage.settings,
+        archive: cachedStorage.settings.archive || {},
       };
-      await services.storageService.setStorageCached({
+      await applicationServices.storage?.setStorageCached({
         settings: mergedSettings,
       });
     }
   }
 
-  applicationServices.action?.setBadgeText({ text: "0" });
-  applicationServices.action?.setBadgeBackgroundColor({ color: "#0000FF" });
+  applicationServices.action?.getBrowserApi().setBadgeText({ text: "0" });
+  applicationServices.action?.getBrowserApi().setBadgeBackgroundColor({ color: "#0000FF" });
 
   try {
-    await bootstrapExistingFacebookTabs();
+    await applicationServices.script?.injectDependenciesInSupportedPlatform();
   } catch (e) {
     console.warn("[SETUP] bootstrapExistingFacebookTabs failed:", e);
   }

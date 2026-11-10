@@ -50,7 +50,7 @@ export const USER_PROFILE_MAIN_FIELD_KEYS = [
     "docType",
 ];
 
-export const PLATFORM_LABELS: Record<Platform, string> = {
+export const SUPPORTED_PLATFORM_LABELS: Record<Platform, string> = {
     facebook: "Facebook",
     tiktok: "TikTok",
     x: "X (Twitter)",
@@ -59,7 +59,7 @@ export const PLATFORM_LABELS: Record<Platform, string> = {
 };
 
 /** Cookie domains cleared per platform (manual login — avoid cross-persona session bleed). */
-export const PLATFORM_COOKIE_DOMAINS: Record<Platform, readonly string[]> = {
+export const SUPPORTED_PLATFORM_COOKIE_DOMAINS: Record<Platform, readonly string[]> = {
     facebook: [".facebook.com", ".fb.com"],
     tiktok: [".tiktok.com"],
     x: [".x.com", ".twitter.com"],
@@ -67,13 +67,22 @@ export const PLATFORM_COOKIE_DOMAINS: Record<Platform, readonly string[]> = {
     youtube: [],
 };
 
-export const PLATFORM_URL_PATTERNS: Record<Platform, RegExp> = {
+export const SUPPORTED_PLATFORM_URL_PATTERNS: Record<Platform, RegExp> = {
     facebook: /^https?:\/\/(www\.|web\.)?facebook\.com\//i,
     tiktok: /^https?:\/\/(www\.)?(m\.)?(vt\.)?(vm\.)?tiktok\.com\/*.*$/i,
     threads: /^https?:\/\/(www\.)?threads\.com\/*.*$/i,
     x: /^https?:\/\/x\.com\/*.*$/i,
     youtube: /^https?:\/\/(www\.)?youtube\.com\/*.*$/i,
 };
+
+export const SUPPORTED_PLATFORM_URLS = [
+    "*://*.facebook.com/*",
+    "*://facebook.com/*",
+    "https://www.facebook.com/*",
+    "https://web.facebook.com/*",
+    "https://*.tiktok.com/*",
+    "https://www.tiktok.com/*",
+];
 
 export const SOCIAL_COOKIE_DOMAINS = [
     ".facebook.com",
@@ -83,15 +92,6 @@ export const SOCIAL_COOKIE_DOMAINS = [
     ".twitter.com",
     ".threads.com",
     ".threads.net",
-];
-
-export const PLATFORM_TAB_FB_GLOBS = [
-    "*://*.facebook.com/*",
-    "*://facebook.com/*",
-    "https://www.facebook.com/*",
-    "https://web.facebook.com/*",
-    "https://*.tiktok.com/*",
-    "https://www.tiktok.com/*",
 ];
 
 export const MAXIMUM_TIME_WAIT_SECOND = 10;

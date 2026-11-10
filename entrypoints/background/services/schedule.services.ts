@@ -34,14 +34,14 @@ export class ScheduleService {
       ) {
         alarmName = "scheduleTask_" + activity.id;
         scheduledTime = parseDelayAndPeriodInMinutes(activity.scheduleTime);
-        const alarm = await this.alarmService.getBroserApi().get(alarmName);
+        const alarm = await this.alarmService.getBrowserApi().get(alarmName);
         if (alarm) {
           // If the alarm already has the correct period, leave it alone.
           if (Math.abs((alarm.periodInMinutes ?? 0) - (scheduledTime.periodInMinutes ?? 0)) < 1) {
             continue;
           }
           // Period mismatch — clear the stale alarm so it gets recreated below.
-          await this.alarmService.getBroserApi().clear(alarmName);
+          await this.alarmService.getBrowserApi().clear(alarmName);
           // When recreating after a mismatch, delay = 1 period so the first fire is on schedule.
           scheduledTime = {
             ...scheduledTime,
@@ -52,7 +52,7 @@ export class ScheduleService {
 
       if (activity.scheduleType === "alarm" && activity.type === "auto-scripts") {
         alarmName = "scheduleTask_" + activity.id;
-        let alarm = await this.alarmService.getBroserApi().get(alarmName);
+        let alarm = await this.alarmService.getBrowserApi().get(alarmName);
         if (alarm) continue;
 
         let assignedTask = taskList?.find((task) => task.activityId === activity.id);
@@ -64,14 +64,14 @@ export class ScheduleService {
       if (activity.scheduleType === "system-scripts") {
         alarmName = activity?.name?.toLowerCase();
         if (!alarmName) continue;
-        let alarm = await this.alarmService.getBroserApi().get(alarmName);
+        let alarm = await this.alarmService.getBrowserApi().get(alarmName);
         if (alarm) continue;
 
         scheduledTime = parseDelayAndPeriodInMinutes(activity.scheduleTime);
       }
 
       if (alarmName && scheduledTime) {
-        this.alarmService.getBroserApi().create(alarmName, scheduledTime);
+        this.alarmService.getBrowserApi().create(alarmName, scheduledTime);
         console.log("Alarm created:", alarmName);
       }
     }

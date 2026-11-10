@@ -5,15 +5,16 @@ import { parseTiktokData } from "./tiktok-parser";
 import { parseXData } from "./x-parser";
 import { ParseType } from "./types";
 import { parseYoutubeData } from "./youtube-parser";
+import { ApplicationServices } from "../../application-services";
 
-export async function parseData(dataString: string, requestInfo: any): Promise<ParseType[]> {
+export async function parseData(dataString: string, requestInfo: any, applicationServices: ApplicationServices): Promise<ParseType[]> {
   const dataReturn: ParseType[] = [];
 
   const platform = helpers.tabControl.distinctPlatformByRequestUrl(
     requestInfo.requestUrl,
     requestInfo.tabUrl,
   );
-  
+
   // console.log(">>>>>> parseData - platform:", platform, "requestUrl:", requestInfo.requestUrl);
   if (!dataString || !platform) {
     return dataReturn;
@@ -21,7 +22,7 @@ export async function parseData(dataString: string, requestInfo: any): Promise<P
 
   // FACEBOOK
   if (platform === "facebook") {
-    const parsingResult = await parseFacebookData(dataString);
+    const parsingResult = await parseFacebookData(dataString, applicationServices);
     if (parsingResult?.postData?.length) { dataReturn.push({ typeName: "FacebookPostData", data: parsingResult.postData }); }
     if (parsingResult?.imageData?.length) { dataReturn.push({ typeName: "FacebookImageData", data: parsingResult.imageData }); }
     if (parsingResult?.groupData?.length) { dataReturn.push({ typeName: "FacebookGroupJoinedData", data: parsingResult.groupData }); }
@@ -35,7 +36,7 @@ export async function parseData(dataString: string, requestInfo: any): Promise<P
 
   // TIKTOK
   if (platform === "tiktok") {
-    const parsingResult = await parseTiktokData(dataString, requestInfo);
+    const parsingResult = await parseTiktokData(dataString, requestInfo, applicationServices);
     if (parsingResult?.postData?.length) { dataReturn.push({ typeName: "TiktokPostData", data: parsingResult.postData }); }
     if (parsingResult?.commentData?.length) { dataReturn.push({ typeName: "TiktokCommentData", data: parsingResult.commentData }); }
     if (parsingResult?.userData?.length) { dataReturn.push({ typeName: "TiktokUserProfileData", data: parsingResult.userData }); }
@@ -45,7 +46,7 @@ export async function parseData(dataString: string, requestInfo: any): Promise<P
 
   // X (Twitter)
   if (platform === "x") {
-    const parsingResult = await parseXData(dataString, requestInfo);
+    const parsingResult = await parseXData(dataString, requestInfo, applicationServices);
     if (parsingResult?.postData?.length) { dataReturn.push({ typeName: "XPostData", data: parsingResult.postData }); }
     if (parsingResult?.attachment?.length) { dataReturn.push({ typeName: "XAttachmentData", data: parsingResult.attachment }); }
     if (parsingResult?.userProfiles?.length) { dataReturn.push({ typeName: "XUserProfileData", data: parsingResult.userProfiles }); }
@@ -54,7 +55,7 @@ export async function parseData(dataString: string, requestInfo: any): Promise<P
 
   // THREADS
   if (platform === "threads") {
-    const parsingResult = await parseThreadsData(dataString, requestInfo.postData);
+    const parsingResult = await parseThreadsData(dataString, requestInfo.postData, applicationServices);
     if (parsingResult?.postData?.length) { dataReturn.push({ typeName: "ThreadsPostData", data: parsingResult.postData }) }
     if (parsingResult?.attachment?.length) { dataReturn.push({ typeName: "ThreadsAttachmentData", data: parsingResult.attachment, }); }
     if (parsingResult?.userProfileData?.length) { dataReturn.push({ typeName: "ThreadsUserProfileData", data: parsingResult.userProfileData }); }
@@ -64,7 +65,7 @@ export async function parseData(dataString: string, requestInfo: any): Promise<P
 
   // YOUTUBE
   if (platform === "youtube") {
-    const parsingResult = await parseYoutubeData(dataString, requestInfo);
+    const parsingResult = await parseYoutubeData(dataString, requestInfo, applicationServices);
     if (parsingResult?.postData?.length) { dataReturn.push({ typeName: "YoutubePostData", data: parsingResult.postData }) }
     if (parsingResult?.commentData?.length) { dataReturn.push({ typeName: "YoutubeCommentData", data: parsingResult.commentData }) }
     if (parsingResult?.userProfiles?.length) { dataReturn.push({ typeName: "YoutubeUserProfileData", data: parsingResult.userProfiles }) }

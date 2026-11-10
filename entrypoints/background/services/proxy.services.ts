@@ -3,7 +3,6 @@ import { Constants, DefaultValues } from "../utils/constants";
 import { BrowserApplicationProxyApi } from "./proxy.api";
 import { StorageService } from "./storage.services";
 
-import * as services from ".";
 import * as helpers from "../utils/helpers";
 
 interface Proxy {
@@ -17,13 +16,14 @@ export class ProxyService {
         private storageService: StorageService
     ) { }
 
-    private getCachedProxyHealth(): ProxyHealth | undefined {
-        try {
-            const storage = this.storageService.getCachedStorage();
-            return (storage as any)?.proxyHealth as ProxyHealth | undefined;
-        } catch {
-            return undefined;
-        }
+    private _lastProxyErrorWriteAt = 0;
+
+    getLastProxyErrorWriteAt() {
+        return this._lastProxyErrorWriteAt;
+    }
+
+    setLastProxyErrorWriteAt(timestamp: number) {
+        this._lastProxyErrorWriteAt = timestamp;
     }
 
     getBrowserApi() {
@@ -41,9 +41,7 @@ export class ProxyService {
     }
 
     setProxy(httpProxy?: Proxy, httpsProxy?: Proxy) {
-        const rules: any = {
-            bypassList: ["localhost", "127.0.0.1"],
-        };
+        const rules: any = { bypassList: ["localhost", "127.0.0.1"] };
 
         if (httpProxy) {
             rules.proxyForHttp = {
@@ -61,14 +59,16 @@ export class ProxyService {
             };
         }
 
-        const config = {
-            mode: "fixed_servers" as const,
-            rules: rules,
-        };
-
-        this.browserProxyApi.getProxySettings().set({ value: config, scope: "regular" }, () => {
-            console.log("Proxy is/are set");
-        });
+        this.browserProxyApi.getProxySettings()
+            .set({
+                scope: "regular",
+                value: {
+                    mode: "fixed_servers",
+                    rules: rules,
+                }
+            }, () => {
+                console.log("Proxy is/are set");
+            });
 
         this.storeProxyData({
             state: "ok",
@@ -84,25 +84,17 @@ export class ProxyService {
     }
 
     storeProxyData(patch: Partial<ProxyHealth>) {
-        try {
-            const prev = this.getCachedProxyHealth();
-            const now = Date.now();
+        const storage = this.storageService.getCachedStorage();
+        const prev = storage.proxyHealth;
 
-            const next: ProxyHealth = {
-                ...(prev || {} as any),
-                state: "ok",
-                updatedAt: now,
-                consecutiveFailures: prev?.consecutiveFailures ?? 0,
-                ...patch,
-            };
-            void this.storageService.setStorageCached({ proxyHealth: next }).catch(() => { });
-
-            // Keep cache in sync even if storage event is delayed.
-            const cache = this.storageService.getCachedStorage();
-            if (cache) {
-                (cache as any).proxyHealth = next;
-            }
-        } catch { }
+        const next: ProxyHealth = {
+            ...(prev || {}),
+            state: "ok",
+            updatedAt: Date.now(),
+            consecutiveFailures: prev?.consecutiveFailures ?? 0,
+            ...patch,
+        };
+        this.storageService.setStorageCached({ proxyHealth: next }).catch(() => { });
     }
 
     async checkProxyStatus(): Promise<void> {
@@ -113,7 +105,9 @@ export class ProxyService {
 
         const details = await proxySettings.get({ incognito: false });
         const proxyValue = details?.value ?? null;
-        const prevHealth = this.getCachedProxyHealth();
+
+        const cachedStorage = this.storageService.getCachedStorage();
+        const prevHealth = cachedStorage?.proxyHealth;
         const prevFailures = prevHealth?.consecutiveFailures ?? 0;
 
         // If proxy isn't active, keep state as OK (Restart button won't show anyway because proxy won't match).
@@ -130,7 +124,6 @@ export class ProxyService {
             });
             return;
         }
-
 
         // Set up an abort controller to timeout the fetch request after 7 seconds.
         const controller = new AbortController();
@@ -231,17 +224,17 @@ export class ProxyService {
                 if (httpProxy || httpsProxy) {
                     this.setProxy(httpProxy, httpsProxy);
                 }
-            } else if (!proxyConfig || (typeof proxyConfig === "object" && !Object.keys(proxyConfig).length)) {
+            } else if (!proxyConfig || (typeof proxyConfig === "object" && !Object.keys(proxyConfig).length) || proxyConfig === "system") {
                 this.clearProxy();
             }
 
             // Persist effective proxy so popup can reflect changes (Restart button logic depends on it).
             try {
                 const proxyActive = helpers.proxy.isActiveProxy(proxyConfig);
-                await services.storageService.setStorageCached({ activeProxy: proxyActive ? proxyConfig : {} });
+                await this.storageService.setStorageCached({ activeProxy: proxyActive ? proxyConfig : {} });
             } catch { }
 
-            const { settings } = await services.storageService.getStorageCachedByKeys(["settings"]);
+            const { settings } = await this.storageService.getStorageCachedByKeys(["settings"]);
             const finalSettings = settings
                 ? {
                     ...settings,
@@ -253,7 +246,7 @@ export class ProxyService {
                     ...settingsFromProxy,
                 };
 
-            await services.storageService.setStorageCached({ settings: finalSettings });
+            await this.storageService.setStorageCached({ settings: finalSettings });
             if (sendResponse) {
                 sendResponse({
                     success: true,

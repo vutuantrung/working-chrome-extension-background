@@ -13,6 +13,26 @@ export class ChromeTabApi implements IBrowserTabApi {
         return chromeApi.tabs.get(tabId);
     }
 
+    safeGet(tabId: number): Promise<Tab | null> {
+        return new Promise((resolve) => {
+            try {
+                chromeApi.tabs.get(tabId, (tab) => {
+                    const err = chromeApi.runtime.lastError;
+                    if (!err) {
+                        resolve(tab ?? null);
+                        return;
+                    }
+
+                    console.warn(`Get failed for tab ${tabId}:`, err);
+                    resolve(null);
+                });
+            } catch (error) {
+                console.warn(`Get threw for tab ${tabId}:`, error);
+                resolve(null);
+            }
+        });
+    }
+
     query(queryInfo: QueryTabInfo): Promise<Tab[]>;
     query(queryInfo: QueryTabInfo, callback: (tabs: Tab[]) => void): void;
     query(queryInfo: QueryTabInfo, callback?: (tabs: Tab[]) => void): Promise<Tab[]> | void {
@@ -36,6 +56,30 @@ export class ChromeTabApi implements IBrowserTabApi {
             return chromeApi.tabs.sendMessage(tabId, message, callback);
         }
         return chromeApi.tabs.sendMessage(tabId, message);
+    }
+
+    safeSendMessage(tabId: number, message: any): Promise<any | null> {
+        return new Promise((resolve) => {
+            try {
+                chromeApi.tabs.sendMessage(tabId, message, (response) => {
+                    const err = chromeApi.runtime.lastError;
+                    if (!err) {
+                        resolve(response ?? null);
+                        return;
+                    }
+
+                    // Common, non-fatal: tab has no content script (closed/reloaded/not matching).
+                    if (err.message?.includes("Receiving end does not exist")) {
+                        resolve(null);
+                        return;
+                    }
+
+                    resolve(null);
+                });
+            } catch (error) {
+                resolve(null);
+            }
+        });
     }
 
     captureVisibleTab(options: ImageDetails): Promise<string>;

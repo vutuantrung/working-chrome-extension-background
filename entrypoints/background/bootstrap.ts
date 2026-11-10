@@ -1,67 +1,135 @@
-import { ChromeProxyApi } from "./infrastructure/chrome-api/ChromeProxyApi";
-import { ChromeTabApi } from "./infrastructure/chrome-api/ChromeTabApi";
-import { ChromeDownloadApi } from "./infrastructure/chrome-api/ChromeDownloadApi";
 import { BrowserApplicationProxyApi } from "./services/proxy.api";
 import { BrowserApplicationTabApi } from "./services/tab.api";
-
-import type { ApplicationServices } from "./application-services";
 import { BrowserApplicationStorageApi } from "./services/storage.api";
-import { ChromeStorageApi } from "./infrastructure/chrome-api/ChromeStorageApi";
 import { BrowserApplicationActionApi } from "./services/action.api";
-import { ChromeActionApi } from "./infrastructure/chrome-api/ChromeActionApi";
 import { BrowserApplicationAlarmApi } from "./services/alarm.api";
-import { ChromeAlarmApi } from "./infrastructure/chrome-api/ChromeAlarmApi";
 import { BrowserApplicationCookieApi } from "./services/cookie.api";
-import { ChromeCookieApi } from "./infrastructure/chrome-api/ChromeCookieApi";
 import { BrowserApplicationDownloadApi } from "./services/download.api";
-import { ChromeRuntimeApi } from "./infrastructure/chrome-api/ChromeRuntimeApi";
 import { BrowserApplicationRuntimeApi } from "./services/runtime.api";
-import { ChromeWindowApi } from "./infrastructure/chrome-api/ChromeWindowApi";
 import { BrowserApplicationWindowApi } from "./services/window.api";
 
-function detectBrowser(): string {
-    if (typeof chrome !== "undefined" && typeof chrome.runtime !== "undefined") {
-        return "chrome";
-    }
-    throw new Error("Unsupported browser");
-}
+import { ApplicationServices } from "./application-services";
 
+import { TabService } from "./services/tab.services";
+import { ProxyService } from "./services/proxy.services";
+import { StorageService } from "./services/storage.services";
+import { AlarmService } from "./services/alarm.services";
+import { CookieService } from "./services/cookie.services";
+import { ActionService } from "./services/action.services";
+import { DownloadService } from "./services/download.services";
+import { RuntimeService } from "./services/runtime.services";
+import { WindowService } from "./services/window.services";
+import { SyncService } from "./services/sync.services";
+import { ScheduleService } from "./services/schedule.services";
+import { BrowserApplicationScriptingApi } from "./services/scripting.api";
+import { ScriptingService } from "./services/scripting.services";
 
-export function createApplicationServices(): ApplicationServices {
-    const currentBrowser = detectBrowser();
+export async function createApplicationServices(currentBrowser: "chrome" | "firefox"): Promise<ApplicationServices> {
 
-    let applicationProxyApi = undefined;
-    let applicationTabApi = undefined;
-    let applicationActionApi = undefined;
-    let applicationAlarmApi = undefined;
-    let applicationCookieApi = undefined;
-    let applicationDownloadApi = undefined;
-    let applicationRuntimeApi = undefined;
-    let applicationStorageApi = undefined;
-    let applicationWindowApi = undefined;
+    let applicationProxyApi: BrowserApplicationProxyApi;
+    let applicationTabApi: BrowserApplicationTabApi;
+    let applicationActionApi: BrowserApplicationActionApi;
+    let applicationAlarmApi: BrowserApplicationAlarmApi;
+    let applicationCookieApi: BrowserApplicationCookieApi;
+    let applicationDownloadApi: BrowserApplicationDownloadApi;
+    let applicationRuntimeApi: BrowserApplicationRuntimeApi;
+    let applicationStorageApi: BrowserApplicationStorageApi;
+    let applicationWindowApi: BrowserApplicationWindowApi;
+    let applicationScriptingApi: BrowserApplicationScriptingApi;
 
+    let applicationTabService = undefined;
+    let applicationProxyService = undefined;
+    let applicationStorageService = undefined;
+    let applicationAlarmService = undefined;
+    let applicationCookieService = undefined;
+    let applicationActionService = undefined;
+    let applicationDownloadService = undefined;
+    let applicationRuntimeService = undefined;
+    let applicationWindowService = undefined;
+    let applicationSyncService = undefined;
+    let applicationScheduleService = undefined;
+    let applicationScriptingService = undefined;
 
     if (currentBrowser === "chrome") {
-        applicationProxyApi = new BrowserApplicationProxyApi(new ChromeProxyApi());
+        const { ChromeTabApi } = (await import("./infrastructure/chrome-api/ChromeTabApi"));
         applicationTabApi = new BrowserApplicationTabApi(new ChromeTabApi());
+
+        const { ChromeProxyApi } = (await import("./infrastructure/chrome-api/ChromeProxyApi"));
+        applicationProxyApi = new BrowserApplicationProxyApi(new ChromeProxyApi());
+
+        const { ChromeActionApi } = (await import("./infrastructure/chrome-api/ChromeActionApi"));
         applicationActionApi = new BrowserApplicationActionApi(new ChromeActionApi());
+
+        const { ChromeAlarmApi } = (await import("./infrastructure/chrome-api/ChromeAlarmApi"));
         applicationAlarmApi = new BrowserApplicationAlarmApi(new ChromeAlarmApi());
+
+        const { ChromeCookieApi } = (await import("./infrastructure/chrome-api/ChromeCookieApi"));
         applicationCookieApi = new BrowserApplicationCookieApi(new ChromeCookieApi());
+
+        const { ChromeDownloadApi } = (await import("./infrastructure/chrome-api/ChromeDownloadApi"));
         applicationDownloadApi = new BrowserApplicationDownloadApi(new ChromeDownloadApi());
+
+        const { ChromeRuntimeApi } = (await import("./infrastructure/chrome-api/ChromeRuntimeApi"));
         applicationRuntimeApi = new BrowserApplicationRuntimeApi(new ChromeRuntimeApi());
+
+        const { ChromeStorageApi } = (await import("./infrastructure/chrome-api/ChromeStorageApi"));
         applicationStorageApi = new BrowserApplicationStorageApi(new ChromeStorageApi());
+
+        const { ChromeWindowApi } = (await import("./infrastructure/chrome-api/ChromeWindowApi"));
         applicationWindowApi = new BrowserApplicationWindowApi(new ChromeWindowApi());
+
+        const { ChromeScriptingApi } = (await import("./infrastructure/chrome-api/ChromeScriptingApi"));
+        applicationScriptingApi = new BrowserApplicationScriptingApi(new ChromeScriptingApi());
+
+    } else if (currentBrowser === "firefox") {
+        throw new Error("Firefox is not supported yet");
+    } else {
+        throw new Error("Unsupported browser API setup");
     }
 
+    applicationStorageService = new StorageService(applicationStorageApi);
+    applicationTabService = new TabService(applicationTabApi);
+    applicationProxyService = new ProxyService(
+        applicationProxyApi,
+        applicationStorageService
+    );
+    applicationAlarmService = new AlarmService(applicationAlarmApi);
+    applicationCookieService = new CookieService(applicationCookieApi);
+    applicationActionService = new ActionService(applicationActionApi);
+    applicationDownloadService = new DownloadService(applicationDownloadApi);
+    applicationRuntimeService = new RuntimeService(applicationRuntimeApi);
+    applicationWindowService = new WindowService(applicationWindowApi);
+    applicationScriptingService = new ScriptingService(
+        applicationScriptingApi,
+        applicationRuntimeApi,
+        applicationTabApi
+    );
+
+    applicationScheduleService = new ScheduleService(
+        applicationStorageService,
+        applicationAlarmService
+    );
+    applicationSyncService = new SyncService(
+        applicationStorageService,
+        applicationProxyService,
+        applicationAlarmService,
+        applicationCookieService,
+        applicationScheduleService,
+        applicationTabService,
+    );
+
     return {
-        proxy: applicationProxyApi,
-        tab: applicationTabApi,
-        action: applicationActionApi,
-        alarm: applicationAlarmApi,
-        cookie: applicationCookieApi,
-        download: applicationDownloadApi,
-        runtime: applicationRuntimeApi,
-        storage: applicationStorageApi,
-        window: applicationWindowApi,
+        tab: applicationTabService,
+        proxy: applicationProxyService,
+        alarm: applicationAlarmService,
+        cookie: applicationCookieService,
+        schedule: applicationScheduleService,
+        action: applicationActionService,
+        download: applicationDownloadService,
+        runtime: applicationRuntimeService,
+        window: applicationWindowService,
+        storage: applicationStorageService,
+        sync: applicationSyncService,
+        script: applicationScriptingService,
     };
 }

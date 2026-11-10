@@ -1,7 +1,10 @@
-import { Result, XUserFollowData, XUserLocalStorageInfo, XUserProfileData } from "../types";
-import { parseXUserInfo, storeXProfileData, X_USER_INFO_KEY } from "./utils";
+import {
+    Result,
+    XUserFollowData,
+    XUserLocalStorageInfo,
+    XUserProfileData
+} from "../types";
 import { findAllKeyValuePairs } from "../commons";
-import * as services from "../../../services";
 
 function parseProfile(dataJSON: any): XUserProfileData | null {
     if (!dataJSON?.rest_id) {
@@ -88,13 +91,15 @@ function parseFollow(
 
 export async function parseDataUserProfile(
     payload: any,
-    extra: any,
+    metaData: {
+        cachedUserInfo: XUserLocalStorageInfo,
+        requestInfo: { requestUrl?: string, tabUrl?: string }
+    },
 ): Promise<Result<{
     userProfiles: XUserProfileData[],
     followers: XUserFollowData[],
+    localStorageNewUser: XUserProfileData[],
 }>> {
-    const requestUrl = extra?.requestUrl || "";
-
     const followerRegex = /^https:\/\/x\.com\/i\/api\/graphql\/[a-zA-Z0-9_-]+\/(Followers|FollowersYouKnow|BlueVerifiedFollowers|UserCreatorSubscriptions)\?/;
     const followingRegex = /^https:\/\/x\.com\/i\/api\/graphql\/[a-zA-Z0-9_-]+\/Following\?/;
 
@@ -115,19 +120,11 @@ export async function parseDataUserProfile(
             ...findAllKeyValuePairs(payload, "users"),
         ];
 
-        let associateLocalStorageUser = null;
+        let cachedUserInfo = null;
         if (isFollowerUrlMatch || isFollowingUrlMatch) {
-            const requestUrlParams = new URLSearchParams(decodeURIComponent(requestUrl).split("?")[1] || "");
-            const variablesPart = requestUrlParams.get("variables");
-            const onPageUserId = variablesPart ? JSON.parse(variablesPart)?.userId : null;
-
-            const localStorageUserProfile = await services.storageService.getStorageByKeys([X_USER_INFO_KEY]);
-            const xUserInfoStr = localStorageUserProfile[X_USER_INFO_KEY] || "";
-            const xUserInfoArr = parseXUserInfo(xUserInfoStr);
-            associateLocalStorageUser = xUserInfoArr.find((u) => u.profile_id === onPageUserId);
-
-            if (!associateLocalStorageUser) {
-                console.warn("Cannot find on page user profile, followers/following data might be inaccurate:", onPageUserId);
+            cachedUserInfo = metaData?.cachedUserInfo;
+            if (!cachedUserInfo) {
+                console.warn("Cannot find on page user profile, followers/following data might be inaccurate:");
             }
         }
 
@@ -137,15 +134,15 @@ export async function parseDataUserProfile(
                 if (!profileData) continue;
                 userProfileArray.push(profileData);
 
-                if (isFollowerUrlMatch && associateLocalStorageUser) {
+                if (isFollowerUrlMatch && cachedUserInfo) {
                     const follower = profileData;
-                    const followed = associateLocalStorageUser;
+                    const followed = cachedUserInfo;
                     const followData = parseFollow(follower, followed);
                     if (followData) followDataArray.push(followData);
                 }
 
-                if (isFollowingUrlMatch && associateLocalStorageUser) {
-                    const follower = associateLocalStorageUser;
+                if (isFollowingUrlMatch && cachedUserInfo) {
+                    const follower = cachedUserInfo;
                     const followed = profileData;
                     const followData = parseFollow(follower, followed);
                     if (followData) followDataArray.push(followData);
@@ -157,10 +154,10 @@ export async function parseDataUserProfile(
             }
 
             // store parsed user profile data to local storage
-            await storeXProfileData(newSavingUser);
+            // await storeXProfileData(newSavingUser);
         }
 
-        return { ok: true, data: { userProfiles: userProfileArray, followers: followDataArray } };
+        return { ok: true, data: { userProfiles: userProfileArray, followers: followDataArray, localStorageNewUser: newSavingUser } };
     } catch (error: any) {
         console.error(
             "Error (X User data parser)",

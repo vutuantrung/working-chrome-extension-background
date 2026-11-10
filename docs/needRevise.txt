@@ -1,0 +1,2 @@
+- set input TYPE of setStorageCached()
+- check the joined group is currently hard code

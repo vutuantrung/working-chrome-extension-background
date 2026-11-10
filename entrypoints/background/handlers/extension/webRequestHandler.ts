@@ -1,7 +1,17 @@
-import * as services from "../../services";
 import * as helpers from "../../utils/helpers";
+import { ApplicationServices } from "../../application-services";
 
-export function webRequestOnAuthRequiredHandler(
+export function createwebRequestOnAuthRequiredHandler(applicationServices: ApplicationServices) {
+    return (
+        details: any,
+        callback?: (response: chrome.webRequest.BlockingResponse
+        ) => void) => {
+        return webRequestOnAuthRequiredHandlerInternal(applicationServices, details, callback);
+    };
+}
+
+function webRequestOnAuthRequiredHandlerInternal(
+    applicationServices: ApplicationServices,
     details: any,
     callback?: (response: chrome.webRequest.BlockingResponse) => void
 ): chrome.webRequest.BlockingResponse | undefined {
@@ -10,12 +20,9 @@ export function webRequestOnAuthRequiredHandler(
         // callback();
         return;
     }
-    services.storageService.getStorageCachedByKeys([
-        "activeProxy",
-        "extensionProxy",
-        "personaProxy",
-        "settings",
-    ]).then((result) => {
+
+    const keys = ["activeProxy", "extensionProxy", "personaProxy", "settings"];
+    applicationServices.storage?.getStorageCachedByKeys(keys).then((result) => {
         const { activeProxy, extensionProxy, personaProxy, settings } = result;
         const creds =
             helpers.proxy.extractProxyAuthCredentials(activeProxy) ||

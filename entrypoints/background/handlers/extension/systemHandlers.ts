@@ -1,52 +1,38 @@
+import * as helpers from "../../utils/helpers";
 import { bgState } from "../../state";
 import { Message, Settings, Archive } from "../../types/types";
 import { Constants, DefaultValues, State } from "../../utils/constants";
-import { delayMs } from "../../utils/tools";
-import {
-  bootstrapExistingFacebookTabs,
-  cleanupFacebookTabs,
-} from "../../scriptInjection";
-import * as services from "../../services";
-import * as helpers from "../../utils/helpers";
+import { ApplicationServices } from "../../application-services";
 
-// ========================================
-// INTERNAL HELPERS
-// ========================================
-async function waitForUserInfoDescription(
-  maxWaitMs: number,
-): Promise<{ found: boolean; info?: any } | null> {
-  const startedAt = Date.now();
-  let lastParsed: any = undefined;
-
-  while (Date.now() - startedAt < maxWaitMs) {
-    const { pendingUserInfo } = (await services.storageService.getStorageCachedByKeys(["pendingUserInfo"])) || {};
-    const parsed = pendingUserInfo?.parsed;
-    if (parsed) lastParsed = parsed;
-    if (helpers.userInfo.hasUserDescription(parsed)) return { found: true, info: parsed };
-    await delayMs(Constants.USERINFO_DESCRIPTION_POLL_MS);
-  }
-
-  return { found: false, info: lastParsed };
-}
 
 // ========================================
 // MESSAGE HANDLERS
 // ========================================
 
-export async function handleGetUserInfo(message: any, sendResponse: (resp: any) => void) {
-  const { user } = await services.storageService.getStorageCachedByKeys(["user"]);
+export async function handleGetUserInfo(
+  applicationServices: ApplicationServices,
+  message: any,
+  sendResponse: (resp: any) => void
+) {
+  const { user } = await applicationServices.storage?.getStorageCachedByKeys(["user"]) || {};
   if (sendResponse) {
     sendResponse({ data: user });
   }
 }
 
 export async function handleInitializeAfterLogin(
+  applicationServices: ApplicationServices,
   message: any,
   sendResponse: (resp: any) => void,
 ) {
   try {
-    const keys = ["settings", "taskList", "activities", "automationByUser"];
-    const { settings, taskList, activities, automationByUser } = await services.storageService.getStorageCachedByKeys(keys);
+    // const keys = ["settings", "taskList", "activities", "automationByUser", "personaProxy", "personaFacebookAccounts", "fbLoginMode"];
+    const cachedStorage = applicationServices.storage?.getCachedStorage();
+    if (!cachedStorage) {
+      throw new Error("Failed to retrieve cached storage");
+    }
+
+    const { settings, taskList, activities, automationByUser } = cachedStorage;
 
     const {
       extension_session: extensionSession,
@@ -105,26 +91,19 @@ export async function handleInitializeAfterLogin(
       }
     }
 
-    const extensionConfigProxy =
-      extensionConfig?.proxy || (extensionProxy && Object.keys(extensionProxy).length
-        ? extensionProxy
-        : undefined);
+    const extensionConfigProxy = extensionConfig?.proxy || (extensionProxy && Object.keys(extensionProxy).length
+      ? extensionProxy
+      : undefined);
 
-    const extensionConfigId =
-      extensionSession?.extension_config_id ?? extensionConfig?.id;
+    const extensionConfigId = extensionSession?.extension_config_id ?? extensionConfig?.id;
     const useExtensionConfig = helpers.proxy.hasExtensionConfigId(extensionConfigId);
-    const { personaProxy, personaFacebookAccounts, fbLoginMode } =
-      await services.storageService.getStorageCachedByKeys([
-        "personaProxy",
-        "personaFacebookAccounts",
-        "fbLoginMode",
-      ]);
+    const { personaProxy, personaFacebookAccounts, fbLoginMode } = cachedStorage;
 
     let extensionAccountProxy: Record<string, unknown> | null = null;
     let personaAccountProxy: Record<string, unknown> | null = null;
     if (fbLoginMode?.mode === "auto") {
       if (useExtensionConfig) {
-        const { allSocialAccounts: storedSocialAccounts } = await services.storageService.getStorageCachedByKeys(["allSocialAccounts"]);
+        const { allSocialAccounts: storedSocialAccounts } = cachedStorage;
         const savedPlatform = (fbLoginMode as any)?.platform ?? "facebook";
         extensionAccountProxy = helpers.proxy.findExtensionAccountProxyByPlatform(
           extensionConfig?.social_accounts ?? storedSocialAccounts ?? [],
@@ -132,32 +111,26 @@ export async function handleInitializeAfterLogin(
           fbLoginMode.account_id,
         );
       } else {
-        const accountsFromMessage: any[] = Array.isArray(
-          message.inputs?.all_social_accounts,
-        )
+        const accountsFromMessage: any[] = Array.isArray(message.inputs?.all_social_accounts)
           ? message.inputs.all_social_accounts
           : [];
 
-        const { allSocialAccounts } =
-          await services.storageService.getStorageCachedByKeys([
-            "allSocialAccounts",
-          ]);
+        const { allSocialAccounts } = cachedStorage;
 
-        const accountList =
-          accountsFromMessage.length > 0
-            ? accountsFromMessage
-            : ((allSocialAccounts?.length
-              ? allSocialAccounts
-              : personaFacebookAccounts) ?? []);
+        const accountList = accountsFromMessage.length > 0
+          ? accountsFromMessage
+          : ((allSocialAccounts?.length
+            ? allSocialAccounts
+            : personaFacebookAccounts) ?? []);
 
-        console.log(
-          "[handleInitializeAfterLogin] persona accountList:",
-          accountList.map((a: any) => ({
-            id: a.account_id,
-            platform: a.platform,
-            has_proxy: !!a.proxy && Object.keys(a.proxy || {}).length > 0,
-          })),
-        );
+        // console.log(
+        //   "[handleInitializeAfterLogin] persona accountList:",
+        //   accountList.map((a: any) => ({
+        //     id: a.account_id,
+        //     platform: a.platform,
+        //     has_proxy: !!a.proxy && Object.keys(a.proxy || {}).length > 0,
+        //   })),
+        // );
 
         personaAccountProxy = helpers.proxy.findPersonaSocialAccountProxy(
           accountList,
@@ -165,11 +138,9 @@ export async function handleInitializeAfterLogin(
         );
 
         if (accountsFromMessage.length > 0) {
-          await services.storageService.setStorageCached({
+          await applicationServices.storage?.setStorageCached({
             allSocialAccounts: accountsFromMessage,
-            personaFacebookAccounts: accountsFromMessage.filter(
-              (a: any) => a.platform === "facebook",
-            ),
+            personaFacebookAccounts: accountsFromMessage.filter((a: any) => a.platform === "facebook"),
           });
         }
       }
@@ -188,32 +159,30 @@ export async function handleInitializeAfterLogin(
       settingsFromAPI.proxyOption = "manual";
       const { httpProxy, httpsProxy } = helpers.proxy.getProxyEndpoints(effectiveProxy);
       if (httpProxy || httpsProxy) {
-        services.proxyService.setProxy(
+        applicationServices.proxy?.setProxy(
           httpProxy ?? undefined,
           httpsProxy ?? undefined,
         );
       }
-      try {
-        await services.storageService.setStorageCached({
-          activeProxy: effectiveProxy,
-          extensionProxy: extensionConfigProxy || {},
-          personaProxy: personaProxy || {},
-        });
-      } catch { }
+      await applicationServices.storage?.setStorageCached({
+        activeProxy: effectiveProxy,
+        extensionProxy: extensionConfigProxy || {},
+        personaProxy: personaProxy || {},
+      });
+
+
     } else if (
-      (extensionConfigProxy &&
-        !Object.entries(extensionConfigProxy as object).length) ||
+      (extensionConfigProxy && !Object.entries(extensionConfigProxy as object).length) ||
       (extensionProxy && !Object.entries(extensionProxy).length)
     ) {
-      services.proxyService.clearProxy();
-      try {
-        await services.storageService.setStorageCached({
-          activeProxy: {},
-        });
-      } catch { }
+
+      applicationServices.proxy?.clearProxy();
+      await applicationServices.storage?.setStorageCached({
+        activeProxy: {}
+      });
     }
 
-    services.storageService.clearStorageCache();
+    applicationServices.storage?.clearStorageCache();
 
     const finalSettings = settings
       ? {
@@ -226,7 +195,7 @@ export async function handleInitializeAfterLogin(
         ...settingsFromAPI,
       };
 
-    await services.storageService.setStorageCached({
+    await applicationServices.storage?.setStorageCached({
       settings: finalSettings,
       taskList: taskList || [],
       activities: activities || [],
@@ -235,19 +204,19 @@ export async function handleInitializeAfterLogin(
       }),
     });
 
-    await services.alarmService.clearAlarm(Constants.SETTINGS_SYNC_ALARM);
-    services.alarmService.createAlarm(Constants.SETTINGS_SYNC_ALARM, {
+    await applicationServices.alarm?.getBrowserApi().clear(Constants.SETTINGS_SYNC_ALARM);
+    applicationServices.alarm?.getBrowserApi().create(Constants.SETTINGS_SYNC_ALARM, {
       delayInMinutes: 2,
       periodInMinutes: 2,
     });
 
     const initialScheduleTime = extensionConfig?.joinedGroupScheduleTime;
     if (typeof initialScheduleTime === "number" && initialScheduleTime > 0) {
-      await services.storageService.setStorageCached({
+      await applicationServices.storage?.setStorageCached({
         joinedGroupScheduleTime: initialScheduleTime,
       });
     }
-    await services.syncService.ensureJoinedGroupsAlarmSchedule(
+    await applicationServices.sync?.ensureJoinedGroupsAlarmSchedule(
       typeof initialScheduleTime === "number" && initialScheduleTime > 0
         ? initialScheduleTime
         : undefined,
@@ -265,7 +234,7 @@ export async function handleInitializeAfterLogin(
 
     // Delay bootstrap to avoid disrupting Facebook UI after login
     setTimeout(() => {
-      bootstrapExistingFacebookTabs({ forceProfileIdBootstrap: true }).catch(
+      applicationServices.script?.injectDependenciesInSupportedPlatform({ forceProfileIdBootstrap: true }).catch(
         (error) => {
           console.warn("[handleInitializeAfterLogin] Bootstrap failed:", error);
         },
@@ -284,6 +253,7 @@ export async function handleInitializeAfterLogin(
 }
 
 export async function handleClearDataAfterLogout(
+  applicationServices: ApplicationServices,
   message: any,
   sendResponse: (resp: any) => void,
 ) {
@@ -292,7 +262,7 @@ export async function handleClearDataAfterLogout(
 
     const skipCookies = message?.inputs?.skipCookies === true;
 
-    services.storageService.clearStorageCache();
+    applicationServices.storage?.clearStorageCache();
 
     // Cancel any in-flight send from previous session.
     bgState.__sendDataKafkaRunId += 1;
@@ -312,23 +282,23 @@ export async function handleClearDataAfterLogout(
 
     // Clear ALL alarms (MV3-safe): periodic, scheduleTask_*, sendFacebookPostData, etc.
     await new Promise<void>((resolve) => {
-      void services.alarmService.clearAllAlarms().then(() => resolve());
+      void applicationServices.alarm?.getBrowserApi().clearAll().then(() => resolve());
     });
 
     setTimeout(() => {
-      cleanupFacebookTabs().catch(() => { });
+      applicationServices.tab?.cleanupFacebookTabs().catch(() => { });
     }, 0);
 
-    services.proxyService.clearProxy();
+    applicationServices.proxy?.clearProxy();
 
-    services.actionService.setBadgeText({ text: "0" });
-    services.actionService.setBadgeBackgroundColor({ color: "#0000FF" });
+    applicationServices.action?.getBrowserApi().setBadgeText({ text: "0" });
+    applicationServices.action?.getBrowserApi().setBadgeBackgroundColor({ color: "#0000FF" });
 
     if (!skipCookies) {
-      await helpers.cookie.clearSocialPlatformCookies();
+      await Promise.all(Constants.SOCIAL_COOKIE_DOMAINS.map((domain) => applicationServices.cookie?.clearCookiesForDomain(domain)))
     }
 
-    await services.storageService.removeStorageByKeys([
+    await applicationServices.storage?.removeStorageByKeys([
       "settings",
       "taskList",
       "activities",
@@ -357,8 +327,8 @@ export async function handleClearDataAfterLogout(
       "youtube_profiles_info",
     ]);
 
-    services.actionService.setBadgeText({ text: "0" });
-    services.actionService.setBadgeBackgroundColor({ color: "#0000FF" });
+    applicationServices.action?.getBrowserApi().setBadgeText({ text: "0" });
+    applicationServices.action?.getBrowserApi().setBadgeBackgroundColor({ color: "#0000FF" });
 
     console.log("[handleClearDataAfterLogout] Cleanup completed successfully");
 
@@ -381,21 +351,21 @@ export async function handleClearDataAfterLogout(
 }
 
 export async function handleStartPeriodicCheck(
+  applicationServices: ApplicationServices,
   _message: any,
   sendResponse: (resp: any) => void,
 ) {
   console.log("[handleStartPeriodicCheck] Starting periodic check alarm...");
   try {
-    const existingAlarm = await services.alarmService.getAlarm("periodicCheck");
+    const existingAlarm = await applicationServices.alarm?.getBrowserApi().get("periodicCheck");
     const periodicTimeCheck = 3;
-    const shouldRecreate =
-      !existingAlarm || existingAlarm.periodInMinutes !== periodicTimeCheck;
+    const shouldRecreate = !existingAlarm || existingAlarm.periodInMinutes !== periodicTimeCheck;
 
     if (shouldRecreate) {
       if (existingAlarm) {
-        await services.alarmService.clearAlarm("periodicCheck");
+        await applicationServices.alarm?.getBrowserApi().clear("periodicCheck");
       }
-      services.alarmService.createAlarm("periodicCheck", {
+      applicationServices.alarm?.getBrowserApi().create("periodicCheck", {
         delayInMinutes: 0.5,
         periodInMinutes: periodicTimeCheck,
       });
@@ -412,7 +382,7 @@ export async function handleStartPeriodicCheck(
       );
     }
 
-    await services.syncService.ensureJoinedGroupsAlarmSchedule();
+    await applicationServices.sync?.ensureJoinedGroupsAlarmSchedule();
 
     if (sendResponse) {
       sendResponse({ success: true });
@@ -429,15 +399,14 @@ export async function handleStartPeriodicCheck(
 }
 
 export async function handleSetBadgeText(
+  applicationServices: ApplicationServices,
   message: Message,
   sendResponse?: (resp: any) => void,
 ): Promise<void> {
   let badgeValue = Number(message.inputs.badgeData);
   if (!Number.isFinite(badgeValue) || badgeValue < 0) badgeValue = 0;
-  services.actionService.setBadgeText({
-    text: badgeValue.toString(),
-  });
-  services.actionService.setBadgeBackgroundColor({ color: "#0000FF" });
+  applicationServices.action?.getBrowserApi().setBadgeText({ text: badgeValue.toString() });
+  applicationServices.action?.getBrowserApi().setBadgeBackgroundColor({ color: "#0000FF" });
 
   if (sendResponse) {
     sendResponse({ success: true });
@@ -445,6 +414,7 @@ export async function handleSetBadgeText(
 }
 
 export async function handleCancelTask(
+  applicationServices: ApplicationServices,
   message: any,
   sendResponse?: (resp: any) => void,
 ): Promise<void> {
@@ -455,8 +425,7 @@ export async function handleCancelTask(
       return;
     }
 
-    const { taskList: storageTaskList } =
-      await services.storageService.getStorageCachedByKeys(["taskList"]);
+    const { taskList: storageTaskList } = await applicationServices.storage?.getStorageCachedByKeys(["taskList"]) || {};
     if (!storageTaskList || !Array.isArray(storageTaskList)) {
       sendResponse?.({ success: false, error: "No taskList" });
       return;
@@ -477,18 +446,16 @@ export async function handleCancelTask(
     task.result = "Canceled. Reason: Canceled by user.";
     task.endTime = Date.now();
 
-    await services.storageService.setStorageCached({
-      taskList: storageTaskList,
-    });
+    await applicationServices.storage?.setStorageCached({ taskList: storageTaskList });
 
     // Ask the content script (if any) to stop this task loop immediately.
     if (typeof task.tabId === "number" && task.tabId > 0) {
       try {
-        services.tabService.sendTabMessage(
+        applicationServices.tab?.getBrowserApi().sendMessage(
           task.tabId,
           { type: "STOP_TASK", taskId },
           () => {
-            void services.runtimeService.getRuntimeLastError();
+            void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
           },
         );
       } catch { }
@@ -525,11 +492,12 @@ export async function handleFetchDataTask(
 }
 
 export async function handleDownloadImage(
+  applicationServices: ApplicationServices,
   message: Message,
   sendResponse?: (resp: any) => void,
 ): Promise<void> {
   const { url, fileName = "extImgDownload.jpg" } = message.inputs;
-  await services.downloadService.download({
+  await applicationServices.download?.getBrowserApi().download({
     url,
     filename: fileName,
     conflictAction: "uniquify",
@@ -542,6 +510,7 @@ export async function handleDownloadImage(
 }
 
 export async function handleScriptExecuteResult(
+  applicationServices: ApplicationServices,
   message: any,
   sender: chrome.runtime.MessageSender,
   sendResponse?: (resp: any) => void,
@@ -549,14 +518,9 @@ export async function handleScriptExecuteResult(
   const {
     settings: storageSettings,
     taskList: storageTaskList,
-    user: storageUser,
-  } = await services.storageService.getStorageCachedByKeys([
-    "settings",
-    "taskList",
-    "user",
-  ]);
+    user: storageUser
+  } = await applicationServices.storage?.getStorageCachedByKeys(["settings", "taskList", "user"]) || {};
   const currentSettingsInputs = message.inputs;
-
   if (storageUser?.extension_session?.automation !== true) {
     return;
   }
@@ -610,8 +574,8 @@ export async function handleScriptExecuteResult(
   }
 
   if (localUpdating) {
-    services.storageService.clearStorageCache();
-    await services.storageService.setStorageCached(localUpdating);
+    applicationServices.storage?.clearStorageCache();
+    await applicationServices.storage?.setStorageCached(localUpdating);
     if (runningTask) {
       bgState.injectedTabs.delete(runningTask.tabId);
     }
@@ -623,15 +587,15 @@ export async function handleScriptExecuteResult(
 }
 
 export async function handleChangeTabUrl(
+  applicationServices: ApplicationServices,
   message: any,
   sender: chrome.runtime.MessageSender,
   sendResponse?: (resp: any) => void,
 ) {
-  const { taskList: storageTaskList, user: storageUser } =
-    await services.storageService.getStorageCachedByKeys([
-      "taskList",
-      "user",
-    ]);
+  const {
+    taskList: storageTaskList,
+    user: storageUser
+  } = await applicationServices.storage?.getStorageCachedByKeys(["taskList", "user"]) || {};
   if (storageUser?.extension_session?.automation !== true) {
     return;
   }
@@ -647,8 +611,8 @@ export async function handleChangeTabUrl(
       };
     }
 
-    await services.storageService.setStorageCached({ taskList: storageTaskList });
-    services.tabService.updateTab(
+    await applicationServices.storage?.setStorageCached({ taskList: storageTaskList });
+    applicationServices.tab?.getBrowserApi().update(
       parseInt(message.inputs.tabId),
       { url: message.inputs.url });
   }

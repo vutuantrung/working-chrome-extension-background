@@ -1,20 +1,15 @@
-import * as services from "../../../services";
-import { Result, TiktokCommentData } from "../types";
-import { parseTiktokPostInfo, TIKTOK_POST_INFO_KEY, generateKey } from "./utils";
+import { Result, TiktokCommentData, TiktokPostLocalStorageInfo } from "../types";
+import { generateKey } from "./utils";
 
 export async function parseDataComment(
   dataArr: { data: any; getMethod: string }[] = [],
+  metaData?: { cachedPostArray: TiktokPostLocalStorageInfo[] }
 ): Promise<Result<TiktokCommentData[]>> {
   try {
     if (!Array.isArray(dataArr) || dataArr.length === 0) {
       return { ok: false, error: new Error("Invalid data format") };
     }
-
-    // 1. get owner info of posts from localstorage
-    // format: postEntryRowkey|postId|ownerId|ownerName, split by comma for multiple records
-    const localStoragePostOwner = await services.storageService.getStorageByKeys([TIKTOK_POST_INFO_KEY]);
-    const tiktokPostsCached = localStoragePostOwner[TIKTOK_POST_INFO_KEY] || "";
-    const tiktokPostsCachedArr = parseTiktokPostInfo(tiktokPostsCached);
+    const tiktokPostsCachedArr = metaData?.cachedPostArray || [];
 
     // 2. parse comment data (include owner info)
     const result = [];

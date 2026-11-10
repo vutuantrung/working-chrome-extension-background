@@ -1,32 +1,45 @@
+import * as helpers from "../utils/helpers";
+
 import { getExtensionConfigInfo } from "../infrastructure/api/source-member.api";
 import { getProxyInfo, getSocialAccountsByPersona } from "../infrastructure/api/user.api";
-import * as services from "../services";
-import * as helpers from "../utils/helpers";
 import { bgState } from "../state";
 import { Constants } from "../utils/constants";
 import { DefaultValues } from "../utils/constants";
 import { StorageService } from "./storage.services";
+import { ScheduleService } from "./schedule.services";
 import { FacebookGroupJoinedData } from "../utils/parsers/types";
-import { sendFacebookJoinedGroupsCachedData, sendFacebookPendingGroupsCachedData } from "../dataPublishers/facebookPublisher";
+import { AlarmService } from "./alarm.services";
+import { CookieService } from "./cookie.services";
+import { ProxyService } from "./proxy.services";
+import { TabService } from "./tab.services";
+import { publishFacebookJoinedGroupsCachedData } from "../dataPublishers/publishFacebookJoinedGroups";
+import { publishFacebookPendingGroupsCachedData } from "../dataPublishers/publishFacebookPendingGroup";
 
 export class SyncService {
-  constructor(private storageSerivce: StorageService) { }
+  constructor(
+    private storageService: StorageService,
+    private proxyService: ProxyService,
+    private alarmService: AlarmService,
+    private cookieService: CookieService,
+    private scheduleService: ScheduleService,
+    private tabService: TabService
+  ) { }
 
   async ensureJoinedGroupsAlarmSchedule(targetScheduleTime?: number): Promise<void> {
     let periodMin = targetScheduleTime;
     if (typeof periodMin !== "number" || periodMin <= 0) {
-      const { joinedGroupScheduleTime } = await services.storageService.getStorageCachedByKeys(["joinedGroupScheduleTime"]);
+      const { joinedGroupScheduleTime } = await this.storageService.getStorageCachedByKeys(["joinedGroupScheduleTime"]);
       periodMin = typeof joinedGroupScheduleTime === "number" && joinedGroupScheduleTime > 0
         ? joinedGroupScheduleTime
         : 20;
     }
 
-    const existingAlarm = await services.alarmService.getAlarm(Constants.SYNC_FB_JOINED_GROUPS_ALARM);
+    const existingAlarm = await this.alarmService.getBrowserApi().get(Constants.SYNC_FB_JOINED_GROUPS_ALARM);
     if (!existingAlarm || existingAlarm.periodInMinutes !== periodMin) {
       if (existingAlarm) {
-        await services.alarmService.clearAlarm(Constants.SYNC_FB_JOINED_GROUPS_ALARM);
+        await this.alarmService.getBrowserApi().clear(Constants.SYNC_FB_JOINED_GROUPS_ALARM);
       }
-      services.alarmService.createAlarm(Constants.SYNC_FB_JOINED_GROUPS_ALARM, {
+      this.alarmService.getBrowserApi().create(Constants.SYNC_FB_JOINED_GROUPS_ALARM, {
         delayInMinutes: 1,
         periodInMinutes: periodMin,
       });
@@ -36,8 +49,7 @@ export class SyncService {
 
   async handleSyncExtensionInfo(hasSyncActivity?: boolean): Promise<void> {
     try {
-
-      const { settings, user, activities, fbLoginMode } = await this.storageSerivce.getStorageCachedByKeys(["settings", "user", "activities", "fbLoginMode"]);
+      const { settings, user, activities, fbLoginMode } = await this.storageService.getStorageCachedByKeys(["settings", "user", "activities", "fbLoginMode"]);
       const extensionConfigId = user?.extension_session?.extension_config_id;
       const useExtensionConfig = helpers.proxy.hasExtensionConfigId(extensionConfigId);
 
@@ -46,13 +58,13 @@ export class SyncService {
         return;
       }
 
-      const { personaProxy, personaFacebookAccounts } = await services.storageService.getStorageCachedByKeys(["personaProxy", "personaFacebookAccounts"]);
+      const { personaProxy, personaFacebookAccounts } = await this.storageService.getStorageCachedByKeys(["personaProxy", "personaFacebookAccounts"]);
 
       if (!useExtensionConfig) {
         let personaAccountProxy: Record<string, unknown> | null = null;
         if (fbLoginMode?.mode === "auto") {
           let freshAccounts: any[] | null = null;
-          const getPersonaIdResult = await services.storageService.getStorageCachedByKeys(["selectedPersonaId"]);
+          const getPersonaIdResult = await this.storageService.getStorageCachedByKeys(["selectedPersonaId"]);
           const selectedPersonaId: string | undefined = getPersonaIdResult?.selectedPersonaId;
 
           if (selectedPersonaId) {
@@ -81,22 +93,17 @@ export class SyncService {
                     }),
                 );
 
-                await services.storageService.setStorageCached({
+                await this.storageService.setStorageCached({
                   allSocialAccounts: freshAccounts,
-                  personaFacebookAccounts: freshAccounts.filter(
-                    (a) => a.platform === "facebook",
-                  ),
+                  personaFacebookAccounts: freshAccounts.filter((a) => a.platform === "facebook"),
                 });
               }
             } catch (err) {
-              console.warn(
-                "[handleSyncExtensionInfo] Failed to refresh social accounts:",
-                err,
-              );
+              console.warn("[handleSyncExtensionInfo] Failed to refresh social accounts:", err);
             }
           }
 
-          const { allSocialAccounts } = await services.storageService.getStorageCachedByKeys(["allSocialAccounts"]);
+          const { allSocialAccounts } = await this.storageService.getStorageCachedByKeys(["allSocialAccounts"]);
           const accountList = freshAccounts ?? allSocialAccounts ?? personaFacebookAccounts ?? [];
 
           personaAccountProxy = helpers.proxy.findPersonaSocialAccountProxy(
@@ -115,17 +122,17 @@ export class SyncService {
         if (hasEffectiveProxy) {
           const { httpProxy, httpsProxy } = helpers.proxy.getProxyEndpoints(proxyInfo);
           if (httpProxy || httpsProxy) {
-            services.proxyService.setProxy(
+            this.proxyService.setProxy(
               httpProxy ?? undefined,
               httpsProxy ?? undefined,
             );
           }
         } else {
-          services.proxyService.clearProxy();
+          this.proxyService.clearProxy();
         }
 
         try {
-          await services.storageService.setStorageCached({
+          await this.storageService.setStorageCached({
             activeProxy: hasEffectiveProxy ? proxyInfo : {},
             personaProxy: personaProxy || {},
           });
@@ -154,7 +161,7 @@ export class SyncService {
       // Persist joinedGroupScheduleTime from API so alarm scheduling can stay dynamic
       const joinedGroupScheduleTime = extensionConfigInfo?.joinedGroupScheduleTime;
       if (typeof joinedGroupScheduleTime === "number" && joinedGroupScheduleTime > 0) {
-        await services.storageService.setStorageCached({ joinedGroupScheduleTime });
+        await this.storageService.setStorageCached({ joinedGroupScheduleTime });
       }
       await this.ensureJoinedGroupsAlarmSchedule(
         typeof joinedGroupScheduleTime === "number" && joinedGroupScheduleTime > 0
@@ -227,17 +234,17 @@ export class SyncService {
       if (hasEffectiveProxy) {
         const { httpProxy, httpsProxy } = helpers.proxy.getProxyEndpoints(proxyInfo);
         if (httpProxy || httpsProxy) {
-          services.proxyService.setProxy(
+          this.proxyService.setProxy(
             httpProxy ?? undefined,
             httpsProxy ?? undefined,
           );
         }
       } else {
-        services.proxyService.clearProxy();
+        this.proxyService.clearProxy();
       }
 
       try {
-        await services.storageService.setStorageCached({
+        await this.storageService.setStorageCached({
           activeProxy: hasEffectiveProxy ? proxyInfo : {},
           extensionProxy: extensionConfigProxy || {},
           personaProxy: personaProxy || {},
@@ -246,8 +253,7 @@ export class SyncService {
 
       if (hasSyncActivity === true) {
         let scheduledActivities = null;
-        const isValidArrayActLocal = (arr: any) =>
-          Array.isArray(arr) && arr.length > 0;
+        const isValidArrayActLocal = (arr: any) => Array.isArray(arr) && arr.length > 0;
         if (extensionConfigInfo?.extension_activities) {
           const actArr = extensionConfigInfo.extension_activities;
           if (isValidArrayActLocal(actArr)) {
@@ -262,7 +268,7 @@ export class SyncService {
           }
         }
         if (scheduledActivities) {
-          await services.scheduleService.handleUpdateScheduleActivities(scheduledActivities);
+          await this.scheduleService.handleUpdateScheduleActivities(scheduledActivities);
         }
       }
 
@@ -281,7 +287,7 @@ export class SyncService {
         },
       };
 
-      await services.storageService.setStorageCached({
+      await this.storageService.setStorageCached({
         user: updatedUser,
         settings: updatedSettings as any,
       });
@@ -300,14 +306,127 @@ export class SyncService {
     }
   }
 
-  async syncFacebookJoinedGroups(): Promise<void> {
+  // async syncFacebookJoinedGroups(): Promise<void> {
+  //   const TAG = "[FB Group Sync]";
+  //   console.log(new Date().toLocaleTimeString(), TAG, "Starting background synchronization...");
+  //   try {
+  //     // 1. Get current c_user cookie to verify login state and obtain Facebook account ID
+  //     let accountId = "";
+  //     try {
+  //       const cookie = await this.cookieService.getBrowserApi().get({ url: Constants.FB_WEB_URL, name: "c_user" });
+  //       accountId = cookie?.value || "";
+  //     } catch (e: any) {
+  //       console.warn(TAG, "Failed to get c_user cookie:", e.message);
+  //     }
+
+  //     if (!accountId) {
+  //       console.warn(TAG, "User not logged into Facebook (no c_user cookie). Skipping.");
+  //       return;
+  //     }
+
+  //     // 2. Find an active Facebook tab to delegate fetching to
+  //     const allowedTabId = await this.tabService?.getSupportedTabs();
+  //     if (!allowedTabId || allowedTabId === -1) {
+  //       console.warn(TAG, "No Facebook tab available to delegate fetch. Skipping.");
+  //       return;
+  //     }
+
+  //     console.log(TAG, `Delegating GraphQL fetch to Facebook tab ${allowedTabId}...`);
+
+  //     // 3. Ask content script to perform the fetch and return all groups
+  //     const response = await this.tabService.getBrowserApi().safeSendMessage(allowedTabId, { type: "FETCH_FB_JOINED_GROUPS", accountId });
+  //     if (!response?.ok) {
+  //       console.error(TAG, "Content script returned error:", response?.error || "Unknown error");
+  //       return;
+  //     }
+
+  //     const allGroups: FacebookGroupJoinedData[] = response.groups || [];
+  //     if (allGroups.length > 0) {
+  //       // 4. Store fetched groups in distinct state cache
+  //       bgState.cachedFacebookSyncGroupsData = allGroups;
+
+  //       // 5. Direct publish and schedule alarm as a retry fallback
+  //       try {
+  //         await publishFacebookJoinedGroupsCachedData();
+  //       } catch (err: any) {
+  //         console.error(TAG, "Failed direct publish, scheduling alarm for retry:", err.message);
+  //         this.alarmService.getBrowserApi().create(Constants.SEND_FB_JOINED_GROUPS_ALARM, { delayInMinutes: 0.05 });
+  //       }
+  //     }
+  //   } catch (error: any) {
+  //     console.error(TAG, "Error during background synchronization:", error.message);
+  //   }
+  // }
+
+  // async syncFacebookPendingGroups(): Promise<void> {
+  //   const TAG = "[FB Pending Groups Sync]";
+  //   console.log(new Date().toLocaleTimeString(), TAG, "Starting background synchronization...");
+  //   try {
+  //     // 1. Get current c_user cookie to verify login state and obtain Facebook account ID
+  //     let accountId = "";
+  //     try {
+  //       const cookie = await this.cookieService.getBrowserApi().get({ url: Constants.FB_WEB_URL, name: "c_user" });
+  //       accountId = cookie?.value || "";
+  //     } catch (e: any) {
+  //       console.warn(TAG, "Failed to get c_user cookie:", e.message);
+  //     }
+
+  //     if (!accountId) {
+  //       console.warn(TAG, "User not logged into Facebook (no c_user cookie). Skipping.");
+  //       return;
+  //     }
+
+  //     // 2. Find an active Facebook tab to delegate fetching to
+  //     const allowedTabId = await this.tabService?.getSupportedTabs();
+  //     if (!allowedTabId || allowedTabId === -1) {
+  //       console.warn(TAG, "No Facebook tab available to delegate fetch. Skipping.");
+  //       return;
+  //     }
+
+  //     console.log(TAG, `Delegating GraphQL fetch to Facebook tab ${allowedTabId}...`);
+
+  //     // 3. Ask content script to perform the fetch and return all pending groups
+  //     const response = await this.tabService.getBrowserApi().safeSendMessage(allowedTabId, { type: "FETCH_FB_PENDING_GROUPS", accountId });
+  //     if (!response?.ok) {
+  //       console.error(TAG, "Content script returned error:", response?.error || "Unknown error");
+  //       return;
+  //     }
+
+  //     const allGroups: FacebookGroupJoinedData[] = response.groups || [];
+  //     if (allGroups.length > 0) {
+  //       // 4. Store fetched groups in distinct state cache
+  //       bgState.cachedFacebookSyncPendingGroupsData = allGroups;
+
+  //       // 5. Direct publish and schedule alarm as a retry fallback
+  //       try {
+  //         await publishFacebookPendingGroupsCachedData();
+  //       } catch (err: any) {
+  //         console.error(TAG, "Failed direct publish, scheduling alarm for retry:", err.message);
+  //         this.alarmService.getBrowserApi().create(Constants.SEND_FB_PENDING_GROUPS_ALARM, { delayInMinutes: 0.05 });
+  //       }
+  //     }
+  //   } catch (error: any) {
+  //     console.error(TAG, "Error during background synchronization:", error.message);
+  //   }
+  // }
+
+  async syncFacebookGroups(
+    messateType: string,
+    bgValueName: 'cachedFacebookSyncPendingGroupsData' | 'cachedFacebookSyncGroupsData',
+    publishMethod: () => Promise<void>,
+  ): Promise<void> {
     const TAG = "[FB Group Sync]";
     console.log(new Date().toLocaleTimeString(), TAG, "Starting background synchronization...");
     try {
+      if (!messateType) {
+        console.warn(TAG, "Message type is not specified. Skipping.");
+        return;
+      }
+
       // 1. Get current c_user cookie to verify login state and obtain Facebook account ID
       let accountId = "";
       try {
-        const cookie = await services.cookieService.getCookie({ url: Constants.FB_WEB_URL, name: "c_user" });
+        const cookie = await this.cookieService.getBrowserApi().get({ url: Constants.FB_WEB_URL, name: "c_user" });
         accountId = cookie?.value || "";
       } catch (e: any) {
         console.warn(TAG, "Failed to get c_user cookie:", e.message);
@@ -319,98 +438,32 @@ export class SyncService {
       }
 
       // 2. Find an active Facebook tab to delegate fetching to
-      const tabId = await helpers.tabControl.getCorrectFacebookTabId();
-      if (!tabId || tabId === -1) {
+      const allowedTabId = await this.tabService?.getSupportedTabs();
+      if (!allowedTabId || allowedTabId === -1) {
         console.warn(TAG, "No Facebook tab available to delegate fetch. Skipping.");
         return;
       }
 
-      console.log(TAG, `Delegating GraphQL fetch to Facebook tab ${tabId}...`);
-
-      // 3. Ask content script to perform the fetch and return all groups
-      const response = await helpers.tabControl.safeTabsSendMessage(tabId, { type: "FETCH_FB_JOINED_GROUPS", accountId });
-      if (!response?.ok) {
-        console.error(TAG, "Content script returned error:", response?.error || "Unknown error");
-        return;
-      }
-
-      const allGroups: FacebookGroupJoinedData[] = response.groups || [];
-
-      console.log(new Date().toLocaleTimeString(), TAG, `Completed fetching. Found ${allGroups.length} groups.`);
-
-      if (allGroups.length > 0) {
-        // 4. Store fetched groups in distinct state cache
-        bgState.cachedFacebookSyncGroupsData = allGroups;
-
-        // 5. Direct publish and schedule alarm as a retry fallback
-        try {
-          await sendFacebookJoinedGroupsCachedData();
-        } catch (err: any) {
-          console.error(TAG, "Failed direct publish, scheduling alarm for retry:", err.message);
-          services.alarmService.createAlarm(Constants.SEND_FB_JOINED_GROUPS_ALARM, {
-            delayInMinutes: 0.05,
-          });
-        }
-      }
-    } catch (error: any) {
-      console.error(
-        TAG, "Error during background synchronization:",
-        error.message,
-      );
-    }
-  }
-
-  async syncFacebookPendingGroups(): Promise<void> {
-    const TAG = "[FB Pending Groups Sync]";
-    console.log(new Date().toLocaleTimeString(), TAG, "Starting background synchronization...");
-    try {
-      // 1. Get current c_user cookie to verify login state and obtain Facebook account ID
-      let accountId = "";
-      try {
-        const cookie = await services.cookieService.getCookie({ url: Constants.FB_WEB_URL, name: "c_user" });
-        accountId = cookie?.value || "";
-      } catch (e: any) {
-        console.warn(TAG, "Failed to get c_user cookie:", e.message);
-      }
-
-      if (!accountId) {
-        console.warn(TAG, "User not logged into Facebook (no c_user cookie). Skipping.");
-        return;
-      }
-
-      // 2. Find an active Facebook tab to delegate fetching to
-      const tabId = await helpers.tabControl.getCorrectFacebookTabId();
-      if (!tabId || tabId === -1) {
-        console.warn(TAG, "No Facebook tab available to delegate fetch. Skipping.");
-        return;
-      }
-
-      console.log(TAG, `Delegating GraphQL fetch to Facebook tab ${tabId}...`);
+      console.log(TAG, `Delegating GraphQL fetch to Facebook tab ${allowedTabId}...`);
 
       // 3. Ask content script to perform the fetch and return all pending groups
-      const response = await helpers.tabControl.safeTabsSendMessage(tabId, { type: "FETCH_FB_PENDING_GROUPS", accountId });
-
+      const response = await this.tabService.getBrowserApi().safeSendMessage(allowedTabId, { type: messateType, accountId });
       if (!response?.ok) {
         console.error(TAG, "Content script returned error:", response?.error || "Unknown error");
         return;
       }
 
       const allGroups: FacebookGroupJoinedData[] = response.groups || [];
-
-      console.log(new Date().toLocaleTimeString(), TAG, `Completed fetching. Found ${allGroups.length} pending groups.`);
-
       if (allGroups.length > 0) {
         // 4. Store fetched groups in distinct state cache
-        bgState.cachedFacebookSyncPendingGroupsData = allGroups;
+        bgState[bgValueName] = allGroups;
 
         // 5. Direct publish and schedule alarm as a retry fallback
         try {
-          await sendFacebookPendingGroupsCachedData();
+          await publishMethod();
         } catch (err: any) {
           console.error(TAG, "Failed direct publish, scheduling alarm for retry:", err.message);
-          services.alarmService.createAlarm(Constants.SEND_FB_PENDING_GROUPS_ALARM, {
-            delayInMinutes: 0.05,
-          });
+          this.alarmService.getBrowserApi().create(Constants.SEND_FB_PENDING_GROUPS_ALARM, { delayInMinutes: 0.05 });
         }
       }
     } catch (error: any) {

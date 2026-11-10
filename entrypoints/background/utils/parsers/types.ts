@@ -313,6 +313,8 @@ export type FacebookGroupJoinedData = {
   url?: string;
   crawled_time?: number;
   account_id?: string;
+  _tenants: string[];
+  tenant_ids: string[];
 };
 export type FacebookAttachment = {
   type: string;

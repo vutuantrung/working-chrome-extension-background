@@ -11,9 +11,9 @@ export class ChromeStorageApi implements IBrowserStorageApi {
         return chromeApi.storage.local.set(value);
     }
 
-    get(keys: string[]): Promise<any>;
-    get(keys: string[], callback: (item: any) => void): void;
-    get(keys: string[], callback?: (item: any) => void): void | Promise<any> {
+    get(keys: string[] | null): Promise<any>;
+    get(keys: string[] | null, callback: (item: any) => void): void;
+    get(keys: string[] | null, callback?: (item: any) => void): void | Promise<any> {
         if (callback) {
             return chromeApi.storage.local.get(keys, callback);
         }

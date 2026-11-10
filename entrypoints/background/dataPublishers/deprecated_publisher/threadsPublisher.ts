@@ -1,0 +1,57 @@
+// import * as services from "../services";
+// import { bgState } from "../state";
+// import { _runKafkaPublish } from "./kafkaPublisher";
+// import { ThreadsPostData } from "@/entrypoints/background/utils/parsers/types";
+// import { Constants, DefaultValues } from "../utils/constants";
+
+// export async function sendThreadsCachedData(): Promise<void> {
+//   return _runKafkaPublish({
+//     platform: "threads",
+//     retryAlarm: Constants.SEND_THREADS_DATA_ALARM,
+//     logTag: "[sendThreadsCachedData]",
+
+//     resolveTopics(_settings) {
+//       return {};
+//     },
+
+//     async publishPayloads(ctx) {
+//       const { settings, tenantObjs, publish, incrementBadge } = ctx;
+//       const { threadsTopic: topicSetting } = settings;
+
+//       const threadsTopic = topicSetting || DefaultValues.SETTINGS_DATA.threadsTopic;
+//       if (!threadsTopic) {
+//         console.warn(this.logTag, "topics missing or invalid — skip publish", threadsTopic);
+//         return;
+//       }
+
+//       // Append tenants info
+//       let postCount = 0;
+//       for (const rawRecord of bgState.cachedThreadsData) {
+//         const record = rawRecord as ThreadsPostData;
+//         if (!record.entry_rowkey) {
+//           continue;
+//         }
+
+//         if (record?.docType?.toLowerCase() === "post") {
+//           postCount++;
+//           record._tenants = tenantObjs;
+//           record.tenant_ids = tenantObjs.map((t: any) => t.id);
+//         }
+//       }
+
+//       // Sending task
+//       if (bgState.cachedThreadsData.length) {
+//         const result = await publish(threadsTopic, bgState.cachedThreadsData, true);
+//         if (result.ok) {
+//           console.log(new Date().toLocaleTimeString(), "[Threads Cached Data] Sent successfully!");
+//           await incrementBadge(postCount);
+//         } else {
+//           console.log(new Date().toLocaleTimeString(), "[Threads Cached Data] Failed to send:", result.error.message);
+//         }
+
+//         bgState.cachedThreadsData = [];
+//         services.syncService.handleSyncExtensionInfo(true);
+//       }
+//     },
+//   });
+// }

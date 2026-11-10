@@ -4,6 +4,7 @@ export interface DownloadOptions {
     saveAs?: boolean;
     body?: string;
     headers?: Record<string, string>;
+    [key: string]: any;
 }
 
 export interface IDownloadApi {

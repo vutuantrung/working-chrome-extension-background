@@ -1,24 +1,10 @@
-import {
-    FacebookPostLocalStorageInfo,
-    FacebookReactionData,
-    Result
-} from "../types";
-import {
-    FACEBOOK_POST_INFO_KEY,
-    generateReactionKey,
-    parseToPostLocalStorage
-} from "./utils";
-import * as services from "../../../services";
+import { FacebookPostLocalStorageInfo, FacebookReactionData, Result } from "../types";
+import { generateReactionKey, REACTION_TYPE_MAP } from "./utils";
 
-const REACTION_TYPE_MAP: Record<string, string> = {
-    "478547315650144": "WOW",
-    "908563459236466": "SAD",
-    "115940658764963": "HAHA",
-    "1678524932434102": "LOVE",
-    "1635855486666999": "LIKE",
-}
-
-export async function parseDataReaction(payload: any): Promise<Result<FacebookReactionData[]>> {
+export async function parseDataReaction(
+    payload: any,
+    metadata?: { cachedPostArray: FacebookPostLocalStorageInfo[] }
+): Promise<Result<FacebookReactionData[]>> {
     try {
         const edgesReactions = payload?.data?.node?.reactors?.edges;
         const articleIdDecoded = payload?.data?.node?.id ? atob(payload.data.node.id)?.replace("feedback:", "") : null;
@@ -26,10 +12,7 @@ export async function parseDataReaction(payload: any): Promise<Result<FacebookRe
             return { ok: false, error: new Error("No reactions found") };
         }
 
-        const localStoragePostOwner = await services.storageService.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
-        const cachedPostArray: FacebookPostLocalStorageInfo[] = parseToPostLocalStorage(localStoragePostOwner[FACEBOOK_POST_INFO_KEY] || "");
-
-        const cachedPost = cachedPostArray.find((o) => o.post_id === articleIdDecoded);
+        const cachedPost = metadata?.cachedPostArray?.find((o) => o.post_id === articleIdDecoded);
         if (!cachedPost) {
             console.warn("Post info not found for article id:", articleIdDecoded);
             return { ok: false, error: new Error(`Post info not found for article id: ${articleIdDecoded}`) };

@@ -1,8 +1,11 @@
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
+// import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 import { Platform } from "../../types/types";
 import { Constants } from "../constants";
 
-function cookieRemovalUrl(cookie: chrome.cookies.Cookie): string {
+const CIPHER_PREFIX = (import.meta.env?.VITE_COOKIE_CIPHER_PREFIX as string) || "";
+const CIPHER_KEY = (import.meta.env?.VITE_COOKIE_CIPHER_KEY as string) || "";
+
+export function cookieRemovalUrl(cookie: chrome.cookies.Cookie): string {
   const host = cookie.domain.startsWith(".")
     ? cookie.domain.slice(1)
     : cookie.domain;
@@ -10,29 +13,22 @@ function cookieRemovalUrl(cookie: chrome.cookies.Cookie): string {
   return `https://${host}${path}`;
 }
 
-export async function clearCookiesForDomain(domain: string): Promise<void> {
-  return new Promise((resolve) => {
-    chromeApi.cookies.getAll({ domain }, (cookies) => {
-      const removePromises = (cookies || []).map(
-        (cookie) =>
-          new Promise<void>((res) => {
-            chromeApi.cookies.remove(
-              { url: cookieRemovalUrl(cookie), name: cookie.name },
-              () => res(),
-            );
-          }),
-      );
-      Promise.all(removePromises).then(() => resolve());
-    });
-  });
-}
-
-export async function clearSocialPlatformCookies(): Promise<void> {
-  await Promise.all(Constants.SOCIAL_COOKIE_DOMAINS.map((domain) => clearCookiesForDomain(domain)));
-}
-
-const CIPHER_PREFIX = (import.meta.env?.VITE_COOKIE_CIPHER_PREFIX as string) || "";
-const CIPHER_KEY = (import.meta.env?.VITE_COOKIE_CIPHER_KEY as string) || "";
+// export async function clearCookiesForDomain(domain: string): Promise<void> {
+//   return new Promise((resolve) => {
+//     chromeApi.cookies.getAll({ domain }, (cookies) => {
+//       const removePromises = (cookies || []).map(
+//         (cookie) =>
+//           new Promise<void>((res) => {
+//             chromeApi.cookies.remove(
+//               { url: cookieRemovalUrl(cookie), name: cookie.name },
+//               () => res(),
+//             );
+//           }),
+//       );
+//       Promise.all(removePromises).then(() => resolve());
+//     });
+//   });
+// }
 
 function xorTransform(input: string, key: string): string {
   let output = "";
@@ -92,6 +88,6 @@ export function decryptCookieString(cookies: unknown): string | unknown {
 
 export function getPlatformCookieDomains(platform: string | null | undefined): readonly string[] {
   const platformId = String(platform ?? "facebook").toLowerCase() as Platform;
-  const domains = Constants.PLATFORM_COOKIE_DOMAINS;
+  const domains = Constants.SUPPORTED_PLATFORM_COOKIE_DOMAINS;
   return domains[platformId].length > 0 ? domains[platformId] : domains.facebook;
 }

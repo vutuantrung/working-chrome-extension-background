@@ -1,8 +1,9 @@
 import { ParseType, TiktokUserFollowData } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
+
 export const handleTiktokFollowInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
+        applicationServices,
         cachedTiktokData,
         MAXIMUM_RECORD_ARCHIVED,
         MAXIMUM_TIME_WAIT_SECOND,
@@ -23,7 +24,7 @@ export const handleTiktokFollowInfo = async (dt: ParseType, ctx: HandlerContext)
         await sendTiktokCachedData();
     } else {
         console.log("[Tiktok Interceptor] Scheduling send in", MAXIMUM_TIME_WAIT_SECOND, "seconds");
-        chromeApi.alarms.create(SEND_TIKTOK_DATA_ALARM, {
+        applicationServices.alarm?.getBrowserApi().create(SEND_TIKTOK_DATA_ALARM, {
             delayInMinutes: Math.max(0.05, MAXIMUM_TIME_WAIT_SECOND / 60),
         });
     }

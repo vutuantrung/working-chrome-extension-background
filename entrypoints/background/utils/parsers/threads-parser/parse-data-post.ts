@@ -1,6 +1,5 @@
 import { generateKey, parseThreadsPostsInfo, THREADS_POST_INFO_KEY } from "./utils";
 import { Result, ThreadsAttachment, ThreadsCommentData, ThreadsPostData, ThreadsPostLocalStorageInfo } from "../types";
-import * as services from "../../../services";
 import { findAllKeyValuePairs } from "../commons";
 
 async function parseThreadsDataRecursively(
@@ -198,7 +197,10 @@ async function parseThreadsDataRecursively(
 
 export async function parsePostData(
     payload: any,
-    requestPostData: any
+    metadata: {
+        requestPostData: any,
+        cachedPostInfo: ThreadsPostLocalStorageInfo[]
+    }
 ): Promise<Result<{
     postArray: ThreadsPostData[];
     commentArray: ThreadsCommentData[];
@@ -213,13 +215,8 @@ export async function parsePostData(
         const threadsPostsKeyValues = findAllKeyValuePairs(payload, "post");
         // console.log(">>>>>> parsePostData - threadsPostsObjects:", threadsPostsObjects.length);
 
-        const localStoragePostInfo = await services.storageService.getStorageByKeys([THREADS_POST_INFO_KEY]);
-        const threadsPostInfoStr = localStoragePostInfo[THREADS_POST_INFO_KEY] || "";
-        const cachedPostInfo = parseThreadsPostsInfo(threadsPostInfoStr);
-        // console.log(">>>>>> parsePostData - currentPostInfo from local storage:", cachedPostInfo);
-
         for (const { value: threadsPost } of threadsPostsKeyValues) {
-            await parseThreadsDataRecursively(threadsPost, requestPostData, postArray, commentArray, attachmentArray, cachedPostInfo);
+            await parseThreadsDataRecursively(threadsPost, metadata.requestPostData, postArray, commentArray, attachmentArray, metadata.cachedPostInfo);
         }
 
         // 2. Get thread items in order to find relations between comments (parent/child)

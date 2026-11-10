@@ -1,4 +1,5 @@
 import { FacebookUserFollowData, FacebookUserFriendData, Result } from "@/entrypoints/background/utils/parsers/types";
+import { AppService } from "../services/app.services"
 
 export type Platform = "facebook" | "tiktok" | "x" | "threads" | "youtube";
 
@@ -126,6 +127,7 @@ export interface KafkaPublishContext {
     hasExtensionInfo: boolean,
   ) => Promise<Result<any>>;
   incrementBadge: (delta: number) => Promise<void>;
+  appServices?: AppService[];
 }
 
 export interface Archive {
@@ -172,12 +174,12 @@ export interface Task {
 }
 
 export interface User {
-    id: string;
-    username: string;
-    name: string;
-    apikey: string;
-    tenants: any;
-    extension_session: any;
+  id: string;
+  username: string;
+  name: string;
+  apikey: string;
+  tenants: any;
+  extension_session: any;
 }
 
 export interface StorageData {
@@ -222,6 +224,7 @@ export interface StorageData {
   facebook_pending_friend_data?: FacebookUserFriendData[];
   /** Dynamic schedule interval (in minutes) for SYNC_FB_JOINED_GROUPS_ALARM, sourced from API joinedGroupScheduleTime. */
   joinedGroupScheduleTime?: number;
+  proxyHealth?: ProxyHealth;
 }
 
 export interface Message {

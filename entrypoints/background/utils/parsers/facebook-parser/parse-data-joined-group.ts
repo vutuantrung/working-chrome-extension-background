@@ -1,5 +1,4 @@
 import { FacebookGroupJoinedData, Result } from "../types";
-import { getAccountIdFromCookie } from "./utils";
 
 export async function parseDataJoinedGroup(payload: any): Promise<Result<{ fbGroupJoined: FacebookGroupJoinedData[] }>> {
     try {
@@ -10,7 +9,8 @@ export async function parseDataJoinedGroup(payload: any): Promise<Result<{ fbGro
         if (!Array.isArray(edges)) {
             return { ok: false, error: new Error("No joined groups found") };
         }
-        const accountId = await getAccountIdFromCookie();
+
+        // const accountId = await getAccountIdFromCookie();
         const joinedGroups: FacebookGroupJoinedData[] = [];
         for (const e of edges) {
             const groupId = e?.["node"]?.["id"];
@@ -24,8 +24,10 @@ export async function parseDataJoinedGroup(payload: any): Promise<Result<{ fbGro
                 name: e?.["node"]?.["name"] || "",
                 channel_name: "facebook",
                 url: e?.["node"]?.["url"] || "",
-                account_id: accountId || "",
+                account_id: "",
                 crawled_time: Date.now(),
+                tenant_ids: [],
+                _tenants: [],
             });
         }
 

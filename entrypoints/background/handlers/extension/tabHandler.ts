@@ -1,22 +1,29 @@
 import { bgState } from "../../state";
 import { isSupportedPlatformUrl } from "../../utils/tools";
 import { DefaultValues, State } from "../../utils/constants";
-import * as helpers from "../../utils/helpers";
-import * as services from "../../services";
-import {
-  ensureFacebookGraphInterceptorInstalled,
-  ensureFacebookGraphForwarderInstalled,
-  ensureFacebookProfileIdBootstrapInstalled,
-} from "../../scriptInjection";
+import { ApplicationServices } from "../../application-services"
 
-export async function tabsOnActivatedHandler(tabId: any) {
-  await handleMaybeFacebookTab(tabId);
+export function createTabsOnActivatedHandler(applicationServices: ApplicationServices) {
+  return (tabId: any) => tabsOnActivatedHandlerInternal(applicationServices, tabId);
+}
+
+async function tabsOnActivatedHandlerInternal(applicationServices: ApplicationServices, tabId: any) {
+  await handleMaybeFacebookTab(applicationServices, tabId);
+}
+
+export function createTabsOnUpdatedHandler(applicationServices: ApplicationServices) {
+  return (
+    tabId: number,
+    changeInfo: any,
+    tab: chrome.tabs.Tab
+  ) => tabsOnUpdatedHandlerInternal(applicationServices, tabId, changeInfo, tab);
 }
 
 // ========================================
 // TAB UPDATED HANDLER
 // ========================================
-export async function tabsOnUpdatedHandler(
+export async function tabsOnUpdatedHandlerInternal(
+  applicationServices: ApplicationServices,
   tabId: number,
   changeInfo: any,
   tab: chrome.tabs.Tab,
@@ -25,14 +32,10 @@ export async function tabsOnUpdatedHandler(
     settings: storageSettings,
     taskList: storageTaskList,
     user: storageUser,
-  } = await services.storageService.getStorageCachedByKeys([
-    "settings",
-    "taskList",
-    "user",
-  ]);
+  } = await applicationServices.storage?.getStorageCachedByKeys(["settings", "taskList", "user"]) || {};
 
   if (changeInfo.status === "complete" || changeInfo.url) {
-    await handleMaybeFacebookTab(tabId);
+    await handleMaybeFacebookTab(applicationServices, tabId);
   }
 
   // Ensure FB interceptor as early as possible (independent of tasks/settings).
@@ -41,11 +44,11 @@ export async function tabsOnUpdatedHandler(
       changeInfo.status === State.TaskState.COMPLETE) &&
     isSupportedPlatformUrl(tab.url || "")
   ) {
-    ensureFacebookGraphInterceptorInstalled(tabId).catch(() => { });
+    applicationServices.script?.injectXHRNetworkCapture(tabId).catch(() => { });
 
     // If profileId is missing, bootstrap extraction without requiring reload.
     if (!storageSettings?.archive?.profileId) {
-      ensureFacebookProfileIdBootstrapInstalled(tabId).catch(() => { });
+      applicationServices.script?.injectFacebookProfileIdCollector(tabId).catch(() => { });
     }
   }
 
@@ -61,15 +64,15 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      services.tabService.sendTabMessage(tabId, getFbProfileIdMsgData, (response: any) => {
-        const err = services.runtimeService.getRuntimeLastError();
+      applicationServices.tab?.getBrowserApi().sendMessage(tabId, getFbProfileIdMsgData, (response: any) => {
+        const err = applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
         if (err) {
           if (err.message?.includes("Receiving end does not exist")) {
             console.debug(
               "[tabsOnUpdatedHandler] No receiver for profile ID fetch (content script not ready)",
             );
             if (!storageSettings?.archive?.profileId) {
-              ensureFacebookProfileIdBootstrapInstalled(tabId).catch(() => { });
+              applicationServices.script?.injectFacebookProfileIdCollector(tabId).catch(() => { });
             }
             return;
           }
@@ -92,8 +95,8 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      services.tabService.sendTabMessage(tabId, injectFbLabelingRules, (response: any) => {
-        const err = services.runtimeService.getRuntimeLastError();
+      applicationServices.tab?.getBrowserApi().sendMessage(tabId, injectFbLabelingRules, (response: any) => {
+        const err = applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
         if (err) {
           console.warn(
             "[tabsOnUpdatedHandler] Failed to send ENHANCE_SPAN message:",
@@ -114,15 +117,15 @@ export async function tabsOnUpdatedHandler(
         tabId: tabId,
       };
 
-      services.tabService.sendTabMessage(tabId, msgData, (response: any) => {
-        const err = services.runtimeService.getRuntimeLastError();
+      applicationServices.tab?.getBrowserApi().sendMessage(tabId, msgData, (response: any) => {
+        const err = applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
         if (err) {
           if (err.message?.includes("Receiving end does not exist")) {
             console.debug(
               "[tabsOnUpdatedHandler] No receiver for profile ID fetch (content script not ready)",
             );
             if (!storageSettings?.archive?.profileId) {
-              ensureFacebookProfileIdBootstrapInstalled(tabId).catch(() => { });
+              applicationServices.script?.injectFacebookProfileIdCollector(tabId).catch(() => { });
             }
             return;
           }
@@ -154,12 +157,12 @@ export async function tabsOnUpdatedHandler(
           tabId: tabId,
         };
 
-        const response = await helpers.tabControl.safeTabsSendMessage(tabId, msgData);
+        const response = await applicationServices.tab?.getBrowserApi().safeSendMessage(tabId, msgData);
         if (response) {
           console.log("[tabsOnUpdatedHandler] Auto-fetch response:", response);
         } else {
           // If content script isn't ready, bootstrap extraction will still work.
-          ensureFacebookProfileIdBootstrapInstalled(tabId).catch(() => { });
+          applicationServices.script?.injectFacebookProfileIdCollector(tabId).catch(() => { });
         }
       }, 2000);
     } else {
@@ -196,12 +199,12 @@ export async function tabsOnUpdatedHandler(
   }
 
   try {
-    await services.tabService.getTab(runningTaskInfo.tabId);
+    await applicationServices.tab?.getBrowserApi().get(runningTaskInfo.tabId);
   } catch (error) {
     runningTaskInfo.state = State.TaskState.CANCELED;
     runningTaskInfo.result = `Canceled. Reason: Tab with id ${runningTaskInfo.tabId} not found`;
     runningTaskInfo.endTime = Date.now();
-    await services.storageService.setStorageCached({
+    await applicationServices.storage?.setStorageCached({
       taskList: storageTaskList,
     });
     return;
@@ -226,8 +229,8 @@ export async function tabsOnUpdatedHandler(
       // Instead of injecting TS files by path (which won't exist at runtime),
       // simply send a message to the tab and let the content script listener pick it up.
       try {
-        services.tabService.sendTabMessage(dtsTabId, runningTaskInfo, () => {
-          const err = services.runtimeService.getRuntimeLastError();
+        applicationServices.tab?.getBrowserApi().sendMessage(dtsTabId, runningTaskInfo, () => {
+          const err = applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
           if (err) {
             console.warn(
               "[tabsOnUpdatedHandler] sendMessage error:",
@@ -248,10 +251,16 @@ export async function tabsOnUpdatedHandler(
 // ========================================
 // TAB REMOVED HANDLER
 // ========================================
-export async function tabsOnRemovedHandler(tabId: number) {
+export function createTabsOnRemovedHandler(applicationServices: ApplicationServices) {
+  return (tabId: number) => tabsOnRemovedHandlerInternal(applicationServices, tabId);
+}
+
+async function tabsOnRemovedHandlerInternal(
+  applicationServices: ApplicationServices,
+  tabId: number
+) {
   try {
-    const { settings } =
-      await services.storageService.getStorageCachedByKeys(["settings"]);
+    const { settings } = await applicationServices.storage?.getStorageCachedByKeys(["settings"]) || {};
 
     const storedFirstTabId = settings?.firstFacebookTabId || 0;
     const storedBoundTabId = settings?.openingDevtoolsTabId || 0;
@@ -260,24 +269,35 @@ export async function tabsOnRemovedHandler(tabId: number) {
       console.log(`[tabsOnRemovedHandler] First Facebook tab ${tabId} was closed. Resetting...`);
       bgState.firstFacebookTabId = null;
 
-      const updatedSettings = { ...settings, firstFacebookTabId: 0 };
-      await services.storageService.setStorageCached({ settings: updatedSettings });
+      const updatedSettings = { firstFacebookTabId: 0 };
+      await applicationServices.storage?.setStorageCached({ settings: updatedSettings });
 
       // In first-tab mode, only when the default tab is closed, pick a new one (if any exist)
-      if ((settings?.isTabSpecific ?? false) === false) {
-        const replacementTabId = await helpers.tabControl.findDeterministicFacebookTabId();
-        if (replacementTabId) {
-          bgState.firstFacebookTabId = replacementTabId;
-          await services.storageService.setStorageCached({
-            settings: {
-              ...updatedSettings,
-              firstFacebookTabId: replacementTabId,
-            } as any,
-          });
-          console.log(
-            `[tabsOnRemovedHandler] Reassigned deterministic first tab: ${replacementTabId}`,
-          );
-        }
+      // let replacementTabId = null;
+      // if ((settings?.isTabSpecific ?? false) === false) {
+      //   const queriedTabs = await applicationServices.tab?.getBrowserApi().query({ url: Constants.SUPPORTED_PLATFORM_URLS });
+      //   if (queriedTabs) replacementTabId = getSmallestSupportedTabId(queriedTabs);
+
+      //   // const replacementTabId = await helpers.tabControl.findDeterministicFacebookTabId();
+      //   if (replacementTabId) {
+      //     bgState.firstFacebookTabId = replacementTabId;
+      //     await applicationServices.storage?.setStorageCached({
+      //       settings: {
+      //         ...updatedSettings,
+      //         firstFacebookTabId: replacementTabId,
+      //       } as any,
+      //     });
+      //     console.log(
+      //       `[tabsOnRemovedHandler] Reassigned deterministic first tab: ${replacementTabId}`,
+      //     );
+      //   }
+      // }
+
+      const allowedTabId = await applicationServices.tab?.getSupportedTabs();
+      if (!allowedTabId || allowedTabId === -1) {
+        const updatedSettings = { firstFacebookTabId: allowedTabId };
+        await applicationServices.storage?.setStorageCached({ settings: updatedSettings });
+        return;
       }
     }
 
@@ -287,7 +307,7 @@ export async function tabsOnRemovedHandler(tabId: number) {
         `[tabsOnRemovedHandler] Bound tab ${tabId} was closed. Clearing binding.`,
       );
 
-      await services.storageService.setStorageCached({
+      await applicationServices.storage?.setStorageCached({
         settings: {
           ...settings,
           openingDevtoolsTabId: 0,
@@ -312,17 +332,22 @@ export async function tabsOnRemovedHandler(tabId: number) {
 // ========================================
 // HANDLE MAYBE FACEBOOK TAB
 // ========================================
-export async function handleMaybeFacebookTab(tabId: any) {
+export async function handleMaybeFacebookTab(
+  applicationServices: ApplicationServices,
+  tabId: any
+) {
   try {
-    const tab = await services.tabService.getTab(tabId);
+    const tab = await applicationServices.tab?.getBrowserApi().get(tabId);
+    if (!tab) return;
+
     const url = tab.url || "";
     if (!isSupportedPlatformUrl(url)) return;
 
-    await ensureFacebookGraphInterceptorInstalled(tabId);
-    await ensureFacebookProfileIdBootstrapInstalled(tabId);
-    await ensureFacebookGraphForwarderInstalled(tabId);
+    await applicationServices.script?.injectXHRNetworkCapture(tabId);
+    await applicationServices.script?.injectFacebookProfileIdCollector(tabId);
+    await applicationServices.script?.injectXHRDataForwarder(tabId);
 
-    await services.storageService.setStorageCached({
+    await applicationServices.storage?.setStorageCached({
       lastActiveFacebookTab: {
         id: tab.id,
         title: tab.title || "",
@@ -330,7 +355,7 @@ export async function handleMaybeFacebookTab(tabId: any) {
       },
     });
 
-    const { settings } = await services.storageService.getStorageCachedByKeys(["settings"]);
+    const { settings } = await applicationServices.storage?.getStorageCachedByKeys(["settings"]) || {};
     const isTabSpecific = settings?.isTabSpecific ?? false;
 
     // ── NEW: if a manual bind is active, never auto-override it ──────────
@@ -349,7 +374,7 @@ export async function handleMaybeFacebookTab(tabId: any) {
           ...settings,
           openingDevtoolsTabId: tabId,
         };
-        await services.storageService.setStorageCached({ settings: updatedSettings });
+        await applicationServices.storage?.setStorageCached({ settings: updatedSettings });
       }
     } else {
       if (!settings?.openingDevtoolsTabId) {
@@ -358,7 +383,7 @@ export async function handleMaybeFacebookTab(tabId: any) {
           ...(settings || DefaultValues.SETTINGS_DATA),
           openingDevtoolsTabId: tabId,
         };
-        await services.storageService.setStorageCached({ settings: updatedSettings });
+        await applicationServices.storage?.setStorageCached({ settings: updatedSettings });
       }
     }
   } catch (e) {

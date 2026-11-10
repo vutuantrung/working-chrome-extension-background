@@ -41,6 +41,8 @@ export interface IBrowserTabApi {
     get(tabId: number, callback: (tab: Tab) => void): void;
     get(tabId: number, callback?: (tab: Tab) => void): Promise<Tab> | void;
 
+    safeGet(tabId: number): Promise<Tab | null>;
+
     query(queryInfo: QueryTabInfo): Promise<Tab[]>;
     query(queryInfo: QueryTabInfo, callback: (tabs: Tab[]) => void): void;
     query(queryInfo: QueryTabInfo, callback?: (tabs: Tab[]) => void): Promise<Tab[]> | void;
@@ -48,6 +50,8 @@ export interface IBrowserTabApi {
     sendMessage(tabId: number, message: unknown): Promise<any>;
     sendMessage(tabId: number, message: unknown, callback: (response: any) => void): void;
     sendMessage(tabId: number, message: unknown, callback?: (response: any) => void): Promise<any> | void;
+
+    safeSendMessage(tabId: number, message: any): Promise<any | null>;
 
     captureVisibleTab(options: ImageDetails): Promise<string>;
     captureVisibleTab(options: ImageDetails, callback: (dataUrl: string) => void): void;
@@ -60,16 +64,26 @@ export interface IBrowserTabApi {
 
 export class BrowserApplicationTabApi {
     constructor(private browserApi: IBrowserTabApi) { }
-    get(tabId: number): Promise<Tab> {
-        return this.browserApi.get(tabId);
+    get(tabId: number, callback?: (tab: Tab) => void): Promise<Tab> | void {
+        return this.browserApi.get(tabId, callback);
+    }
+    safeGet(tabId: number): Promise<Tab | null> {
+        return this.browserApi.safeGet(tabId);
+    }
+    
+    query(queryInfo: QueryTabInfo): Promise<Tab[]>;
+    query(queryInfo: QueryTabInfo, callback: (tabs: Tab[]) => void): void;
+    query(queryInfo: QueryTabInfo, callback?: (tabs: Tab[]) => void): Promise<Tab[]> | void {
+        return this.browserApi.query(queryInfo, callback);
     }
 
-    query(queryInfo: QueryTabInfo): Promise<Tab[]> {
-        return this.browserApi.query(queryInfo);
-    }
-
+    sendMessage(tabId: number, message: unknown): Promise<any>;
+    sendMessage(tabId: number, message: unknown, callback: (response: any) => void): void;
     sendMessage(tabId: number, message: unknown, callback?: (response: any) => void): Promise<any> | void {
         return this.browserApi.sendMessage(tabId, message, callback);
+    }
+    safeSendMessage(tabId: number, message: any): Promise<any | null> {
+        return this.browserApi.safeSendMessage(tabId, message);
     }
 
     captureVisibleTab(options: ImageDetails, callback?: (dataUrl: string) => void): Promise<string> | void {

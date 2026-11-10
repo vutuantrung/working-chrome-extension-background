@@ -1,9 +1,9 @@
 import { ParseType, ThreadsAttachment } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 export const handleThreadsImageInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
+        applicationServices,
         cachedThreadsData,
         MAXIMUM_RECORD_ARCHIVED,
         MAXIMUM_TIME_WAIT_SECOND,
@@ -24,7 +24,7 @@ export const handleThreadsImageInfo = async (dt: ParseType, ctx: HandlerContext)
         await sendThreadsCachedData();
     } else {
         console.log("[Threads Interceptor] Scheduling send in", MAXIMUM_TIME_WAIT_SECOND, "seconds");
-        chromeApi.alarms.create(SEND_THREADS_DATA_ALARM, {
+        applicationServices.alarm?.getBrowserApi().create(SEND_THREADS_DATA_ALARM, {
             delayInMinutes: Math.max(0.05, MAXIMUM_TIME_WAIT_SECOND / 60),
         });
     }

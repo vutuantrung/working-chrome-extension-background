@@ -1,9 +1,9 @@
 import { FacebookProfileData, ParseType } from "@/entrypoints/background/utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
-import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
 
 export const handleFbProfileInfo = async (dt: ParseType, ctx: HandlerContext) => {
     const {
+        applicationServices,
         senderTabId,
         cachedFacebookData,
         MAXIMUM_RECORD_ARCHIVED,
@@ -21,7 +21,7 @@ export const handleFbProfileInfo = async (dt: ParseType, ctx: HandlerContext) =>
     cachedFacebookData.push(...crawledProfileData);
     console.log("[Facebook Interceptor] Total in queue - Records:", cachedFacebookData.length);
     
-    chromeApi.tabs.sendMessage(senderTabId, {
+    applicationServices.tab?.getBrowserApi().sendMessage(senderTabId, {
         activityName: "INJECT_HOVER_POST_OWNER_DATA",
         tabId: senderTabId,
         taskId: "inject_hover_post_owner_data_task",
@@ -37,7 +37,7 @@ export const handleFbProfileInfo = async (dt: ParseType, ctx: HandlerContext) =>
         sendFacebookCachedData();
     } else {
         console.log("[Facebook Interceptor] Scheduling send in", MAXIMUM_TIME_WAIT_SECOND, "seconds");
-        chromeApi.alarms.create(SEND_FACEBOOK_DATA_ALARM, {
+        applicationServices.alarm?.getBrowserApi().create(SEND_FACEBOOK_DATA_ALARM, {
             delayInMinutes: Math.max(0.05, MAXIMUM_TIME_WAIT_SECOND / 60),
         });
     }

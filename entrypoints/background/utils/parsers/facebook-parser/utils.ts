@@ -2,9 +2,16 @@
 // FACEBOOK PARSING UTILS
 // ===============================================
 import SparkMD5 from "spark-md5";
-import * as services from "../../../services";
 import { FacebookCollectionListKind, FacebookPostData, FacebookPostLocalStorageInfo, ResolvedCollectionPage } from "../types";
 import { findAllKeyValuePairs } from "../commons";
+
+export const REACTION_TYPE_MAP: Record<string, string> = {
+    "478547315650144": "WOW",
+    "908563459236466": "SAD",
+    "115940658764963": "HAHA",
+    "1678524932434102": "LOVE",
+    "1635855486666999": "LIKE",
+}
 
 /// UTILS
 function parsePayloadRoot(payload: unknown): any | null {
@@ -238,6 +245,15 @@ export function mergeUserInfoFields(base: any, patch: any) {
     out[key] = val;
   }
   return out;
+}
+
+export function deriveNameFromTruncation(text: any): string | undefined {
+  if (typeof text !== "string") return undefined;
+  const t = text.trim();
+  if (!t) return undefined;
+  // Example: "See more about Sơn" -> "Sơn"
+  const m = t.match(/see more about\s+(.+)$/i);
+  return (m?.[1] || t).trim() || undefined;
 }
 
 type FacebookVideoGridRenderer = {
@@ -503,7 +519,7 @@ export function extractReactionAndCommentCount(data: any) {
 }
 
 // LOCAL STORAGE UTILS
-const MAXIMUM_USERS = 30, MAXIMUM_POSTS = 50;
+
 export const FACEBOOK_POST_INFO_KEY = "facebook_posts_info";
 export const FACEBOOK_USER_INFO_KEY = "facebook_user_info";
 export function parseToPostLocalStorage(facebookPostsOwnersStr: string = ""): FacebookPostLocalStorageInfo[] {
@@ -516,8 +532,7 @@ export function parseToPostLocalStorage(facebookPostsOwnersStr: string = ""): Fa
       const [postEntryRowkey, postId, ownerId, ownerName, ownerType] = str
         .trim()
         .split("|");
-      if (!postEntryRowkey || !postId || !ownerId || !ownerName || !ownerType)
-        return null;
+      if (!postEntryRowkey || !postId || !ownerId || !ownerName || !ownerType) return null;
       return {
         entry_rowkey: postEntryRowkey,
         post_id: postId,
@@ -529,43 +544,13 @@ export function parseToPostLocalStorage(facebookPostsOwnersStr: string = ""): Fa
     .filter((item) => item !== null);
 }
 
-export async function storeFacebookPostInfo(newGroupPost: FacebookPostData[] = []): Promise<FacebookPostLocalStorageInfo[]> {
-  const localStoragePostOwner = await services.storageService.getStorageByKeys([FACEBOOK_POST_INFO_KEY]);
-  const facebookPostsOwnersStr = localStoragePostOwner[FACEBOOK_POST_INFO_KEY] || "";
-  const currentGroupPosts = parseToPostLocalStorage(facebookPostsOwnersStr);
-  const tmpCurrentGroupPosts = [...currentGroupPosts];
-
-  for (const newPost of newGroupPost) {
-    const index = tmpCurrentGroupPosts.findIndex((p) => p.post_id === newPost.post_id);
-    if (index !== -1) continue; // Already have this post info -> pass
-
-    if (tmpCurrentGroupPosts.length >= MAXIMUM_POSTS) {
-      tmpCurrentGroupPosts.shift();
-    }
-    const newSavingPosts: FacebookPostLocalStorageInfo = {
-      entry_rowkey: newPost.entry_rowkey,
-      post_id: newPost.post_id.split("_")[1],
-      owner_id: newPost.owner_id,
-      owner_name: newPost.owner_name,
-      owner_type: newPost.owner_type,
-    };
-    tmpCurrentGroupPosts.push(newSavingPosts);
-  }
-
-  const updatingPostsString = tmpCurrentGroupPosts
-    .map((p) => `${p.entry_rowkey}|${p.post_id}|${p.owner_id}|${p.owner_name}|${p.owner_type}`).join("::");
-  services.storageService.setStorageCached({ [FACEBOOK_POST_INFO_KEY]: updatingPostsString });
-
-  return tmpCurrentGroupPosts;
-}
-
-export async function getAccountIdFromCookie(): Promise<string | null> {
-  try {
-    const cookie = await services.cookieService.getCookie({ url: "https://www.facebook.com", name: "c_user" });
-    return cookie?.value || null;
-  } catch { }
-  return null;
-}
+// export async function getAccountIdFromCookie(): Promise<string | null> {
+//   try {
+//     const cookie = await services.cookieService.getCookie({ url: "https://www.facebook.com", name: "c_user" });
+//     return cookie?.value || null;
+//   } catch { }
+//   return null;
+// }
 
 export function generatePostKey(timestamp: number, uniqueString: string): string | null {
   if (uniqueString === "") return null;

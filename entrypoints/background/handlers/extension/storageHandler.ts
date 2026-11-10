@@ -1,13 +1,19 @@
-import * as services from "../../services";
+import { ApplicationServices } from "../../application-services";
 
-export function storageOnChangedHandler(changes: any, area: string) {
+export function createStorageOnChangedHandler(applicationService: ApplicationServices) {
+    return (changes: any, area: string) => storageOnChangedHandlerInternal(applicationService, changes, area);
+}
+
+function storageOnChangedHandlerInternal(
+    applicationService: ApplicationServices,
+    changes: any,
+    area: string
+) {
     console.log("[storageOnChangedHandler] Changes detected:", changes);
 
     if (area !== "local") return;
 
-    if (!services.storageService.getStorageCache()) {
-        services.storageService.setStorageCache({});
-    }
+    const currentCachedStorage = applicationService.storage?.getCachedStorage() || {};
 
     for (const [k, delta] of Object.entries(changes)) {
         const newValue = (delta as any).newValue;
@@ -15,11 +21,11 @@ export function storageOnChangedHandler(changes: any, area: string) {
         // Deep merge for settings to preserve nested objects like archive
         if (k === "settings" && typeof newValue === "object" && newValue !== null) {
             // Preserve existing settings and merge new values
-            const existingSettings = services.storageService.getStorageCache()[k];
+            const existingSettings = applicationService.storage?.getCachedStorage()[k];
             const existingArchive = existingSettings?.archive || {};
             const newArchive = newValue.archive || {};
 
-            services.storageService.getStorageCache()[k] = {
+            currentCachedStorage[k] = {
                 ...existingSettings,
                 ...newValue,
                 archive: {
@@ -28,7 +34,9 @@ export function storageOnChangedHandler(changes: any, area: string) {
                 },
             };
         } else {
-            Object.assign(services.storageService.getStorageCache(), { [k]: newValue });
+            Object.assign(currentCachedStorage, { [k]: newValue });
         }
     }
+
+    applicationService.storage?.setCachedStorage(currentCachedStorage);
 }

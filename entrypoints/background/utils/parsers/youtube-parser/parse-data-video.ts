@@ -1,6 +1,6 @@
 import { findAllKeyValuePairs } from "../commons";
 import { Result, YoutubeImageData, YoutubePostData } from "../types";
-import { findByKey, generateKey, parseVietnameseRelativeTime, parseVietnameseViewCount, storeYoutubePostData } from "./utils";
+import { findByKey, generateKey, parseVietnameseRelativeTime, parseVietnameseViewCount } from "./utils";
 
 export function parsePostData(
     payload: string,
@@ -28,8 +28,6 @@ export function parsePostData(
                 parseGetWatchData(payload, postArray, imageArray)
                 break;
         }
-
-        storeYoutubePostData(postArray).catch(() => { })
 
         return {
             ok: true,

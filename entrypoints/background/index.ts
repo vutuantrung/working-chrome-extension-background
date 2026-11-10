@@ -1,40 +1,64 @@
-import * as services from "./services";
 import { createApplicationServices } from "./bootstrap";
-import * as extensionHandlers from "./handlers/extension";
-import { chromeApi } from "./infrastructure/chrome-api/chrome-api";
 import { Constants } from "./utils/constants";
 import { ApplicationServices } from "./application-services";
+import { registerListeners } from "./infrastructure/chrome-api/init";
 
+function detectBrowser(): "chrome" | "firefox" | null {
+  if (typeof chrome !== "undefined" && typeof chrome.runtime !== "undefined") {
+    return "chrome";
+  }
+  return null;
+}
 
 // ========================================
 // WXT BACKGROUND ENTRY POINT
 // ========================================
 export default defineBackground(() => {
-  // Initialize only in browser context (not in WXT dev shadow environment)
-  if (import.meta.env.BROWSER) {
+  try {
+    // Initialize only in browser context (not in WXT dev shadow environment)
+    if (import.meta.env.BROWSER) {
+      const currentBrowser = detectBrowser();
 
-    const applicationServices = createApplicationServices();
+      if (!currentBrowser) {
+        throw new Error("Unsupported browser");
+      }
 
-    initializeBackgroundServices(applicationServices);
-    initializeState();
+      createApplicationServices(currentBrowser)
+        .then(async (applicationServices) => {
+          let register = null;
+          if (currentBrowser === "chrome") {
+            const { registerListeners } = await import("./infrastructure/chrome-api/init");
+            register = registerListeners;
+          }
+
+          if (!register) {
+            throw new Error("No register function available for the current browser");
+          }
+
+          register(applicationServices);
+          initializeState(applicationServices);
+        });
+    }
+  } catch (error) {
+    console.error("Error initializing background services:", error);
   }
 });
 
-function initializeState() {
+async function initializeState(applicationServices: ApplicationServices) {
   // Initialize the proxy health check alarm if it doesn't already exist.
   try {
-    services.alarmService.getAlarm(Constants.PROXY_HEALTH_CHECK_ALARM).then((existing) => {
+    applicationServices.alarm?.getBrowserApi().get(Constants.PROXY_HEALTH_CHECK_ALARM, (existing: any) => {
       if (existing) return;
-      services.alarmService.createAlarm(Constants.PROXY_HEALTH_CHECK_ALARM, {
+      applicationServices.alarm?.getBrowserApi().create(Constants.PROXY_HEALTH_CHECK_ALARM, {
         delayInMinutes: 0.2,
         periodInMinutes: 1,
       });
-    });
+    })
   } catch { }
 
   // Initialize the proxy health state to "ok" on service worker boot.
   try {
-    services.proxyService.storeProxyData({
+    applicationServices.proxy?.storeProxyData({
       state: "ok",
       reason: "sw_boot",
       lastOkAt: Date.now(),
@@ -44,74 +68,79 @@ function initializeState() {
       consecutiveFailures: 0,
     });
 
-    Promise.resolve(services.proxyService.checkProxyStatus());
+    Promise.resolve(applicationServices.proxy?.checkProxyStatus());
   } catch { }
+
+  // Initialize storage
+  if (!applicationServices.storage?.getCachedStorage()) {
+    applicationServices.storage?.setCachedStorage({});
+  }
 }
 
-// ========================================
-// INITIALIZATION
-// ========================================
-function initializeBackgroundServices(applicationServices: ApplicationServices) {
-  console.log("Initializing background services...");
+// // ========================================
+// // INITIALIZATION
+// // ========================================
+// function initializeBackgroundServices(applicationServices: ApplicationServices) {
+//   console.log("Initializing background services...");
 
-  // Register all Chrome API event listeners
-  // ========================================
-  // ACTION HANDLERS
-  // ========================================
-  chromeApi.action.onClicked.addListener(extensionHandlers.actionOnClickedHandler);
-
-
-  // ========================================
-  // RUNTIME HANDLERS
-  // ========================================
-  chromeApi.runtime.onMessage.addListener(extensionHandlers.createRunTimeOnMessageHandler(applicationServices));
-  chromeApi.runtime.onInstalled.addListener(extensionHandlers.createRunTimeOnInstalledHandler(applicationServices));
+//   // Register all Chrome API event listeners
+//   // ========================================
+//   // ACTION HANDLERS
+//   // ========================================
+//   chromeApi.action.onClicked.addListener(extensionHandlers.createActionOnClickedHandler(applicationServices));
 
 
-  // ========================================
-  // TAB HANDLERS
-  // ========================================
-  chromeApi.tabs.onUpdated.addListener(extensionHandlers.tabsOnUpdatedHandler);
-  chromeApi.tabs.onRemoved.addListener(extensionHandlers.tabsOnRemovedHandler);
-  chromeApi.tabs.onActivated.addListener(extensionHandlers.tabsOnActivatedHandler);
+//   // ========================================
+//   // RUNTIME HANDLERS
+//   // ========================================
+//   chromeApi.runtime.onMessage.addListener(extensionHandlers.createRunTimeOnMessageHandler(applicationServices));
+//   chromeApi.runtime.onInstalled.addListener(extensionHandlers.createRunTimeOnInstalledHandler(applicationServices));
 
 
-  // ========================================
-  // ALARMS HANDLERS
-  // ========================================
-  chromeApi.alarms.onAlarm.addListener(extensionHandlers.alarmsOnAlarmHandler);
+//   // ========================================
+//   // TAB HANDLERS
+//   // ========================================
+//   chromeApi.tabs.onUpdated.addListener(extensionHandlers.createTabsOnUpdatedHandler(applicationServices));
+//   chromeApi.tabs.onRemoved.addListener(extensionHandlers.createTabsOnRemovedHandler(applicationServices));
+//   chromeApi.tabs.onActivated.addListener(extensionHandlers.createTabsOnActivatedHandler(applicationServices));
 
 
-  // ========================================
-  // STORAGE HANDLERS
-  // ========================================
-  chromeApi.storage.onChanged.addListener(extensionHandlers.storageOnChangedHandler);
+//   // ========================================
+//   // ALARMS HANDLERS
+//   // ========================================
+//   chromeApi.alarms.onAlarm.addListener(extensionHandlers.createAlarmsOnAlarmHandler(applicationServices));
 
 
-  // ========================================
-  // WINDOWS HANDLERS
-  // ========================================
-  chromeApi.windows.onFocusChanged.addListener(extensionHandlers.windowOnFocusChangedHandler);
+//   // ========================================
+//   // STORAGE HANDLERS
+//   // ========================================
+//   chromeApi.storage.onChanged.addListener(extensionHandlers.createStorageOnChangedHandler(applicationServices));
 
 
-  // ========================================
-  // WEB REQUEST HANDLERS
-  // ========================================
-  chromeApi.webRequest.onAuthRequired.addListener(extensionHandlers.webRequestOnAuthRequiredHandler, { urls: ["<all_urls>"] }, ["asyncBlocking"]);
+//   // ========================================
+//   // WINDOWS HANDLERS
+//   // ========================================
+//   chromeApi.windows.onFocusChanged.addListener(extensionHandlers.createWindowOnFocusChangedHandler(applicationServices));
 
 
-  // Provide proxy auth credentials (username/password) to avoid browser prompt.
-  // NOTE: chrome.proxy.settings cannot apply credentials; must use webRequest.onAuthRequired.
-  // registerProxyAuthProvider();
-
-  // ========================================
-  // PROXY HANDLERS
-  // ========================================
-  chromeApi.proxy.onProxyError.addListener(extensionHandlers.onProxyErrorHandler);
+//   // ========================================
+//   // WEB REQUEST HANDLERS
+//   // ========================================
+//   chromeApi.webRequest.onAuthRequired.addListener(extensionHandlers.createwebRequestOnAuthRequiredHandler(applicationServices), { urls: ["<all_urls>"] }, ["asyncBlocking"]);
 
 
-  // Setup side panel - open when extension icon clicked
-  chromeApi.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((e) => {
-    console.warn("[sidePanel] setPanelBehavior not supported:", e);
-  });
-}
+//   // Provide proxy auth credentials (username/password) to avoid browser prompt.
+//   // NOTE: chrome.proxy.settings cannot apply credentials; must use webRequest.onAuthRequired.
+//   // registerProxyAuthProvider();
+
+//   // ========================================
+//   // PROXY HANDLERS
+//   // ========================================
+//   chromeApi.proxy.onProxyError.addListener(extensionHandlers.createOnProxyErrorHandler(applicationServices));
+
+
+//   // Setup side panel - open when extension icon clicked
+//   chromeApi.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((e) => {
+//     console.warn("[sidePanel] setPanelBehavior not supported:", e);
+//   });
+// }

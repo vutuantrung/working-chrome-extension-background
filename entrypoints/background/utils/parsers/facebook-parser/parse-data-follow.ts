@@ -72,16 +72,12 @@ export function parseDataFollow(payload: any): Result<FacebookUserFollowData[]> 
   try {
     const resolved = resolveCollectionPageFromPayload(payload);
     if (!resolved) {
-      console.debug(
-        "[FB Follow Trace][parseDataFollow] skip: not a follow/followers page",
-      );
+      console.debug("[FB Follow Trace][parseDataFollow] skip: not a follow/followers page");
       return { ok: false, error: new Error("Not a follow payload") };
     }
 
     if (resolved.kind === "friends") {
-      console.debug(
-        "[FB Follow Trace][parseDataFollow] skip: friends list — use parseDataFriend",
-      );
+      console.debug("[FB Follow Trace][parseDataFollow] skip: friends list — use parseDataFriend");
       return { ok: false, error: new Error("Friends payload") };
     }
 
@@ -120,9 +116,7 @@ export function parseDataFollow(payload: any): Result<FacebookUserFollowData[]> 
     );
 
     if (!ownerId) {
-      console.debug(
-        "[FB Follow Trace][parseDataFollow] skip: missing profile owner id",
-      );
+      console.debug("[FB Follow Trace][parseDataFollow] skip: missing profile owner id");
       return { ok: false, error: new Error("Missing profile owner id") };
     }
 

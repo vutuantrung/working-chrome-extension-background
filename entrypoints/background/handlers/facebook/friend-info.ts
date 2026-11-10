@@ -1,16 +1,16 @@
-import * as services from "../../services";
 import {
   ParseType,
   FacebookUserFriendData,
   FacebookDataType,
-} from "@/entrypoints/background/utils/parsers/types";
+} from "../../utils/parsers/types";
 import { HandlerContext } from "../../types/handle";
 import { decodeUnicodeEscapes, normalizeFacebookUserInfoMap } from "../../utils/parsers/facebook-parser/utils";
 
 const FB_FRIEND_FLUSH_IMMEDIATE_LIMIT = 30;
 const FB_FRIEND_FLUSH_DEBOUNCE_MS = 10_000;
 const FB_USER_NAME_MAP_KEY = "facebook_user_info_map";
-const FB_COLLECTION_OWNER_MAP_KEY = "facebook_friend_collection_owner_map";
+const FB_FRIEND_COLLECTION_OWNER_MAP_KEY = "facebook_friend_collection_owner_map";
+const FB_FOLLOW_COLLECTION_OWNER_MAP_KEY = "facebook_follow_collection_owner_map";
 const FB_PENDING_FRIEND_KEY = "facebook_pending_friend_data";
 
 export type FacebookFriendCollectionOwnerEntry = {
@@ -137,86 +137,88 @@ function flattenCollectionRows(map: Record<string, FacebookFriendCollectionOwner
   return merged;
 }
 
-function clearCollectionRowBuffers(
-  map: Record<string, FacebookFriendCollectionOwnerEntry>,
-): void {
-  for (const entry of Object.values(map)) {
-    entry.rows = [];
-  }
-}
+// function clearCollectionRowBuffers(
+//   map: Record<string, FacebookFriendCollectionOwnerEntry>,
+// ): void {
+//   for (const entry of Object.values(map)) {
+//     entry.rows = [];
+//   }
+// }
 
-export async function clearFacebookFriendStagingState(cachedFacebookData: FacebookDataType[]): Promise<void> {
-  const cached = await services.storageService.getStorageCachedByKeys([FB_COLLECTION_OWNER_MAP_KEY]);
-  const collectionOwnerMapRaw = cached[FB_COLLECTION_OWNER_MAP_KEY];
-  const collectionOwnerMap = normalizeCollectionOwnerMap(collectionOwnerMapRaw);
-  clearCollectionRowBuffers(collectionOwnerMap);
+// export async function clearFacebookFriendStagingState(cachedFacebookData: FacebookDataType[]): Promise<void> {
+//   const cached = await services.storageService.getStorageCachedByKeys([FB_COLLECTION_OWNER_MAP_KEY]);
+//   const collectionOwnerMapRaw = cached[FB_COLLECTION_OWNER_MAP_KEY];
+//   const collectionOwnerMap = normalizeCollectionOwnerMap(collectionOwnerMapRaw);
+//   clearCollectionRowBuffers(collectionOwnerMap);
 
-  await services.storageService.setStorageCached({
-    [FB_COLLECTION_OWNER_MAP_KEY]: collectionOwnerMap,
-    [FB_PENDING_FRIEND_KEY]: [],
-  });
+//   await services.storageService.setStorageCached({
+//     [FB_COLLECTION_OWNER_MAP_KEY]: collectionOwnerMap,
+//     [FB_PENDING_FRIEND_KEY]: [],
+//   });
 
-  for (let i = cachedFacebookData.length - 1; i >= 0; i--) {
-    if (isFriendRecord(cachedFacebookData[i])) {
-      cachedFacebookData.splice(i, 1);
-    }
-  }
+//   for (let i = cachedFacebookData.length - 1; i >= 0; i--) {
+//     if (isFriendRecord(cachedFacebookData[i])) {
+//       cachedFacebookData.splice(i, 1);
+//     }
+//   }
 
-  console.log(
-    "[FB Friend Trace][clearFacebookFriendStagingState] cleared pending buffer; kept user/collection maps",
-  );
-}
+//   console.log("[FB Friend Trace][clearFacebookFriendStagingState] cleared pending buffer; kept user/collection maps");
+// }
 
-export function hasFacebookFriendRecordsInQueue(records: FacebookDataType[]): boolean {
-  return records.some(isFriendRecord);
-}
+// export function hasFacebookFriendRecordsInQueue(records: FacebookDataType[]): boolean {
+//   return records.some(isFriendRecord);
+// }
 
-async function loadPendingFriends(): Promise<FacebookUserFriendData[]> {
-  const cached = await services.storageService.getStorageCachedByKeys([FB_PENDING_FRIEND_KEY]);
-  const pending = cached[FB_PENDING_FRIEND_KEY];
-  return Array.isArray(pending) ? [...pending] : [];
-}
+// async function loadPendingFriends(): Promise<FacebookUserFriendData[]> {
+//   const cached = await services.storageService.getStorageCachedByKeys([FB_PENDING_FRIEND_KEY]);
+//   const cachedPending = cached[FB_PENDING_FRIEND_KEY];
+//   return Array.isArray(cachedPending) ? [...cachedPending] : [];
+// }
 
-async function savePendingFriends(rows: FacebookUserFriendData[]): Promise<void> {
-  await services.storageService.setStorageCached({ [FB_PENDING_FRIEND_KEY]: rows });
-}
+// async function savePendingFriends(rows: FacebookUserFriendData[]): Promise<void> {
+//   await services.storageService.setStorageCached({ [FB_PENDING_FRIEND_KEY]: rows });
+// }
 
-export async function flushFacebookFriendStaging(
-  cachedFacebookData: FacebookDataType[],
-  sendFacebookCachedData: () => Promise<void>,
-): Promise<void> {
-  const pending = await loadPendingFriends();
-  if (!pending.length) {
-    console.log(
-      "[FB Friend Trace][flushFacebookFriendStaging] skip: empty pending",
-    );
-    return;
-  }
+// export async function flushFacebookFriendStaging(cachedFacebookData: FacebookDataType[]): Promise<void> {
+//   const cached = await services.storageService.getStorageCachedByKeys([FB_PENDING_FRIEND_KEY]);
+//   const cachedPending = cached[FB_PENDING_FRIEND_KEY];
+//   const pending = Array.isArray(cachedPending) ? [...cachedPending] : [];
+//   if (!pending.length) {
+//     console.log("[FB Friend Trace][flushFacebookFriendStaging] skip: empty pending");
+//     return;
+//   }
+//   console.log("[FB Friend Trace][flushFacebookFriendStaging] pushing", pending.length, "friend rows");
+//   await services.storageService.setStorageCached({ [FB_PENDING_FRIEND_KEY]: [] });
+//   cachedFacebookData.push(...pending);
+// }
 
-  console.log(
-    "[FB Friend Trace][flushFacebookFriendStaging] pushing",
-    pending.length,
-    "friend rows",
-  );
-
-  await savePendingFriends([]);
-  cachedFacebookData.push(...pending);
-  await sendFacebookCachedData();
-}
-
-function scheduleFacebookFriendFlushInternal(
-  ctx: Pick<
-    HandlerContext,
-    "cachedFacebookData" | "sendFacebookCachedData" | "debounce"
-  >,
-  pendingCount: number,
-): void {
-  const { cachedFacebookData, sendFacebookCachedData, debounce } = ctx;
+function scheduleFacebookFriendFlushInternal(ctx: HandlerContext, pendingCount: number): void {
+  const {
+    applicationServices,
+    cachedFacebookData,
+    sendFacebookCachedData,
+    debounce
+  } = ctx;
 
   if (!pendingCount) return;
 
+  const flushFacebookFriendStaging = async (cachedFacebookData: FacebookDataType[]): Promise<boolean> => {
+    const cachedStorage = await applicationServices.storage?.getStorageCachedByKeys([FB_PENDING_FRIEND_KEY]);
+    const cachedPending = cachedStorage?.[FB_PENDING_FRIEND_KEY] || [];
+    const pending = Array.isArray(cachedPending) ? [...cachedPending] : [];
+    if (!pending.length) {
+      console.log("[FB Friend Trace][flushFacebookFriendStaging] skip: empty pending");
+      return false;
+    }
+    console.log("[FB Friend Trace][flushFacebookFriendStaging] pushing", pending.length, "friend rows");
+    await applicationServices.storage?.setStorageCached({ [FB_PENDING_FRIEND_KEY]: [] });
+    cachedFacebookData.push(...pending);
+
+    return true;
+  }
+
   const scheduleFlush = () => {
-    void flushFacebookFriendStaging(cachedFacebookData, sendFacebookCachedData);
+    void flushFacebookFriendStaging(cachedFacebookData).then((success) => { if (success) sendFacebookCachedData() })
   };
 
   if (pendingCount >= FB_FRIEND_FLUSH_IMMEDIATE_LIMIT) {
@@ -227,28 +229,25 @@ function scheduleFacebookFriendFlushInternal(
   debounce(scheduleFlush, FB_FRIEND_FLUSH_DEBOUNCE_MS, "fb_friend_flush_debounce");
 }
 
-export async function refreshPendingFriendsFromUserInfoMap(
-  ctx: Pick<
-    HandlerContext,
-    "cachedFacebookData" | "sendFacebookCachedData" | "debounce"
-  >,
-): Promise<void> {
-  const pending = await loadPendingFriends();
+export async function refreshPendingFriendsFromUserInfoMap(ctx: HandlerContext): Promise<void> {
+  const { applicationServices } = ctx;
+  const cachedStorage = await applicationServices.storage?.getStorageCachedByKeys([
+    FB_PENDING_FRIEND_KEY,
+    FB_USER_NAME_MAP_KEY,
+    FB_FRIEND_COLLECTION_OWNER_MAP_KEY
+  ]);
+  if (!cachedStorage) {
+    return;
+  }
+
+  const cachedPending = cachedStorage[FB_PENDING_FRIEND_KEY] || [];
+  const pending = Array.isArray(cachedPending) ? [...cachedPending] : [];
+
   if (!pending.length) return;
 
-  const cachedMaps = await services.storageService.getStorageCachedByKeys([
-    FB_USER_NAME_MAP_KEY,
-    FB_COLLECTION_OWNER_MAP_KEY,
-  ]);
-  const userNameMap = normalizeFacebookUserInfoMap(
-    cachedMaps[FB_USER_NAME_MAP_KEY] as Record<string, string> | undefined,
-  );
-  const collectionOwnerMap = normalizeCollectionOwnerMap(
-    cachedMaps[FB_COLLECTION_OWNER_MAP_KEY] as Record<
-      string,
-      FacebookFriendCollectionOwnerEntry
-    >,
-  );
+  // const cachedMaps = await applicationServices.storage?.getStorageCachedByKeys([FB_USER_NAME_MAP_KEY, FB_COLLECTION_OWNER_MAP_KEY]);
+  const userNameMap = normalizeFacebookUserInfoMap(cachedStorage[FB_USER_NAME_MAP_KEY] as Record<string, string> | undefined);
+  const collectionOwnerMap = normalizeCollectionOwnerMap(cachedStorage[FB_FRIEND_COLLECTION_OWNER_MAP_KEY] as Record<string, FacebookFriendCollectionOwnerEntry>);
 
   const refreshed: FacebookUserFriendData[] = [];
   for (const row of pending) {
@@ -259,6 +258,7 @@ export async function refreshPendingFriendsFromUserInfoMap(
       userNameMap,
       collectionOwnerMap,
     );
+
     if (
       !next.user_id ||
       !next.friend_id ||
@@ -274,15 +274,12 @@ export async function refreshPendingFriendsFromUserInfoMap(
 
   if (!refreshed.length) return;
 
-  await savePendingFriends(refreshed);
+  await applicationServices.storage?.setStorageCached({ [FB_PENDING_FRIEND_KEY]: refreshed });
   scheduleFacebookFriendFlushInternal(ctx, refreshed.length);
 }
 
-export const handleFbFriendInfo = async (
-  dt: ParseType,
-  ctx: HandlerContext,
-) => {
-  const { cachedFacebookData, sendFacebookCachedData, debounce } = ctx;
+export const handleFbFriendInfo = async (dt: ParseType, ctx: HandlerContext) => {
+  const { applicationServices } = ctx;
 
   const crawledFriendData = dt.data as FacebookUserFriendData[];
   if (!Array.isArray(crawledFriendData) || !crawledFriendData.length) {
@@ -295,24 +292,21 @@ export const handleFbFriendInfo = async (
     crawledFriendData.length,
   );
 
-  const cachedMaps = await services.storageService.getStorageCachedByKeys([
+  const cachedStorage = await applicationServices.storage?.getStorageCachedByKeys([
+    FB_PENDING_FRIEND_KEY,
     FB_USER_NAME_MAP_KEY,
-    FB_COLLECTION_OWNER_MAP_KEY,
-    "facebook_follow_collection_owner_map",
+    FB_FRIEND_COLLECTION_OWNER_MAP_KEY,
+    FB_FOLLOW_COLLECTION_OWNER_MAP_KEY,
   ]);
 
-  const userNameMap = normalizeFacebookUserInfoMap(
-    cachedMaps[FB_USER_NAME_MAP_KEY] as Record<string, string> | undefined,
-  );
-  const collectionOwnerMap = normalizeCollectionOwnerMap(
-    cachedMaps[FB_COLLECTION_OWNER_MAP_KEY] as Record<
-      string,
-      FacebookFriendCollectionOwnerEntry
-    >,
-  );
-  const followOwnerMap = normalizeCollectionOwnerMap(
-    cachedMaps["facebook_follow_collection_owner_map"] as any,
-  );
+  if (!cachedStorage) {
+    console.log("Storage cached not found");
+    return;
+  }
+
+  const userNameMap = normalizeFacebookUserInfoMap(cachedStorage[FB_USER_NAME_MAP_KEY] as any);
+  const collectionOwnerMap = normalizeCollectionOwnerMap(cachedStorage[FB_FRIEND_COLLECTION_OWNER_MAP_KEY] as any);
+  const followOwnerMap = normalizeCollectionOwnerMap(cachedStorage[FB_FOLLOW_COLLECTION_OWNER_MAP_KEY] as any);
 
   const followRowsToRedirect: any[] = [];
   const friendRowsToKeep: FacebookUserFriendData[] = [];
@@ -483,9 +477,7 @@ export const handleFbFriendInfo = async (
     }
   }
 
-  await services.storageService.setStorageCached({
-    [FB_COLLECTION_OWNER_MAP_KEY]: collectionOwnerMap,
-  });
+  await applicationServices.storage?.setStorageCached({ [FB_FRIEND_COLLECTION_OWNER_MAP_KEY]: collectionOwnerMap });
 
   console.log(
     "[FB Friend Trace][handleFbFriendInfo] normalized:",
@@ -499,16 +491,20 @@ export const handleFbFriendInfo = async (
   );
 
   const collectionBuffered = flattenCollectionRows(collectionOwnerMap);
-  const pending = mergePendingFriends(
-    mergePendingFriends(await loadPendingFriends(), normalized),
+  const cachedPending = cachedStorage[FB_USER_NAME_MAP_KEY];
+  const pending = Array.isArray(cachedPending) ? [...cachedPending] : [];
+
+  const mergedPending = mergePendingFriends(
+    mergePendingFriends(pending, normalized),
     collectionBuffered,
   );
-  await savePendingFriends(pending);
+
+  await applicationServices.storage?.setStorageCached({ [FB_PENDING_FRIEND_KEY]: mergedPending });
 
   console.log(
     "[FB Friend Trace][handleFbFriendInfo] pending buffer size:",
-    pending.length,
+    mergedPending.length,
   );
 
-  scheduleFacebookFriendFlushInternal(ctx, pending.length);
+  scheduleFacebookFriendFlushInternal(ctx, mergedPending.length);
 };

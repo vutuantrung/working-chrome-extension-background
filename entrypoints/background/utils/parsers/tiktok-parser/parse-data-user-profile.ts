@@ -1,6 +1,9 @@
-import { Result, TiktokUserFollowData, TiktokUserLocalStorageInfo, TiktokUserProfileData } from "../types";
-import { parseTiktokUserInfo, storeTiktokUserInfo, TIKTOK_USER_INFO_KEY } from "./utils";
-import * as services from "../../../services";
+import {
+    Result,
+    TiktokUserFollowData,
+    TiktokUserLocalStorageInfo,
+    TiktokUserProfileData
+} from "../types";
 
 function parseProfile(dataJSON: any, extra: any): TiktokUserProfileData | null {
     if (!dataJSON.user.id) {
@@ -90,12 +93,16 @@ function parseFollow(
 
 export async function parseDataUserProfile(
     dataArr: { data: any, getMethod: string }[] = [],
-    extra: any = {},
+    metaData: {
+        cachedUserInfo: TiktokUserLocalStorageInfo,
+        requestInfo: { requestUrl?: string, tabUrl?: string }
+    },
 ): Promise<Result<{
     userProfiles: TiktokUserProfileData[],
     followers: TiktokUserFollowData[],
+    localStorageNewUser: TiktokUserProfileData[],
 }>> {
-    const requestUrl = extra?.requestInfo?.requestUrl || "";
+    const requestUrl = metaData?.requestInfo?.requestUrl || "";
 
     const isFollowerList = requestUrl?.includes("/api/user/list/") && requestUrl?.includes("&scene=67");
     const isFollowingList = requestUrl?.includes("/api/user/list/") && requestUrl?.includes("&scene=21");
@@ -106,20 +113,11 @@ export async function parseDataUserProfile(
 
     try {
         // Get current on page user profile (from parsed data or local storage)
-        let associateLocalStorageUser = null;
+        let cachedUserInfo = null;
         if (isFollowerList || isFollowingList) {
-            const onPageUserUniqueId = extra?.requestInfo?.tabUrl?.replace("https://www.tiktok.com/@", "");
-            const onPageUserProfileFromTab = userProfileArray.find((u) => u.uniqueId === onPageUserUniqueId);
-
-            const localStorageUserProfile = await services.storageService.getStorageByKeys([TIKTOK_USER_INFO_KEY]);
-            const tiktokUserInfoStr = localStorageUserProfile[TIKTOK_USER_INFO_KEY] || "";
-            const tiktokUserInfoArr = parseTiktokUserInfo(tiktokUserInfoStr);
-            const tiktokLocalStorageUser = tiktokUserInfoArr.find((u) => u.uniqueId === onPageUserUniqueId);
-
-            associateLocalStorageUser = tiktokLocalStorageUser || onPageUserProfileFromTab;
-
-            if (!associateLocalStorageUser) {
-                console.warn("Cannot find on page user profile, followers/following data might be inaccurate:", onPageUserUniqueId);
+            cachedUserInfo = metaData?.cachedUserInfo;
+            if (!cachedUserInfo) {
+                console.warn("Cannot find on page user profile, followers/following data might be inaccurate:");
             }
         }
 
@@ -127,23 +125,23 @@ export async function parseDataUserProfile(
             for (const { data: dataJSON } of dataArr) {
 
                 // PARSE PROFILE
-                const profileData = parseProfile(dataJSON, extra);
+                const profileData = parseProfile(dataJSON, metaData);
                 if (!profileData) continue;
                 userProfileArray.push(profileData);
 
 
                 // PARSE FOLLOWERS/FOLLOWING
                 // https://www.tiktok.com/@<userUniqueId>
-                if (isFollowingList && associateLocalStorageUser) {
+                if (isFollowingList && cachedUserInfo) {
                     const followedUser = profileData;
-                    const followerUser = associateLocalStorageUser;
+                    const followerUser = cachedUserInfo;
                     const followerData = parseFollow(followerUser, followedUser);
                     followDataArray.push(followerData);
                 }
 
-                if (isFollowerList && associateLocalStorageUser) {
+                if (isFollowerList && cachedUserInfo) {
                     const followerUser = profileData;
-                    const followedUser = associateLocalStorageUser;
+                    const followedUser = cachedUserInfo;
                     const followerData = parseFollow(followerUser, followedUser);
                     followDataArray.push(followerData);
                 }
@@ -154,10 +152,9 @@ export async function parseDataUserProfile(
             }
         }
 
-        await storeTiktokUserInfo(newSavingUsers);
 
         // return data
-        return { ok: true, data: { userProfiles: userProfileArray, followers: followDataArray } };
+        return { ok: true, data: { userProfiles: userProfileArray, followers: followDataArray, localStorageNewUser: newSavingUsers } };
 
     } catch (error: any) {
         console.error(

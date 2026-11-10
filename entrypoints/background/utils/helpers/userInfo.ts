@@ -1,7 +1,5 @@
 import { PendingUserInfo } from "../../types/types";
-import { delayMs } from "../tools";
 import { Constants } from "../constants";
-import * as services from "../../services";
 
 export type UserProfileMainFieldKey = (typeof Constants.USER_PROFILE_MAIN_FIELD_KEYS)[number];
 
@@ -10,7 +8,7 @@ export function filterUserProfilePayload(value: any): Record<string, any> | null
 
   const out: Record<string, any> = {};
   for (const key of Constants.USER_PROFILE_MAIN_FIELD_KEYS) {
-    const val = (value as any)[key];
+    const val = value[key];
     if (!isMeaningfulValue(val)) continue;
     out[key] = val;
   }
@@ -115,43 +113,43 @@ export function stripNonUserProfileFields(value: any): any {
   return out;
 }
 
-export async function waitForUserInfoDescription(maxWaitMs: number): Promise<{ found: boolean; info?: any } | null> {
-  const startedAt = Date.now();
-  let lastParsed: any = undefined;
+// export async function waitForUserInfoDescription(maxWaitMs: number): Promise<{ found: boolean; info?: any } | null> {
+//   const startedAt = Date.now();
+//   let lastParsed: any = undefined;
 
-  while (Date.now() - startedAt < maxWaitMs) {
-    const { pendingUserInfo } = (await services.storageService.getStorageCachedByKeys(["pendingUserInfo"])) || {};
-    const parsed = pendingUserInfo?.parsed;
-    if (parsed) lastParsed = parsed;
-    if (hasUserDescription(parsed)) return { found: true, info: parsed };
-    await delayMs(Constants.USERINFO_DESCRIPTION_POLL_MS);
-  }
+//   while (Date.now() - startedAt < maxWaitMs) {
+//     const { pendingUserInfo } = (await services.storageService.getStorageCachedByKeys(["pendingUserInfo"])) || {};
+//     const parsed = pendingUserInfo?.parsed;
+//     if (parsed) lastParsed = parsed;
+//     if (hasUserDescription(parsed)) return { found: true, info: parsed };
+//     await delayMs(Constants.USERINFO_DESCRIPTION_POLL_MS);
+//   }
 
-  return { found: false, info: lastParsed };
-}
+//   return { found: false, info: lastParsed };
+// }
 
-export async function waitForUserInfoCollectReady(maxWaitMs: number): Promise<Record<string, any> | null> {
-  const startedAt = Date.now();
-  let lastFiltered: Record<string, any> | null = null;
+// export async function waitForUserInfoCollectReady(maxWaitMs: number): Promise<Record<string, any> | null> {
+//   const startedAt = Date.now();
+//   let lastFiltered: Record<string, any> | null = null;
 
-  while (Date.now() - startedAt < maxWaitMs) {
-    const { pendingUserInfo } = (await services.storageService.getStorageCachedByKeys(["pendingUserInfo"])) || {};
-    let parsed = pendingUserInfo?.parsed;
-    if (!parsed && pendingUserInfo?.raw) {
-      try {
-        parsed = JSON.parse(pendingUserInfo.raw);
-      } catch {
-        parsed = undefined;
-      }
-    }
-    const filtered = filterUserProfilePayload(parsed);
-    if (filtered) lastFiltered = filtered;
-    if (filtered && isUserProfileCollectReady(filtered)) return filtered;
-    await delayMs(Constants.USERINFO_COLLECT_POLL_MS);
-  }
+//   while (Date.now() - startedAt < maxWaitMs) {
+//     const { pendingUserInfo } = (await services.storageService.getStorageCachedByKeys(["pendingUserInfo"])) || {};
+//     let parsed = pendingUserInfo?.parsed;
+//     if (!parsed && pendingUserInfo?.raw) {
+//       try {
+//         parsed = JSON.parse(pendingUserInfo.raw);
+//       } catch {
+//         parsed = undefined;
+//       }
+//     }
+//     const filtered = filterUserProfilePayload(parsed);
+//     if (filtered) lastFiltered = filtered;
+//     if (filtered && isUserProfileCollectReady(filtered)) return filtered;
+//     await delayMs(Constants.USERINFO_COLLECT_POLL_MS);
+//   }
 
-  return lastFiltered;
-}
+//   return lastFiltered;
+// }
 
 function isMeaningfulValue(value: any): boolean {
   if (value === null || value === undefined) return false;

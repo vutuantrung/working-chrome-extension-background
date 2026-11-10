@@ -16,7 +16,7 @@ export function getSelectedPlatformId(): Platform | null {
 
 export function getPlatformLabel(id: Platform | string | null | undefined): string | null {
   if (!id || !isPlatformId(id)) return null;
-  return Constants.PLATFORM_LABELS[id];
+  return Constants.SUPPORTED_PLATFORM_LABELS[id];
 }
 
 export function getSelectedPlatformLabel(): string | null {

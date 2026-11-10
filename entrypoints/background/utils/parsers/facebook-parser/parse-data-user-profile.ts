@@ -4,40 +4,33 @@ import {
     normalizeFieldKey,
     normalizeGenderLabel,
     normalizePlaceText,
+    deriveNameFromTruncation,
 } from "./utils";
 import { FacebookUserData, Result } from "../types";
 
 export function parseDataUserProfile(payload: any): Result<FacebookUserData> {
     try {
-        const dataUser =
+        const userPayload =
             payload?.data?.user ||
             payload?.data?.node?.user;
         // payload?.data?.node?.comet_hovercard_renderer?.user ||
         // payload?.data?.node?.comet_hovercard_renderer?.profile_plus_viewer?.user;
-        if (!dataUser) {
+        if (!userPayload) {
             // console.error("User data not found in payload:", payload);
             return { ok: false, error: new Error("User data not found") };
         }
-        const header = dataUser?.profile_header_renderer;
+        const header = userPayload?.profile_header_renderer;
         const topRow = header?.user?.header_top_row || header?.header_top_row;
         const profileUser = topRow?.profile_user;
-        const u = header?.user || profileUser || dataUser;
+        const userData = header?.user || profileUser || userPayload;
         const profileOwner = extractProfileOwnerCandidate(payload);
-        const deriveNameFromTruncation = (text: any): string | undefined => {
-            if (typeof text !== "string") return undefined;
-            const t = text.trim();
-            if (!t) return undefined;
-            // Example: "See more about Sơn" -> "Sơn"
-            const m = t.match(/see more about\s+(.+)$/i);
-            return (m?.[1] || t).trim() || undefined;
-        };
 
-        const resolvedId = u?.id || profileOwner?.id;
+        const resolvedId = userData?.id || profileOwner?.id;
         const resolvedName =
-            u?.name ??
-            dataUser?.name ??
+            userData?.name ??
+            userPayload?.name ??
             profileOwner?.name ??
-            deriveNameFromTruncation(dataUser?.directory_tile_section_truncation_string?.text);
+            deriveNameFromTruncation(userPayload?.directory_tile_section_truncation_string?.text);
 
         if (!resolvedId || typeof resolvedName !== "string" || !resolvedName)
             return { ok: false, error: new Error("Unable to resolve user ID or name") };
@@ -78,8 +71,8 @@ export function parseDataUserProfile(payload: any): Result<FacebookUserData> {
         // Example path: data.user.profile_tile_sections.edges[].node.profile_tile_views.nodes[].view_style_renderer.view.profile_tile_items.nodes[].directory_tile_item_renderer.tile_item
         try {
             const tileEdges: any[] =
-                Array.isArray(dataUser?.profile_tile_sections?.edges)
-                    ? dataUser.profile_tile_sections.edges
+                Array.isArray(userPayload?.profile_tile_sections?.edges)
+                    ? userPayload.profile_tile_sections.edges
                     : [];
 
             for (const edge of tileEdges) {
@@ -100,7 +93,6 @@ export function parseDataUserProfile(payload: any): Result<FacebookUserData> {
                             tileItem?.pressable_profile_field_type ||
                             tileItem?.profile_field_type ||
                             tileItem?.field_type;
-                        const fieldType = normalizeFieldKey(fieldTypeRaw);
                         const subtitleText: any =
                             tileItem?.item_subtitle?.text?.text ||
                             tileItem?.item_subtitle?.text ||
@@ -111,7 +103,7 @@ export function parseDataUserProfile(payload: any): Result<FacebookUserData> {
                                 ? subtitleText.trim()
                                 : undefined;
                         const normalizedSubtitle = normalizePlaceText(subtitleText);
-
+                        const fieldType = normalizeFieldKey(fieldTypeRaw);
                         if (
                             fieldType === "current_city" ||
                             fieldType === "hometown" ||
@@ -139,15 +131,18 @@ export function parseDataUserProfile(payload: any): Result<FacebookUserData> {
         const bio = profileUser?.profile_status?.profile_status_text?.text;
 
         const usernameRaw =
-            u?.username_for_profile ??
-            profileUser?.username_for_profile ??
-            header?.username_for_profile;
+            header?.username_for_profile ??
+            userData?.username_for_profile ??
+            profileUser?.username_for_profile;
         const username =
             typeof usernameRaw === "string" && usernameRaw.trim()
                 ? usernameRaw.trim()
-                : deriveUsernameFromUrl(u?.url);
+                : deriveUsernameFromUrl(userData?.url);
 
-        const alternateNameRaw = u?.alternate_name ?? profileUser?.alternate_name ?? header?.alternate_name;
+        const alternateNameRaw =
+            header?.alternate_name ??
+            userData?.alternate_name ??
+            profileUser?.alternate_name;
         const alternate_name =
             typeof alternateNameRaw === "string" && alternateNameRaw.trim()
                 ? alternateNameRaw.trim()
@@ -158,22 +153,26 @@ export function parseDataUserProfile(payload: any): Result<FacebookUserData> {
             contextByType["home_town"] ||
             contextByType["hometown_city"];
 
+        const gender = normalizeGenderLabel(typeof userData?.gender === "string"
+            ? userData.gender
+            : contextByType["gender"])
+
         const userInfo: any = {
             id: String(resolvedId),
-            name: u?.name ?? dataUser?.name ?? profileOwner?.name,
+            name: userData?.name ?? userPayload?.name ?? profileOwner?.name,
             username,
             alternate_name: alternate_name,
-            url: typeof u?.url === "string" ? u.url : undefined,
-            gender: normalizeGenderLabel(typeof u?.gender === "string" ? u.gender : contextByType["gender"]),
-            profile_picture: u?.profilePicLarge?.uri,
+            url: typeof userData?.url === "string" ? userData.url : undefined,
+            gender: gender,
+            profile_picture: userData?.profilePicLarge?.uri,
             cover_photo:
                 header?.user?.cover_photo?.photo?.image?.uri ||
-                u?.cover_photo?.photo?.image?.uri,
+                userData?.cover_photo?.photo?.image?.uri,
             followers_text: typeof followersText === "string" ? followersText : undefined,
             following_text: typeof followingText === "string" ? followingText : undefined,
             category: contextByType["category"],
             current_city: contextByType["current_city"],
-            hometown,
+            hometown: hometown,
             work: contextByType["work"],
             description: typeof bio === "string" ? bio : undefined,
             docType: "Profile",

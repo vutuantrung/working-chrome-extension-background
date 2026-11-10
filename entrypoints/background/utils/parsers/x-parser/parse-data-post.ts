@@ -111,9 +111,7 @@ function parseXDataRecursively(
     postArray.push(tweetData);
 }
 
-export function parsePostData(
-    payload: any
-): Result<{
+export function parsePostData(payload: any): Result<{
     postArray: XPostData[];
     commentArray: XCommentData[];
     attachmentArray: XAttachment[];
