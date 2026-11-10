@@ -1,7 +1,6 @@
 import { createApplicationServices } from "./bootstrap";
 import { Constants } from "./utils/constants";
 import { ApplicationServices } from "./application-services";
-import { registerListeners } from "./infrastructure/chrome-api/init";
 
 function detectBrowser(): "chrome" | "firefox" | null {
   if (typeof chrome !== "undefined" && typeof chrome.runtime !== "undefined") {

@@ -13,23 +13,6 @@ export function cookieRemovalUrl(cookie: chrome.cookies.Cookie): string {
   return `https://${host}${path}`;
 }
 
-// export async function clearCookiesForDomain(domain: string): Promise<void> {
-//   return new Promise((resolve) => {
-//     chromeApi.cookies.getAll({ domain }, (cookies) => {
-//       const removePromises = (cookies || []).map(
-//         (cookie) =>
-//           new Promise<void>((res) => {
-//             chromeApi.cookies.remove(
-//               { url: cookieRemovalUrl(cookie), name: cookie.name },
-//               () => res(),
-//             );
-//           }),
-//       );
-//       Promise.all(removePromises).then(() => resolve());
-//     });
-//   });
-// }
-
 function xorTransform(input: string, key: string): string {
   let output = "";
   for (let i = 0; i < input.length; i++) {

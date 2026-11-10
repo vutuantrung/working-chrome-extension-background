@@ -1,5 +1,4 @@
 import { FacebookUserFollowData, FacebookUserFriendData, Result } from "@/entrypoints/background/utils/parsers/types";
-import { AppService } from "../services/app.services"
 
 export type Platform = "facebook" | "tiktok" | "x" | "threads" | "youtube";
 
@@ -127,7 +126,6 @@ export interface KafkaPublishContext {
     hasExtensionInfo: boolean,
   ) => Promise<Result<any>>;
   incrementBadge: (delta: number) => Promise<void>;
-  appServices?: AppService[];
 }
 
 export interface Archive {
