@@ -2,16 +2,7 @@ import { AxiosInstance } from "axios";
 
 export const getSocialAccountProxy = async (
     http: AxiosInstance,
-    id: string
-) => {
-    const response = await http.get(`/social-account/${id}/proxy`);
-    return response.data;
-};
-
-export const getSocialAccountInfo = async (
-    http: AxiosInstance,
-    id: string
-) => {
+    id: string) => {
     const response = await http.get(`/social-account/${id}/proxy`);
     return response.data;
 };

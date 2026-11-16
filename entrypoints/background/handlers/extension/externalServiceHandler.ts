@@ -102,13 +102,6 @@ export async function handleExternalApiCall(
                 .then(response => sendResponse(response));
             break;
         }
-        case "getSocialAccountInfo": {
-            const { id } = body;
-            apiCall.socialAccount
-                .getSocialAccountInfo(applicationServices.http?.getHttpInstance(), id)
-                .then(response => sendResponse(response));
-            break;
-        }
         case "getSocialAccountGroups": {
             const { id, offset, limit } = body;
             apiCall.socialAccount
@@ -155,9 +148,9 @@ export async function handleExternalApiCall(
         }
 
         case "getMemberSourcesGroup": {
-            const { accountId, status, search, offset, limit } = body;
+            const { accountId, status, search, offset, limit, platform, type } = body;
             apiCall.sourceMember
-                .getMemberSourcesGroup(applicationServices.http?.getHttpInstance(), accountId, status, search, offset, limit)
+                .getMemberSourcesGroup(applicationServices.http?.getHttpInstance(), accountId, status, search, offset, limit, platform, type)
                 .then(response => sendResponse(response));
             break;
         }

@@ -72,5 +72,7 @@ export const postCaseImages = async (
         })
     );
 
-    await http.post(`/profile-cases/${profileCaseId}/images`, form)
+    await http.post(`/profile-cases/${profileCaseId}/images`, form);
+
+    return true;
 }
