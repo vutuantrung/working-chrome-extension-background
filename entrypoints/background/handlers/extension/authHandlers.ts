@@ -165,6 +165,7 @@ async function restoreOrAuthenticate(
 // Explicit password/API-key commands keep their existing queue semantics.
 const autoLoginInFlight = new Map<string, Promise<AutoLoginResponse>>();
 let pendingSessionEnds = 0;
+let pendingRecoveries = 0;
 
 function getOrStartAutoLogin(
   services: ApplicationServices,
@@ -193,7 +194,7 @@ export async function handleAuthAutoLogin(
     respond({ success: false, error: "Extension ID is required", code: "INVALID_AUTH_INPUT" });
     return;
   }
-  if (pendingSessionEnds > 0) {
+  if (pendingSessionEnds > 0 || pendingRecoveries > 0) {
     respond({ success: false, error: "Session cleanup in progress", code: "AUTH_BUSY" });
     return;
   }
@@ -201,7 +202,7 @@ export async function handleAuthAutoLogin(
   respond(result);
 }
 
-type SessionEndMode = "logout" | "restart";
+type SessionEndMode = "logout" | "restart" | "expired";
 type SessionEndResult = {
   cleared: true;
   snapshotPreserved: boolean;
@@ -251,7 +252,7 @@ async function endSession(
 
     // Restart retains the legacy recovery semantics: capture manual cookies
     // before destructive cleanup; never clear a snapshot on restart.
-    const snapshotPreserved = mode === "restart" ? await preserveManualCookies(services) : false;
+    const snapshotPreserved = mode !== "logout" ? await preserveManualCookies(services) : false;
     // Explicit logout signs out remotely before cleanup. Restart intentionally
     // keeps the existing local-only behavior for recovery from a dead proxy.
     const signoutConfirmed = mode === "logout" ? await tryServerSignout(services, extensionId) : null;
@@ -263,7 +264,7 @@ async function endSession(
     if (!cleared) throw new Error("Session cleanup failed");
 
     await services.storage.removeStorageByKeys([
-      ...SESSION_END_KEYS,
+      ...SESSION_END_KEYS.filter(key => mode !== "expired" || key !== "draftCredentials"),
       ...(mode === "logout" ? MANUAL_SNAPSHOT_KEYS : []),
     ]);
     const data: SessionEndResult = { cleared: true, snapshotPreserved, signoutConfirmed };
@@ -296,4 +297,89 @@ export function handleAuthLogout(services: ApplicationServices, message: Message
 
 export function handleAuthRestart(services: ApplicationServices, message: Message, respond: Respond): Promise<void> {
   return enqueueSessionEnd(services, "restart", message, respond);
+}
+
+type RecoveryResponse =
+  | { success: true; data: { status: "recovered"; session: any } }
+  | { success: true; data: { status: "signed_out"; snapshotPreserved: boolean } }
+  | { success: false; error: string; code: string };
+
+async function attemptRecovery(services: ApplicationServices, input: AuthenticationInput): Promise<any | null> {
+  let session: any = null;
+  await authenticate(services, input, response => {
+    if (response.success === true) session = response.data;
+  });
+  return session;
+}
+
+async function recoverExpiredSession(
+  services: ApplicationServices,
+  extensionId: string,
+  allowLegacyCredentials: boolean,
+): Promise<RecoveryResponse> {
+  try {
+    if (!services.storage) throw new Error("Storage unavailable");
+    const state = await services.storage.getStorageByKeys(["user", "apikey", "draftCredentials"]);
+    // A delayed expiry notification must not sign in after logout has cleared user.
+    if (!state.user) return { success: true, data: { status: "signed_out", snapshotPreserved: false } };
+
+    let session: any = null;
+    if (isNonEmptyString(state.apikey)) {
+      session = await attemptRecovery(services, { mode: "apiKey", apiKey: state.apikey, extensionId });
+    }
+    const remembered = state.draftCredentials;
+    // Keep the old opt-in condition for existing legacy credentials only.
+    // Never create a new stored password or send credentials to Sidepanel.
+    if (!session && allowLegacyCredentials && isNonEmptyString(remembered?.username) && isNonEmptyString(remembered?.password)) {
+      session = await attemptRecovery(services, {
+        mode: "password", username: remembered.username, password: remembered.password, extensionId,
+      });
+    }
+    if (session) return { success: true, data: { status: "recovered", session } };
+
+    let result: RecoveryResponse | undefined;
+    await endSession(services, "expired", extensionId, response => {
+      result = response.success === true
+        ? { success: true, data: { status: "signed_out", snapshotPreserved: response.data.snapshotPreserved } }
+        : response;
+    });
+    return result ?? { success: false, error: "Session recovery failed", code: "AUTH_RECOVERY_FAILED" };
+  } catch {
+    return { success: false, error: "Session recovery failed", code: "AUTH_RECOVERY_FAILED" };
+  }
+}
+
+// One recovery per extension in this worker. Run the entire fallback and cleanup
+// sequence inside the existing queue; do not recursively enqueue authenticate.
+const recoveryInFlight = new Map<string, Promise<RecoveryResponse>>();
+
+export async function handleAuthRecoverSession(
+  services: ApplicationServices,
+  message: Message,
+  respond: Respond,
+): Promise<void> {
+  const { extensionId, allowLegacyCredentials } = message.inputs ?? {};
+  if (!isNonEmptyString(extensionId)) {
+    respond({ success: false, error: "Extension ID is required", code: "INVALID_AUTH_INPUT" });
+    return;
+  }
+  if (pendingSessionEnds > 0) {
+    respond({ success: false, error: "Session cleanup in progress", code: "AUTH_BUSY" });
+    return;
+  }
+  const existing = recoveryInFlight.get(extensionId);
+  if (existing) {
+    respond(await existing);
+    return;
+  }
+  pendingRecoveries += 1;
+  const next = authenticationTail.then(() => recoverExpiredSession(services, extensionId, allowLegacyCredentials === true));
+  recoveryInFlight.set(extensionId, next);
+  authenticationTail = next.then(() => undefined, () => undefined);
+  try {
+    respond(await next);
+  } finally {
+    recoveryInFlight.delete(extensionId);
+    pendingRecoveries -= 1;
+  }
 }
