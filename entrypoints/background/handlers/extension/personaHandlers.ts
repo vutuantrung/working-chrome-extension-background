@@ -7,14 +7,14 @@ import { enqueueSessionOperation, getAuthenticationGeneration } from "./authHand
 type Respond = (response: unknown) => void;
 type PersonaRecord = Record<string, unknown>;
 type PersonaSummary = { id: string; first_name: string; last_name: string; nickname: string; job: string; gender: string; country: string; status: string };
-type Selection = { userId: string; sessionId: string; revision: number; persona: PersonaSummary };
+type Selection = { userId: string; sessionId: string; revision: number; persona: PersonaSummary; activation?: "active" | "reconciliation_required" };
 type PersonaState = {
   selectedPersonaId: string | null;
   selectedPersona: PersonaSummary | null;
   mode: "config_bound" | "persona_bound";
   canSwitch: boolean;
   revision: number;
-  status: "unselected" | "selected";
+  status: "unselected" | "selected" | "active" | "reconciliation_required";
 };
 
 class PersonaError extends Error {
@@ -82,7 +82,7 @@ function state(ctx: Context, selection: Selection | null): PersonaState {
   const configured = hasExtensionConfigId(ctx.user.extension_session?.extension_config_id);
   return { selectedPersonaId: selection?.persona.id ?? null, selectedPersona: selection ? summary(selection.persona) : null,
     mode: configured ? "config_bound" : "persona_bound", canSwitch: !configured,
-    revision: selection?.revision ?? 0, status: selection ? "selected" : "unselected" };
+    revision: selection?.revision ?? 0, status: selection ? (selection.activation ?? "selected") : "unselected" };
 }
 async function persistSelection(ctx: Context, persona: PersonaRecord): Promise<PersonaState> {
   await assertSession(ctx);
@@ -130,6 +130,17 @@ async function prepareSelection(services: ApplicationServices) {
     status: recommendedPersonaId ? "ready" : "selection_required" };
 }
 
+async function validateTarget(services: ApplicationServices, ctx: Context, personaId: string): Promise<PersonaRecord> {
+  const target = record(await api.persona.getPersonaById(services.http.getHttpInstance(), personaId));
+  if (target.id !== personaId) return fail("PERSONA_NOT_FOUND", "Persona not found");
+  verifyOwner(target, ctx.user.id);
+  if (target.user_id !== ctx.user.id) {
+    const candidates = await listPersonas(services, ctx);
+    if (!candidates.some(p => p.id === personaId)) return fail("PERSONA_FORBIDDEN", "Persona is not assigned to current user");
+  }
+  return target;
+}
+
 async function selectPersona(services: ApplicationServices, message: Message): Promise<PersonaState> {
   const { personaId, expectedRevision } = message.inputs ?? {};
   if (!nonEmpty(personaId)) return fail("PERSONA_INVALID_ID", "Invalid persona ID");
@@ -140,13 +151,7 @@ async function selectPersona(services: ApplicationServices, message: Message): P
     return fail("PERSONA_SWITCH_NOT_ALLOWED", "Switching is not allowed with extension config");
   }
   if (previous.selectedPersonaId === personaId) return previous;
-  const target = record(await api.persona.getPersonaById(services.http.getHttpInstance(), personaId));
-  if (target.id !== personaId) return fail("PERSONA_NOT_FOUND", "Persona not found");
-  verifyOwner(target, ctx.user.id);
-  if (target.user_id !== ctx.user.id) {
-    const candidates = await listPersonas(services, ctx);
-    if (!candidates.some(p => p.id === personaId)) return fail("PERSONA_FORBIDDEN", "Persona is not assigned to current user");
-  }
+  const target = await validateTarget(services, ctx, personaId);
   // restoreSelection may have migrated a legacy ID; reread its revision.
   const refreshed = await readContext(services);
   await assertSession(ctx);
@@ -176,4 +181,70 @@ export function handlePersonaPrepareSelection(services: ApplicationServices, _me
 }
 export function handlePersonaSelect(services: ApplicationServices, message: Message, respond: Respond): Promise<void> {
   return respondWith(() => enqueueSessionOperation(() => selectPersona(services, message)), respond);
+}
+
+async function persistActivation(ctx: Context, persona: PersonaRecord, activation: "active" | "reconciliation_required"): Promise<PersonaState> {
+  await assertSession(ctx);
+  const previous = storedSelection(ctx);
+  const next: Selection = {
+    userId: ctx.user.id, sessionId: sessionId(ctx.user),
+    revision: (previous?.revision ?? 0) + 1, persona: summary(persona), activation,
+  };
+  const patch = { selectedPersonaId: next.persona.id, personaSelection: next };
+  await ctx.storage.getBrowserApi().set(patch);
+  Object.assign(ctx.storage.getCachedStorage(), patch);
+  return state(ctx, next);
+}
+
+async function activatePersona(services: ApplicationServices, personaId: unknown, expectedRevision?: unknown): Promise<PersonaState> {
+  if (!nonEmpty(personaId)) return fail("PERSONA_INVALID_ID", "Invalid persona ID");
+  const ctx = await readContext(services);
+  const previous = await restoreSelection(services, ctx);
+  // Exact same confirmed target is a no-op, even after concurrent activation.
+  if (previous.selectedPersonaId === personaId && previous.status === "active") return previous;
+  if (expectedRevision !== undefined && expectedRevision !== previous.revision) return fail("PERSONA_CONFLICT", "Persona selection changed");
+  if (previous.selectedPersonaId && previous.selectedPersonaId !== personaId &&
+      (previous.mode === "config_bound" || previous.status !== "selected")) {
+    return fail("PERSONA_SWITCH_NOT_ALLOWED", "Use persona switching for another selected session");
+  }
+  const target = await validateTarget(services, ctx, personaId);
+  await assertSession(ctx);
+  const refreshed = await readContext(services);
+  // Record uncertainty before the remote operation. A crash or timeout must
+  // never leave an acknowledged active state for an unconfirmed mutation.
+  await persistActivation(refreshed, target, "reconciliation_required");
+  try {
+    const result = await api.extensionUser.activatePersonaSession(services.http.getHttpInstance(), personaId);
+    if (result?.success === false || result?.data?.success === false) {
+      return fail("PERSONA_ACTIVATION_FAILED", "Persona activation rejected");
+    }
+  } catch {
+    return fail("PERSONA_ACTIVATION_FAILED", "Persona activation not confirmed; reconcile before retrying");
+  }
+  try {
+    await assertSession(ctx);
+    return await persistActivation(await readContext(services), target, "active");
+  } catch {
+    return fail("PERSONA_RECONCILIATION_REQUIRED", "Activation acknowledged but local state could not be committed");
+  }
+}
+
+export function handlePersonaActivate(services: ApplicationServices, message: Message, respond: Respond): Promise<void> {
+  const { personaId, expectedRevision } = message.inputs ?? {};
+  return respondWith(() => enqueueSessionOperation(() => activatePersona(services, personaId, expectedRevision)), respond);
+}
+
+export function handlePersonaEnsureDefault(services: ApplicationServices, _message: Message, respond: Respond): Promise<void> {
+  return respondWith(() => enqueueSessionOperation(async () => {
+    const ctx = await readContext(services);
+    if (!hasExtensionConfigId(ctx.user.extension_session?.extension_config_id)) {
+      return fail("PERSONA_SWITCH_NOT_ALLOWED", "Default persona requires extension config");
+    }
+    const current = await restoreSelection(services, ctx);
+    if (current.status === "active") return current;
+    // Do not call a public handler from this queue: it would deadlock.
+    if (current.selectedPersonaId) return activatePersona(services, current.selectedPersonaId, current.revision);
+    const prepared = await prepareSelection(services);
+    return activatePersona(services, prepared.recommendedPersonaId, prepared.state.revision);
+  }), respond);
 }
