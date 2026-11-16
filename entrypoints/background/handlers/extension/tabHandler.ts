@@ -2,6 +2,7 @@ import { bgState } from "../../state";
 import { isSupportedPlatformUrl } from "../../utils/tools";
 import { DefaultValues, State } from "../../utils/constants";
 import { ApplicationServices } from "../../application-services"
+import { Tab } from "../../services/tab.api";
 
 export function createTabsOnActivatedHandler(applicationServices: ApplicationServices) {
   return (tabId: any) => tabsOnActivatedHandlerInternal(applicationServices, tabId);
@@ -15,7 +16,7 @@ export function createTabsOnUpdatedHandler(applicationServices: ApplicationServi
   return (
     tabId: number,
     changeInfo: any,
-    tab: chrome.tabs.Tab
+    tab: Tab
   ) => tabsOnUpdatedHandlerInternal(applicationServices, tabId, changeInfo, tab);
 }
 
@@ -26,7 +27,7 @@ export async function tabsOnUpdatedHandlerInternal(
   applicationServices: ApplicationServices,
   tabId: number,
   changeInfo: any,
-  tab: chrome.tabs.Tab,
+  tab: Tab,
 ) {
   const {
     settings: storageSettings,

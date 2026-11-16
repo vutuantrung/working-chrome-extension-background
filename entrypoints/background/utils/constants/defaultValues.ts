@@ -1,4 +1,4 @@
-import { State } from "./index";
+import { State } from ".";
 
 export const SETTINGS_DATA = {
     autoReport: true,

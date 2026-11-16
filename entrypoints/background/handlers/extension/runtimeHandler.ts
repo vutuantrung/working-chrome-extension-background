@@ -1,8 +1,5 @@
-import { Message, Settings } from "../../types/types";
-import {
-  Constants,
-  DefaultValues
-} from "../../utils/constants";
+import { Message } from "../../types/types";
+import { handleExternalApiCall } from "./externalServiceHandler";
 
 // Message handler imports
 import {
@@ -61,6 +58,7 @@ import { createPublishYoutubeCachedData } from "../../dataPublishers/publishYout
 import { createPublishThreadsCachedData } from "../../dataPublishers/publishThreadCachedData";
 import { createSaveFacebookUserData } from "../../dataPublishers/saveFacebookUserData";
 import { createSaveFacebookGroupData } from "../../dataPublishers/saveFacebookGroupData";
+import { Constants, DefaultValues } from "../../utils/constants";
 
 async function handleBodyDataIntercepted(
   applicationServices: ApplicationServices,
@@ -104,7 +102,7 @@ async function handleBodyDataIntercepted(
       return;
     }
 
-    const dataParsed = await parseData(
+    const parsedData = await parseData(
       responseText,
       {
         requestUrl: requestUrl,
@@ -158,7 +156,7 @@ async function handleBodyDataIntercepted(
       applicationServices: applicationServices,
     };
 
-    for (const dt of dataParsed) {
+    for (const dt of parsedData) {
       let handler = null;
       // Facebook
       if (dt.typeName === "FacebookPostData")
@@ -214,10 +212,15 @@ async function handleBodyDataIntercepted(
       if (dt.typeName === "ThreadsCommentData")
         handler = threadsHandlers.handleThreadsCommentInfo;
 
-      // Youtube            
-      if (["YoutubePostData", "YoutubeCommentData", "YoutubeUserProfileData", "YoutubeImageData"].includes(dt.typeName)) {
-        handler = youtubeHandlers.handleYoutubeDataInfo;
-      }
+      // Youtube
+      if (dt.typeName === "YoutubePostData")
+        handler = youtubeHandlers.handleYoutubePostInfo;
+      if (dt.typeName === "YoutubeImageData")
+        handler = youtubeHandlers.handleYoutubeImageInfo;
+      if (dt.typeName === "YoutubeCommentData")
+        handler = youtubeHandlers.handleYoutubeCommentInfo;
+      if (dt.typeName === "YoutubeUserProfileData")
+        handler = youtubeHandlers.handleYoutubeUserInfo;
 
       if (!handler) continue;
 
@@ -252,11 +255,6 @@ function runTimeOnMessageHandlerInternal(
   sendResponse: (response?: any) => void
 ): boolean {
 
-  if (message.type === "GET_MY_TAB_ID") {
-    sendResponse?.({ success: true, tabId: sender.tab?.id });
-    return false;
-  }
-
   if (message.type === "ENSURE_FB_INTERCEPTOR") {
     const tabId = sender.tab?.id;
     if (!tabId) {
@@ -273,59 +271,130 @@ function runTimeOnMessageHandlerInternal(
     return true;
   }
 
-  if (message.type === "CONTENT_READY") {
-    console.log("[CONTENT_READY] Content script loaded:", message.name, "on tab", sender.tab?.id);
-    if (message.name === "getFbProfileId" && sender.tab?.id) {
-      applicationServices.storage?.getStorageCachedByKeys(["settings"])
-        .then(({ settings }) => {
-          if (settings?.openingDevtoolsTabId === sender.tab?.id) {
-            setTimeout(() => {
-              applicationServices.tab?.getBrowserApi().sendMessage(
-                sender?.tab!.id as any,
-                {
-                  platform: "facebook",
-                  taskId: "getFbProfileId",
-                  tabId: sender.tab?.id,
-                },
-                (response: any) => {
-                  void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
-                },
-              );
-            }, 1000);
-          }
-        });
+  if (message.type === "CONTENT_READY" && message.name === "getFbProfileId") {
+    const tabId = sender.tab?.id;
+    if (!tabId) {
+      sendResponse?.({ ok: false, error: "No sender tabId" });
+      return false;
     }
 
-    if (message.name === "clickAboutButton" && sender.tab?.id) {
-      applicationServices.tab?.getBrowserApi().sendMessage(
-        sender?.tab!.id as any,
-        {
-          type: "CLICK_ABOUT_BUTTON",
-          platform: "youtube",
-          tabId: sender.tab?.id,
-        },
-        (response: any) => {
-          void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
-        },
-      );
-    }
-
-    if (message.name === "clickTranscriptButton" && sender.tab?.id) {
-      applicationServices.tab?.getBrowserApi().sendMessage(
-        sender?.tab!.id as any,
-        {
-          type: "CLICK_TRANSCRIPT_BUTTON",
-          platform: "youtube",
-          tabId: sender.tab?.id,
-        },
-        (response: any) => {
-          void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
-        },
-      );
-    }
-
+    applicationServices.storage?.getStorageCachedByKeys(["settings"])
+      .then(({ settings }) => {
+        if (settings?.openingDevtoolsTabId === tabId) {
+          setTimeout(() => {
+            applicationServices.tab?.getBrowserApi().sendMessage(
+              tabId,
+              {
+                platform: "facebook",
+                taskId: "getFbProfileId",
+                tabId: tabId,
+              },
+              (response: any) => {
+                void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
+              },
+            );
+          }, 1000);
+        }
+      });
     return false;
   }
+
+  if (message.type === "CONTENT_READY" && message.name === "clickAboutButton") {
+    const tabId = sender.tab?.id;
+    if (!tabId) {
+      sendResponse?.({ ok: false, error: "No sender tabId" });
+      return false;
+    }
+
+    applicationServices.tab?.getBrowserApi().sendMessage(
+      tabId,
+      {
+        type: "CLICK_ABOUT_BUTTON",
+        platform: "youtube",
+        tabId: tabId,
+      },
+      (response: any) => {
+        void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
+      },
+    );
+    return false;
+  }
+
+  if (message.type === "CONTENT_READY" && message.name === "clickTranscriptButton") {
+    const tabId = sender.tab?.id;
+    if (!tabId) {
+      sendResponse?.({ ok: false, error: "No sender tabId" });
+      return false;
+    }
+
+    applicationServices.tab?.getBrowserApi().sendMessage(
+      tabId,
+      {
+        type: "CLICK_TRANSCRIPT_BUTTON",
+        platform: "youtube",
+        tabId: tabId,
+      },
+      (response: any) => {
+        void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
+      },
+    );
+    return false;
+  }
+
+
+  // if (message.type === "CONTENT_READY") {
+  //   console.log("[CONTENT_READY] Content script loaded:", message.name, "on tab", sender.tab?.id);
+  //   if (message.name === "getFbProfileId" && sender.tab?.id) {
+  //     applicationServices.storage?.getStorageCachedByKeys(["settings"])
+  //       .then(({ settings }) => {
+  //         if (settings?.openingDevtoolsTabId === sender.tab?.id) {
+  //           setTimeout(() => {
+  //             applicationServices.tab?.getBrowserApi().sendMessage(
+  //               sender.tab?.id as any,
+  //               {
+  //                 platform: "facebook",
+  //                 taskId: "getFbProfileId",
+  //                 tabId: sender.tab?.id,
+  //               },
+  //               (response: any) => {
+  //                 void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
+  //               },
+  //             );
+  //           }, 1000);
+  //         }
+  //       });
+  //   }
+
+  //   if (message.name === "clickAboutButton" && sender.tab?.id) {
+  //     applicationServices.tab?.getBrowserApi().sendMessage(
+  //       sender?.tab!.id as any,
+  //       {
+  //         type: "CLICK_ABOUT_BUTTON",
+  //         platform: "youtube",
+  //         tabId: sender.tab?.id,
+  //       },
+  //       (response: any) => {
+  //         void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
+  //       },
+  //     );
+  //   }
+
+  //   if (message.name === "clickTranscriptButton" && sender.tab?.id) {
+  //     applicationServices.tab?.getBrowserApi().sendMessage(
+  //       sender?.tab!.id as any,
+  //       {
+  //         type: "CLICK_TRANSCRIPT_BUTTON",
+  //         platform: "youtube",
+  //         tabId: sender.tab?.id,
+  //       },
+  //       (response: any) => {
+  //         void applicationServices.runtime?.getBrowserApi().getRuntimeLastError();
+  //       },
+  //     );
+  //   }
+
+  //   return false;
+  // }
 
   // ── Async dispatch — all handlers below keep the channel open ────────────
   const dispatch = async () => {
@@ -348,7 +417,13 @@ function runTimeOnMessageHandlerInternal(
       case "BODY_DATA_INTERCEPTED":
         return handleBodyDataIntercepted(applicationServices, message, sender, sendResponse);
 
+      // EXTERNAL CALL
+      case "CALL_EXTERNAL_SERVICE":
+        return handleExternalApiCall(applicationServices, message, sendResponse);
+
       // SYSTEM REQUESTS
+      case "GET_TAB_ID":
+        return sendResponse?.({ success: true, tabId: sender.tab?.id });
       case "SET_SETTINGS":
         return applicationServices.storage?.handleSetSettings(message, sendResponse);
       case "GET_SETTINGS":
@@ -382,9 +457,7 @@ function runTimeOnMessageHandlerInternal(
       case "SCREENSHOT_CROPPED":
         return evidenCollectionHandlers.handleScreenshotCropped(applicationServices, message, sendResponse);
       default:
-        console.warn(
-          "[runTimeOnMessageHandler] Unhandled message type:",
-          message.type,
+        console.warn("[runTimeOnMessageHandler] Unhandled message type:", message.type,
         );
     }
   };

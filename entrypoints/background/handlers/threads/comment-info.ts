@@ -11,7 +11,6 @@ export const handleThreadsCommentInfo = async (dt: ParseType, ctx: HandlerContex
         SEND_THREADS_DATA_ALARM,
     } = ctx;
     const { data } = dt;
-
     const crawledCommentData = data as ThreadsCommentData[];
     console.log("[Threads Interceptor] Found crawled comments - Comments:", crawledCommentData?.length);
 

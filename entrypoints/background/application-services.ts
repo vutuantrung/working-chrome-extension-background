@@ -12,6 +12,7 @@ import { SyncService } from "./services/sync.services";
 import { ScheduleService } from "./services/schedule.services";
 import { ExtensionService } from "./services/extension.services";
 import { ScriptingService } from "./services/scripting.services";
+import { HttpService } from "./services/http.services";
 
 export interface ApplicationServices {
     // each service need to be optional and initialized based on the browser environment and priority
@@ -29,4 +30,5 @@ export interface ApplicationServices {
     sync?: SyncService;
     extension?: ExtensionService;
     script?: ScriptingService;
+    http: HttpService;
 }

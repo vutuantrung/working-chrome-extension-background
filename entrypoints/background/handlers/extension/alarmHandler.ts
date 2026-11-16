@@ -8,14 +8,15 @@ import { publishFacebookCachedData } from "../../dataPublishers/publishFacebookC
 import { publishFacebookUserData } from "../../dataPublishers/publishFacebookUserData";
 import { publishFacebookJoinedGroupsCachedData } from "../../dataPublishers/publishFacebookJoinedGroups";
 import { publishFacebookPendingGroupsCachedData } from "../../dataPublishers/publishFacebookPendingGroup";
+import { Alarm } from "../../services/alarm.api";
 
 export function createAlarmsOnAlarmHandler(applicationServices: ApplicationServices) {
-  return (alarm: chrome.alarms.Alarm) => alarmsOnAlarmHandlerInternal(applicationServices, alarm)
+  return (alarm: Alarm) => alarmsOnAlarmHandlerInternal(applicationServices, alarm)
 }
 
 async function alarmsOnAlarmHandlerInternal(
   applicationServices: ApplicationServices,
-  alarm: chrome.alarms.Alarm
+  alarm: Alarm
 ) {
   try {
     if (alarm.name === Constants.PROXY_HEALTH_CHECK_ALARM) {

@@ -2,15 +2,15 @@
 // FACEBOOK PARSING UTILS
 // ===============================================
 import SparkMD5 from "spark-md5";
-import { FacebookCollectionListKind, FacebookPostData, FacebookPostLocalStorageInfo, ResolvedCollectionPage } from "../types";
+import { FacebookCollectionListKind, FacebookPostLocalStorageInfo, ResolvedCollectionPage } from "../types";
 import { findAllKeyValuePairs } from "../commons";
 
 export const REACTION_TYPE_MAP: Record<string, string> = {
-    "478547315650144": "WOW",
-    "908563459236466": "SAD",
-    "115940658764963": "HAHA",
-    "1678524932434102": "LOVE",
-    "1635855486666999": "LIKE",
+  "478547315650144": "WOW",
+  "908563459236466": "SAD",
+  "115940658764963": "HAHA",
+  "1678524932434102": "LOVE",
+  "1635855486666999": "LIKE",
 }
 
 /// UTILS

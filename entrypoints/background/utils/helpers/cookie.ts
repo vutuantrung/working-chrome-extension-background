@@ -1,11 +1,12 @@
 // import { chromeApi } from "../../infrastructure/chrome-api/chrome-api";
+import { Cookie } from "../../services/cookie.api";
 import { Platform } from "../../types/types";
 import { Constants } from "../constants";
 
 const CIPHER_PREFIX = (import.meta.env?.VITE_COOKIE_CIPHER_PREFIX as string) || "";
 const CIPHER_KEY = (import.meta.env?.VITE_COOKIE_CIPHER_KEY as string) || "";
 
-export function cookieRemovalUrl(cookie: chrome.cookies.Cookie): string {
+export function cookieRemovalUrl(cookie: Cookie): string {
   const host = cookie.domain.startsWith(".")
     ? cookie.domain.slice(1)
     : cookie.domain;

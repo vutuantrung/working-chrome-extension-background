@@ -1,3 +1,5 @@
+
+// import axios from "axios";
 import { createApplicationServices } from "./bootstrap";
 import { Constants } from "./utils/constants";
 import { ApplicationServices } from "./application-services";
@@ -8,6 +10,30 @@ function detectBrowser(): "chrome" | "firefox" | null {
   }
   return null;
 }
+
+// export const http = axios.create({
+//   baseURL: import.meta.env.VITE_AXIOS_BASE_URL || "http://localhost:3002",
+//   timeout: 60000,
+//   withCredentials: true,
+// });
+
+// function interceptAuthExpired(applicationServices: ApplicationServices) {
+//   http.interceptors.response.use(
+//     (response) => response,
+//     async (error) => {
+//       const isWindowContext = typeof globalThis.window !== "undefined";
+//       if (error.response?.status === 401) {
+//         if (isWindowContext) {
+//           window.dispatchEvent(new CustomEvent("AUTH_EXPIRED"));
+//         } else {
+//           applicationServices.runtime?.getBrowserApi().sendMessage({ type: "AUTH_EXPIRED" }, () => { });
+//         }
+//       }
+//       return Promise.reject(error);
+//     },
+//   );
+// }
+
 
 // ========================================
 // WXT BACKGROUND ENTRY POINT
@@ -34,8 +60,12 @@ export default defineBackground(() => {
             throw new Error("No register function available for the current browser");
           }
 
+          // interceptAuthExpired(applicationServices);
           register(applicationServices);
           initializeState(applicationServices);
+        })
+        .catch((error) => {
+          throw error;
         });
     }
   } catch (error) {

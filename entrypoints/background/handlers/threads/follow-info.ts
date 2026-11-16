@@ -11,7 +11,6 @@ export const handleThreadsFollowInfo = async (dt: ParseType, ctx: HandlerContext
         SEND_THREADS_DATA_ALARM,
     } = ctx;
     const { data } = dt;
-
     const crawledFollowData = data as ThreadsUserFollowData[];
     console.log("[Threads Interceptor] Found crawled follows - Follows:", crawledFollowData?.length);
 

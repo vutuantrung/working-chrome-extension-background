@@ -12,8 +12,8 @@ interface Proxy {
 
 export class ProxyService {
     constructor(
-        private browserProxyApi: BrowserApplicationProxyApi,
-        private storageService: StorageService
+        private readonly browserProxyApi: BrowserApplicationProxyApi,
+        private readonly storageService: StorageService
     ) { }
 
     private _lastProxyErrorWriteAt = 0;

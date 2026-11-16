@@ -1,4 +1,3 @@
-import * as helpers from "../../utils/helpers";
 import { Message, Screenshot } from "../../types/types";
 import { ApplicationServices } from "../../application-services";
 

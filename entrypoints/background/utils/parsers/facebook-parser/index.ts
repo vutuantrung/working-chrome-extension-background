@@ -1,4 +1,4 @@
-import { FACEBOOK_POST_INFO_KEY, generateReactionKey, parseToPostLocalStorage, REACTION_TYPE_MAP } from "./utils";
+import { FACEBOOK_POST_INFO_KEY, parseToPostLocalStorage } from "./utils";
 import {
     FacebookCommentData,
     FacebookGroupJoinedData,

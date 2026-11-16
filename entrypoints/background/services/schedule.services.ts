@@ -3,7 +3,7 @@ import { Activity } from "../types/types";
 import { parseDelayAndPeriodInMinutes } from "../utils/tools";
 import { AlarmService } from "./alarm.services";
 import { StorageService } from "./storage.services";
-import { getExtensionConfigInfo } from "../infrastructure/api/source-member.api";
+import api from "../infrastructure/api";
 
 export class ScheduleService {
   constructor(
@@ -86,7 +86,7 @@ export class ScheduleService {
       const { extension_session } = settings;
       if (!extension_session?.extension_config_id) return;
 
-      const fetchReq = await getExtensionConfigInfo(
+      const fetchReq = await api.extensionUser.getExtensionConfigInfo(
         extension_session.extension_config_id,
         {
           include: [{ relation: "extension_activities" }],

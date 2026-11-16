@@ -23,9 +23,11 @@ import { SyncService } from "./services/sync.services";
 import { ScheduleService } from "./services/schedule.services";
 import { BrowserApplicationScriptingApi } from "./services/scripting.api";
 import { ScriptingService } from "./services/scripting.services";
+import { HttpService } from "./services/http.services";
+
 
 export async function createApplicationServices(currentBrowser: "chrome" | "firefox"): Promise<ApplicationServices> {
-
+    console.log("Creating application services for browser:", currentBrowser);
     let applicationProxyApi: BrowserApplicationProxyApi;
     let applicationTabApi: BrowserApplicationTabApi;
     let applicationActionApi: BrowserApplicationActionApi;
@@ -49,6 +51,7 @@ export async function createApplicationServices(currentBrowser: "chrome" | "fire
     let applicationSyncService = undefined;
     let applicationScheduleService = undefined;
     let applicationScriptingService = undefined;
+    let applicationHttpService = undefined;
 
     if (currentBrowser === "chrome") {
         const { ChromeTabApi } = (await import("./infrastructure/chrome-api/ChromeTabApi"));
@@ -117,6 +120,7 @@ export async function createApplicationServices(currentBrowser: "chrome" | "fire
         applicationScheduleService,
         applicationTabService,
     );
+    applicationHttpService = new HttpService(applicationRuntimeService);
 
     return {
         tab: applicationTabService,
@@ -131,5 +135,6 @@ export async function createApplicationServices(currentBrowser: "chrome" | "fire
         storage: applicationStorageService,
         sync: applicationSyncService,
         script: applicationScriptingService,
+        http: applicationHttpService,
     };
 }
