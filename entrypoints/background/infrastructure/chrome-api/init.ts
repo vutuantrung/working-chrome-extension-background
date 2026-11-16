@@ -4,7 +4,7 @@ import { ApplicationServices } from "../../application-services";
 // ========================================
 // INITIALIZATION
 // ========================================
-export function registerListeners(applicationServices: ApplicationServices, options: { registerRuntimeMessage?: boolean } = {}) {
+export function registerListeners(applicationServices: ApplicationServices) {
     console.log("Initializing background services...");
 
     // Register all Chrome API event listeners
@@ -17,9 +17,7 @@ export function registerListeners(applicationServices: ApplicationServices, opti
     // ========================================
     // RUNTIME HANDLERS
     // ========================================
-    if (options.registerRuntimeMessage !== false) {
-        chrome.runtime.onMessage.addListener(extensionHandlers.createRunTimeOnMessageHandler(applicationServices));
-    }
+    chrome.runtime.onMessage.addListener(extensionHandlers.createRunTimeOnMessageHandler(applicationServices));
     chrome.runtime.onInstalled.addListener(extensionHandlers.createRunTimeOnInstalledHandler(applicationServices));
 
 

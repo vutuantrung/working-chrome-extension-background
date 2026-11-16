@@ -7,155 +7,167 @@ export async function handleExternalApiCall(
     message: Message,
     sendResponse: (resp: any) => void
 ) {
-    const { serviceName, body } = message.inputs ?? {};
-    if (typeof serviceName !== "string" || !body || typeof body !== "object" || Array.isArray(body)) {
-        sendResponse({ success: false, error: "Invalid external service request", code: "INVALID_REQUEST" });
-        return;
-    }
-    try {
+    const { serviceName, body } = message.inputs;
     switch (serviceName) {
         // extension user
         case "login": {
             const { username, password, extensionId } = body;
-            return await apiCall.extensionUser
+            apiCall.extensionUser
                 .login(applicationServices.http?.getHttpInstance(), username, password, extensionId)
                 .then(response => sendResponse(response));
+            break;
         }
         case "loginByApiKey": {
             const { apiKey, extensionId } = body;
-            return await apiCall.extensionUser
+            apiCall.extensionUser
                 .loginByApikey(applicationServices.http?.getHttpInstance(), apiKey, extensionId)
                 .then(response => sendResponse(response));
+            break;
         }
         case "logout": {
             const { extensionId } = body;
-            return await apiCall.extensionUser
+            apiCall.extensionUser
                 .logout(applicationServices.http?.getHttpInstance(), extensionId)
                 .then(response => sendResponse(response));
+            break;
         }
         case "updateExtensionSession": {
             const { extensionId, payload } = body;
-            return await apiCall.extensionUser
+            apiCall.extensionUser
                 .updateExtensionSession(applicationServices.http?.getHttpInstance(), extensionId, payload)
                 .then(response => sendResponse(response));
+            break;
         }
         case "getExtensionConfigInfo": {
             const { extensionConfigId, filter } = body;
-            return await apiCall.extensionUser
+            apiCall.extensionUser
                 .getExtensionConfigInfo(applicationServices.http?.getHttpInstance(), extensionConfigId, filter)
                 .then(response => sendResponse(response));
+            break;
         }
         case "deactivatePersona": {
             const { personaId } = body;
-            return await apiCall.extensionUser
+            apiCall.extensionUser
                 .deactivatePersona(applicationServices.http?.getHttpInstance(), personaId)
                 .then(response => sendResponse(response));
+            break;
         }
         case "activatePersonaSession": {
             const { personaId } = body;
-            return await apiCall.extensionUser
+            apiCall.extensionUser
                 .activatePersonaSession(applicationServices.http?.getHttpInstance(), personaId)
                 .then(response => sendResponse(response));
+            break;
         }
 
         // persona
         case "getPersonas": {
             const { userId, filter } = body;
-            return await apiCall.persona
+            apiCall.persona
                 .getPersonas(applicationServices.http?.getHttpInstance(), userId, filter)
                 .then(response => sendResponse(response));
+            break;
         }
         case "createPersona": {
-            return await apiCall.persona
+            apiCall.persona
                 .createPersona(applicationServices.http?.getHttpInstance())
                 .then(response => sendResponse(response));
+            break;
         }
         case "getPersonaById": {
             const { persona_id } = body;
-            return await apiCall.persona
+            apiCall.persona
                 .getPersonaById(applicationServices.http?.getHttpInstance(), persona_id)
                 .then(response => sendResponse(response));
+            break;
         }
         case "getProxiesByPersona": {
             const { personaId, filter } = body;
-            return await apiCall.proxy
+            apiCall.proxy
                 .getProxiesByPersona(applicationServices.http?.getHttpInstance(), personaId, filter)
                 .then(response => sendResponse(response));
+            break;
         }
         case "getProxyInfo": {
             const { proxy_id } = body;
-            return await apiCall.proxy
+            apiCall.proxy
                 .getProxyInfo(applicationServices.http?.getHttpInstance(), proxy_id)
                 .then(response => sendResponse(response));
+            break;
         }
         case "getSocialAccountProxy": {
             const { id } = body;
-            return await apiCall.socialAccount
+            apiCall.socialAccount
                 .getSocialAccountProxy(applicationServices.http?.getHttpInstance(), id)
                 .then(response => sendResponse(response));
+            break;
         }
         case "getSocialAccountInfo": {
             const { id } = body;
-            return await apiCall.socialAccount
+            apiCall.socialAccount
                 .getSocialAccountInfo(applicationServices.http?.getHttpInstance(), id)
                 .then(response => sendResponse(response));
+            break;
         }
         case "getSocialAccountGroups": {
             const { id, offset, limit } = body;
-            return await apiCall.socialAccount
+            apiCall.socialAccount
                 .getSocialAccountGroups(applicationServices.http?.getHttpInstance(), id, offset, limit)
                 .then(response => sendResponse(response));
+            break;
         }
         case "getSocialAccountsByPersona": {
             const { personaId, filter } = body;
-            return await apiCall.socialAccount
+            apiCall.socialAccount
                 .getSocialAccountsByPersona(applicationServices.http?.getHttpInstance(), personaId, filter)
                 .then(response => sendResponse(response));
+            break;
         }
 
         // profile
         case "getProfileCases": {
             const { filter } = body;
-            return await apiCall.profileCase
+            apiCall.profileCase
                 .getProfileCases(applicationServices.http?.getHttpInstance(), filter)
                 .then(response => sendResponse(response));
+            break;
         }
         case "createProfileCase": {
             const { profileCase, dataUrls, metadata } = body;
-            return await apiCall.profileCase
+            apiCall.profileCase
                 .createProfileCase(applicationServices.http?.getHttpInstance(), profileCase, dataUrls, metadata)
                 .then(response => sendResponse(response));
+            break;
         }
         case "patchCaseInfo": {
             const { profileCaseId, info, updateImages, deleteIds } = body;
-            return await apiCall.profileCase
+            apiCall.profileCase
                 .patchCaseInfo(applicationServices.http?.getHttpInstance(), profileCaseId, info, updateImages, deleteIds)
                 .then(response => sendResponse(response));
+            break;
         }
         case "postCaseImages": {
             const { profileCaseId, dataUrls, metadata } = body;
-            return await apiCall.profileCase
+            apiCall.profileCase
                 .postCaseImages(applicationServices.http?.getHttpInstance(), profileCaseId, dataUrls, metadata)
                 .then(response => sendResponse(response));
+            break;
         }
 
         case "getMemberSourcesGroup": {
             const { accountId, status, search, offset, limit } = body;
-            return await apiCall.sourceMember
+            apiCall.sourceMember
                 .getMemberSourcesGroup(applicationServices.http?.getHttpInstance(), accountId, status, search, offset, limit)
                 .then(response => sendResponse(response));
+            break;
         }
         case "getMemberSourcesApi": {
             const { data, status, search, offset, limit, platform, type, assigneeId } = body;
-            return await apiCall.sourceMember
+            apiCall.sourceMember
                 .getMemberSourcesApi(applicationServices.http?.getHttpInstance(), data, status, search, offset, limit, platform, type, assigneeId)
                 .then(response => sendResponse(response));
+            break;
         }
-        default:
-            sendResponse({ success: false, error: "Unsupported external service", code: "UNSUPPORTED_SERVICE" });
-    }
-    } catch {
-        // Do not send Axios errors/configuration (credentials, headers) to clients.
-        sendResponse({ success: false, error: "External service request failed", code: "EXTERNAL_SERVICE_FAILED" });
+        default: sendResponse(null);
     }
 }

@@ -3,6 +3,7 @@ import * as helpers from "../utils/helpers";
 
 import { Archive, Settings, StorageData } from "../types/types";
 import { DefaultValues } from "../utils/constants";
+import { isValidArrayAct } from "../utils/tools";
 import { BrowserApplicationStorageApi } from "./storage.api";
 
 export class StorageService {
@@ -28,45 +29,54 @@ export class StorageService {
     }
 
     async getStorageCachedByKeys(keys: string[]): Promise<Partial<StorageData>> {
-        // Wait for an existing read, then recompute the missing keys. An empty
-        // object is a valid cache, not evidence that a read is in progress.
-        while (this._storageInFlight) {
-            await this._storageInFlight;
-        }
+        if (this._cachedStorage) {
+            if (!keys) {
+                return this._cachedStorage;
+            }
 
-        const missing = keys.filter(key =>
-            !Object.prototype.hasOwnProperty.call(this._cachedStorage, key));
-        if (missing.length > 0) {
-            const cacheAtRead = this._cachedStorage;
-            const read = this.browserStorageApi.get(missing).then(values => {
-                // Do not repopulate a cache that was cleared/replaced during IO.
-                if (this._cachedStorage === cacheAtRead) {
-                    for (const key of missing) {
-                        if (Object.prototype.hasOwnProperty.call(values, key) && !Object.prototype.hasOwnProperty.call(cacheAtRead, key)) {
-                            (cacheAtRead as Record<string, any>)[key] = values[key];
-                        }
-                    }
+            const out: any = {};
+            let allPresent = true;
+            for (const k of keys) {
+                if (!Object.prototype.hasOwnProperty.call(this._cachedStorage, k)) {
+                    allPresent = false;
+                    break;
                 }
-                return values as StorageData;
-            });
-            this._storageInFlight = read;
-            try {
-                const values = await read;
-                if (this._cachedStorage !== cacheAtRead) {
-                    // A replacement invalidated this read; resolve against the new cache.
-                    // Release our lock before retrying.
-                    if (this._storageInFlight === read) this._storageInFlight = null;
-                    return this.getStorageCachedByKeys(keys);
-                }
-                void values;
-            } finally {
-                if (this._storageInFlight === read) this._storageInFlight = null;
+                out[k] = (this._cachedStorage as any)[k];
+            }
+            if (allPresent) {
+                return out;
             }
         }
 
-        return Object.fromEntries(keys.map(key => [
-            key, (this._cachedStorage as Record<string, any>)[key],
-        ])) as Partial<StorageData>;
+        if (this._cachedStorage) {
+            await this._storageInFlight;
+            return this.getStorageCachedByKeys(keys);
+        }
+
+        const fetchArg = isValidArrayAct(keys) ? keys : undefined;
+        if (!fetchArg) {
+            return {};
+        }
+
+        this._storageInFlight = this.browserStorageApi.get(fetchArg)
+            .then((vals) => {
+                if (this._cachedStorage) {
+                    Object.assign(this._cachedStorage, vals);
+                } else {
+                    this._cachedStorage = vals;
+                }
+                return this._cachedStorage;
+            })
+            .finally(() => {
+                this._storageInFlight = null;
+            });
+        await this._storageInFlight;
+
+        const out: any = {};
+        for (const k of keys) {
+            out[k] = (this._cachedStorage as any)[k];
+        }
+        return out;
     }
 
     async removeStorageByKeys(keys: string[]): Promise<void> {

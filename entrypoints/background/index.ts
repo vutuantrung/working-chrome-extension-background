@@ -3,9 +3,6 @@
 import { createApplicationServices } from "./bootstrap";
 import { Constants } from "./utils/constants";
 import { ApplicationServices } from "./application-services";
-import { registerListeners } from "./infrastructure/chrome-api/init";
-import { createDeferredRuntimeListener } from "./infrastructure/chrome-api/deferred-runtime-listener";
-import { createRunTimeOnMessageHandler } from "./handlers/extension/runtimeHandler";
 
 function detectBrowser(): "chrome" | "firefox" | null {
   if (typeof chrome !== "undefined" && typeof chrome.runtime !== "undefined") {
@@ -51,18 +48,25 @@ export default defineBackground(() => {
         throw new Error("Unsupported browser");
       }
 
-      const servicesReady = createApplicationServices(currentBrowser);
-      // Register synchronously in the WXT entrypoint before the worker yields.
-      chrome.runtime.onMessage.addListener(
-        createDeferredRuntimeListener(servicesReady, createRunTimeOnMessageHandler),
-      );
+      createApplicationServices(currentBrowser)
+        .then(async (applicationServices) => {
+          let register = null;
+          if (currentBrowser === "chrome") {
+            const { registerListeners } = await import("./infrastructure/chrome-api/init");
+            register = registerListeners;
+          }
 
-      void servicesReady.then((applicationServices) => {
-        registerListeners(applicationServices, { registerRuntimeMessage: false });
-        return initializeState(applicationServices);
-      }).catch(() => {
-        console.error("Error initializing background services");
-      });
+          if (!register) {
+            throw new Error("No register function available for the current browser");
+          }
+
+          // interceptAuthExpired(applicationServices);
+          register(applicationServices);
+          initializeState(applicationServices);
+        })
+        .catch((error) => {
+          throw error;
+        });
     }
   } catch (error) {
     console.error("Error initializing background services:", error);
