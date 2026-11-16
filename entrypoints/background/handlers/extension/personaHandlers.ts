@@ -303,6 +303,7 @@ async function switchPersonaSession(services: ApplicationServices, message: Mess
   if (!previous.canSwitch) return fail("PERSONA_SWITCH_NOT_ALLOWED", "Switching is not allowed with extension config");
   if (previous.status === "reconciliation_required") return fail("PERSONA_RECONCILIATION_REQUIRED", "Previous persona operation requires reconciliation");
   if (previous.selectedPersonaId === personaId && previous.status === "active") return previous;
+  if (previous.resourceSetupPending) return fail("PERSONA_CONFLICT", "Complete the current persona resource setup before switching again");
   if (expectedRevision !== undefined && expectedRevision !== previous.revision) return fail("PERSONA_CONFLICT", "Persona selection changed");
   if (!previous.selectedPersonaId || !previous.selectedPersona) return fail("PERSONA_CONFLICT", "No current persona selection");
 

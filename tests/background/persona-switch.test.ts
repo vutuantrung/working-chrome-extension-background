@@ -75,6 +75,18 @@ describe("R2.4 persona switching", () => {
     await handlePersonaSwitch(services, { ...command, inputs: { personaId: "p1", expectedRevision: 1 } }, respond);
     expect(patch).not.toHaveBeenCalled();
   });
+  it("blocks a different target until pending resource setup completes", async () => {
+    const { services, patch } = setup();
+    await handlePersonaSwitch(services, command, vi.fn());
+    const respond = vi.fn();
+    await handlePersonaSwitch(services, { ...command, inputs: { personaId: "p3", expectedRevision: 3 } }, respond);
+    expect(respond.mock.calls[0][0].code).toBe("PERSONA_CONFLICT");
+    expect(patch).toHaveBeenCalledTimes(2);
+    const resume = vi.fn();
+    await handlePersonaSwitch(services, { ...command, inputs: { personaId: "p2", expectedRevision: 3 } }, resume);
+    expect(resume.mock.calls[0][0].data.resourceSetupPending).toBe(true);
+    expect(patch).toHaveBeenCalledTimes(2);
+  });
   it("accepts resource completion only for matching identity and revision", async () => {
     const { services, storage } = setup();
     await handlePersonaSwitch(services, command, vi.fn());
