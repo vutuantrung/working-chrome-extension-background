@@ -24,6 +24,7 @@ import { ScheduleService } from "./services/schedule.services";
 import { BrowserApplicationScriptingApi } from "./services/scripting.api";
 import { ScriptingService } from "./services/scripting.services";
 import { HttpService } from "./services/http.services";
+import { getAuthenticationGeneration, recoverFromUnauthorized, shouldObserveUnauthorized } from "./handlers/extension/authHandlers";
 
 
 export async function createApplicationServices(currentBrowser: "chrome" | "firefox"): Promise<ApplicationServices> {
@@ -122,7 +123,7 @@ export async function createApplicationServices(currentBrowser: "chrome" | "fire
     );
     applicationHttpService = new HttpService(applicationRuntimeService);
 
-    return {
+    const services: ApplicationServices = {
         tab: applicationTabService,
         proxy: applicationProxyService,
         alarm: applicationAlarmService,
@@ -137,4 +138,9 @@ export async function createApplicationServices(currentBrowser: "chrome" | "fire
         script: applicationScriptingService,
         http: applicationHttpService,
     };
+    applicationHttpService.observeUnauthorized({
+        captureGeneration: () => shouldObserveUnauthorized() ? getAuthenticationGeneration() : undefined,
+        recover: generation => recoverFromUnauthorized(services, generation),
+    });
+    return services;
 }

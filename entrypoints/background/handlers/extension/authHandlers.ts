@@ -53,6 +53,7 @@ async function authenticate(
   input: AuthenticationInput,
   respond: Respond,
 ): Promise<void> {
+  activeAuthenticationOperations += 1;
   try {
     if (!services.storage) throw new Error("Storage unavailable");
     const http = services.http.getHttpInstance();
@@ -79,9 +80,13 @@ async function authenticate(
     // Use the existing storage adapter through StorageService, not Chrome directly.
     await services.storage.getBrowserApi().set({ user, isApikeySession });
     services.storage.getCachedStorage().user = user;
+    lastExtensionId = input.extensionId;
+    authenticationGeneration += 1;
     respond({ success: true, data: { user, isApikeySession, extensionConfig, configurationUnavailable } });
   } catch {
     respond({ success: false, error: "Authentication failed", code: "AUTH_FAILED" });
+  } finally {
+    activeAuthenticationOperations -= 1;
   }
 }
 
@@ -92,6 +97,11 @@ function isNonEmptyString(value: unknown): value is string {
 // Serialize new authentication commands within this worker instance. This is
 // not a durable lock and does not serialize legacy commands or other writers.
 let authenticationTail: Promise<void> = Promise.resolve();
+let activeAuthenticationOperations = 0;
+let authenticationGeneration = 0;
+let lastExtensionId: string | undefined;
+
+export function getAuthenticationGeneration(): number { return authenticationGeneration; }
 function enqueueAuthentication(services: ApplicationServices, input: AuthenticationInput, respond: Respond): Promise<void> {
   const next = authenticationTail.then(() => authenticate(services, input, respond));
   authenticationTail = next.catch(() => undefined);
@@ -141,6 +151,7 @@ async function restoreOrAuthenticate(
     if (!services.storage) throw new Error("Storage unavailable");
     // Durable state is authoritative. Read inside the authentication queue so
     // a completed manual login cannot be overwritten by a queued auto-login.
+    lastExtensionId = extensionId;
     const state = await services.storage.getStorageByKeys(["user", "isApikeySession", "apikey"]);
     if (state.user) {
       return { success: true, data: { status: "restored", user: state.user, isApikeySession: state.isApikeySession === true } };
@@ -267,6 +278,7 @@ async function endSession(
       ...SESSION_END_KEYS.filter(key => mode !== "expired" || key !== "draftCredentials"),
       ...(mode === "logout" ? MANUAL_SNAPSHOT_KEYS : []),
     ]);
+    authenticationGeneration += 1;
     const data: SessionEndResult = { cleared: true, snapshotPreserved, signoutConfirmed };
     respond({ success: true, data });
   } catch {
@@ -316,9 +328,13 @@ async function recoverExpiredSession(
   services: ApplicationServices,
   extensionId: string,
   allowLegacyCredentials: boolean,
+  expectedGeneration?: number,
 ): Promise<RecoveryResponse> {
   try {
     if (!services.storage) throw new Error("Storage unavailable");
+    if (expectedGeneration !== undefined && expectedGeneration !== authenticationGeneration) {
+      return { success: false, error: "Authentication state changed", code: "AUTH_STALE" };
+    }
     const state = await services.storage.getStorageByKeys(["user", "apikey", "draftCredentials"]);
     // A delayed expiry notification must not sign in after logout has cleared user.
     if (!state.user) return { success: true, data: { status: "signed_out", snapshotPreserved: false } };
@@ -359,6 +375,10 @@ export async function handleAuthRecoverSession(
   respond: Respond,
 ): Promise<void> {
   const { extensionId, allowLegacyCredentials } = message.inputs ?? {};
+  return queueRecovery(services, extensionId, allowLegacyCredentials === true, respond);
+}
+
+async function queueRecovery(services: ApplicationServices, extensionId: unknown, allowLegacyCredentials: boolean, respond: Respond, expectedGeneration?: number): Promise<void> {
   if (!isNonEmptyString(extensionId)) {
     respond({ success: false, error: "Extension ID is required", code: "INVALID_AUTH_INPUT" });
     return;
@@ -373,7 +393,7 @@ export async function handleAuthRecoverSession(
     return;
   }
   pendingRecoveries += 1;
-  const next = authenticationTail.then(() => recoverExpiredSession(services, extensionId, allowLegacyCredentials === true));
+  const next = authenticationTail.then(() => recoverExpiredSession(services, extensionId, allowLegacyCredentials, expectedGeneration));
   recoveryInFlight.set(extensionId, next);
   authenticationTail = next.then(() => undefined, () => undefined);
   try {
@@ -382,4 +402,43 @@ export async function handleAuthRecoverSession(
     recoveryInFlight.delete(extensionId);
     pendingRecoveries -= 1;
   }
+}
+
+// The HTTP interceptor invokes this only for requests issued outside the
+// authentication workflow. No Sidepanel receiver is needed to recover.
+export async function recoverFromUnauthorized(
+  services: ApplicationServices,
+  requestGeneration: number,
+): Promise<void> {
+  if (activeAuthenticationOperations || pendingSessionEnds || pendingRecoveries ||
+      requestGeneration !== authenticationGeneration) return;
+  const state = await services.storage?.getStorageByKeys(["user", "fbLoginMode"]);
+  if (!state?.user || requestGeneration !== authenticationGeneration ||
+      activeAuthenticationOperations || pendingSessionEnds || pendingRecoveries) return;
+
+  const extensionId = lastExtensionId || state.user.extension_session?.extension_id;
+  if (!isNonEmptyString(extensionId)) return;
+
+  // The former document-local selection flag is not available in a worker.
+  // Use persisted login-mode selection for the existing legacy fallback.
+  const selection = state.fbLoginMode;
+  const allowLegacy = selection === "manual" || selection === "auto" ||
+    selection?.mode === "manual" || selection?.mode === "auto";
+  await queueRecovery(services, extensionId, allowLegacy, response => {
+    if (response.code === "AUTH_STALE" || response.code === "AUTH_BUSY") return;
+    // Notification carries no user, API key, password or cookies. UI reads
+    // authoritative storage via AUTH_GET_STATE. Missing receivers are normal.
+    try {
+      services.runtime?.getBrowserApi().sendMessage({
+        type: "AUTH_STATE_CHANGED",
+        reason: "recovery",
+        success: response.success === true,
+        status: response.success === true ? response.data.status : "failed",
+      }, () => { void services.runtime?.getBrowserApi().getRuntimeLastError(); });
+    } catch { /* no UI receiver */ }
+  }, requestGeneration);
+}
+
+export function shouldObserveUnauthorized(): boolean {
+  return activeAuthenticationOperations === 0 && pendingSessionEnds === 0 && pendingRecoveries === 0;
 }

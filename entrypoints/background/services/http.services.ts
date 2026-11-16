@@ -1,9 +1,14 @@
 import axios, { AxiosInstance } from "axios";
 import { RuntimeService } from "./runtime.services";
-import apiCall from "../infrastructure/api";
+
+type UnauthorizedObserver = {
+    captureGeneration(): number | undefined;
+    recover(generation: number): Promise<void>;
+};
 
 export class HttpService {
     private readonly http: AxiosInstance;
+    private observer?: UnauthorizedObserver;
 
     constructor(private readonly runtimeService: RuntimeService) {
         this.http = axios.create({
@@ -12,22 +17,41 @@ export class HttpService {
             withCredentials: true,
         });
 
+        // Keep generation metadata local; do not add it to HTTP headers.
+        const generations = new WeakMap<object, number>();
+        this.http.interceptors.request.use(config => {
+            const url = (config.url || "").split("?")[0];
+            if (!/\\/extension-sessions\\/(signin|signout)\\/?$/.test(url)) {
+                const generation = this.observer?.captureGeneration();
+                if (generation !== undefined) generations.set(config, generation);
+            }
+            return config;
+        });
+
         this.http.interceptors.response.use(
             (response) => response,
             async (error) => {
-                const isWindowContext = typeof globalThis.window !== "undefined";
                 if (error.response?.status === 401) {
-                    if (isWindowContext) {
-                        // Popup/page context custom event (same-window communication)
+                    if (this.observer) {
+                        const generation = error.config && generations.get(error.config);
+                        if (generation !== undefined) {
+                            // Do not await recovery in an interceptor: recovery
+                            // itself performs HTTP operations on this instance.
+                            void this.observer.recover(generation).catch(() => {});
+                        }
+                    } else if (typeof globalThis.window !== "undefined") {
                         window.dispatchEvent(new CustomEvent("AUTH_EXPIRED"));
                     } else {
-                        // Background service worker context runtime message
-                        this.runtimeService.getBrowserApi().sendMessage({ type: "AUTH_EXPIRED" }, () => { });
+                        this.runtimeService.getBrowserApi().sendMessage({ type: "AUTH_EXPIRED" }, () => {});
                     }
                 }
                 return Promise.reject(error);
             },
         );
+    }
+
+    observeUnauthorized(observer: UnauthorizedObserver): void {
+        this.observer = observer;
     }
 
     getHttpInstance() {
