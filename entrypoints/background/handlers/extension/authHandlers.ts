@@ -2,6 +2,8 @@ import type { ApplicationServices } from "../../application-services";
 import type { Message, User } from "../../types/types";
 import apiCall from "../../infrastructure/api";
 import { hasExtensionConfigId } from "../../utils/helpers/proxy";
+import { handleClearDataAfterLogout } from "./systemHandlers";
+import { Constants } from "../../utils/constants";
 
 type Respond = (response: any) => void;
 type AuthenticationInput =
@@ -88,7 +90,7 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 // Serialize new authentication commands within this worker instance. This is
-// not a durable lock and does not serialize legacy logout or other writers.
+// not a durable lock and does not serialize legacy commands or other writers.
 let authenticationTail: Promise<void> = Promise.resolve();
 function enqueueAuthentication(services: ApplicationServices, input: AuthenticationInput, respond: Respond): Promise<void> {
   const next = authenticationTail.then(() => authenticate(services, input, respond));
@@ -162,6 +164,7 @@ async function restoreOrAuthenticate(
 // Coalesce automatic requests for the same extension within one worker.
 // Explicit password/API-key commands keep their existing queue semantics.
 const autoLoginInFlight = new Map<string, Promise<AutoLoginResponse>>();
+let pendingSessionEnds = 0;
 
 function getOrStartAutoLogin(
   services: ApplicationServices,
@@ -190,6 +193,107 @@ export async function handleAuthAutoLogin(
     respond({ success: false, error: "Extension ID is required", code: "INVALID_AUTH_INPUT" });
     return;
   }
+  if (pendingSessionEnds > 0) {
+    respond({ success: false, error: "Session cleanup in progress", code: "AUTH_BUSY" });
+    return;
+  }
   const result = await getOrStartAutoLogin(services, extensionId);
   respond(result);
+}
+
+type SessionEndMode = "logout" | "restart";
+type SessionEndResult = {
+  cleared: true;
+  snapshotPreserved: boolean;
+  signoutConfirmed: boolean | null;
+};
+
+const SESSION_END_KEYS = [
+  "draftCredentials", "facebookAccounts", "isApikeySession",
+];
+const MANUAL_SNAPSHOT_KEYS = ["manualPlatformCookies", "manualFacebookCookies"];
+
+async function preserveManualCookies(services: ApplicationServices): Promise<boolean> {
+  const storage = services.storage;
+  if (!storage) throw new Error("Storage unavailable");
+  const { fbLoginMode } = await storage.getStorageByKeys(["fbLoginMode"]);
+  if (fbLoginMode !== "manual" && fbLoginMode?.mode !== "manual") return false;
+  if (!services.cookie) throw new Error("Cookie service unavailable");
+
+  const browserCookies = services.cookie.getBrowserApi();
+  const entries = await Promise.all(Constants.SOCIAL_COOKIE_DOMAINS.map(async domain =>
+    [domain, await browserCookies.getAll({ domain })] as const));
+  const snapshot = Object.fromEntries(entries.filter(([, cookies]) => cookies && cookies.length > 0));
+  if (Object.keys(snapshot).length === 0) return false;
+  await storage.getBrowserApi().set({ manualPlatformCookies: JSON.stringify(snapshot) });
+  return true;
+}
+
+async function tryServerSignout(services: ApplicationServices, extensionId: string): Promise<boolean> {
+  try {
+    await apiCall.extensionUser.logout(services.http.getHttpInstance(), extensionId);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function endSession(
+  services: ApplicationServices,
+  mode: SessionEndMode,
+  extensionId: string,
+  respond: Respond,
+): Promise<void> {
+  try {
+    if (!services.storage || !services.alarm || !services.proxy || !services.cookie) {
+      throw new Error("Session cleanup dependencies unavailable");
+    }
+
+    // Restart retains the legacy recovery semantics: capture manual cookies
+    // before destructive cleanup; never clear a snapshot on restart.
+    const snapshotPreserved = mode === "restart" ? await preserveManualCookies(services) : false;
+    // Explicit logout signs out remotely before cleanup. Restart intentionally
+    // keeps the existing local-only behavior for recovery from a dead proxy.
+    const signoutConfirmed = mode === "logout" ? await tryServerSignout(services, extensionId) : null;
+
+    let cleared = false;
+    await handleClearDataAfterLogout(services, { inputs: {} }, response => {
+      cleared = response?.success === true && response?.cleared === true;
+    });
+    if (!cleared) throw new Error("Session cleanup failed");
+
+    await services.storage.removeStorageByKeys([
+      ...SESSION_END_KEYS,
+      ...(mode === "logout" ? MANUAL_SNAPSHOT_KEYS : []),
+    ]);
+    const data: SessionEndResult = { cleared: true, snapshotPreserved, signoutConfirmed };
+    respond({ success: true, data });
+  } catch {
+    respond({ success: false, error: "Session cleanup failed", code: "AUTH_CLEANUP_FAILED" });
+  }
+}
+
+function enqueueSessionEnd(
+  services: ApplicationServices,
+  mode: SessionEndMode,
+  message: Message,
+  respond: Respond,
+): Promise<void> {
+  const { extensionId } = message.inputs ?? {};
+  if (!isNonEmptyString(extensionId)) {
+    respond({ success: false, error: "Extension ID is required", code: "INVALID_AUTH_INPUT" });
+    return Promise.resolve();
+  }
+  pendingSessionEnds += 1;
+  const next = authenticationTail.then(() => endSession(services, mode, extensionId, respond));
+  authenticationTail = next.catch(() => undefined);
+  return next.finally(() => { pendingSessionEnds -= 1; });
+}
+
+export function handleAuthLogout(services: ApplicationServices, message: Message, respond: Respond): Promise<void> {
+  return enqueueSessionEnd(services, "logout", message, respond);
+}
+
+export function handleAuthRestart(services: ApplicationServices, message: Message, respond: Respond): Promise<void> {
+  return enqueueSessionEnd(services, "restart", message, respond);
 }

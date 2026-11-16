@@ -281,15 +281,11 @@ export async function handleClearDataAfterLogout(
     bgState.__debouncers.clear();
 
     // Clear ALL alarms (MV3-safe): periodic, scheduleTask_*, sendFacebookPostData, etc.
-    await new Promise<void>((resolve) => {
-      void applicationServices.alarm?.getBrowserApi().clearAll().then(() => resolve());
-    });
+    await applicationServices.alarm?.getBrowserApi().clearAll();
 
-    setTimeout(() => {
-      applicationServices.tab?.cleanupFacebookTabs().catch(() => { });
-    }, 0);
-
-    applicationServices.proxy?.clearProxy();
+    // Await cleanup before returning the acknowledgment to a session command.
+    await applicationServices.tab?.cleanupFacebookTabs().catch(() => { });
+    await applicationServices.proxy?.getBrowserApi().clear({ scope: "regular" });
 
     applicationServices.action?.getBrowserApi().setBadgeText({ text: "0" });
     applicationServices.action?.getBrowserApi().setBadgeBackgroundColor({ color: "#0000FF" });

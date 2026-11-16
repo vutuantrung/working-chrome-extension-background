@@ -1,6 +1,6 @@
 import { Message } from "../../types/types";
 import { handleExternalApiCall } from "./externalServiceHandler";
-import { handleAuthLogin, handleAuthLoginByApiKey, handleAuthGetState, handleAuthAutoLogin } from "./authHandlers";
+import { handleAuthLogin, handleAuthLoginByApiKey, handleAuthGetState, handleAuthAutoLogin, handleAuthLogout, handleAuthRestart } from "./authHandlers";
 
 // Message handler imports
 import {
@@ -425,6 +425,10 @@ function runTimeOnMessageHandlerInternal(
         return handleAuthLoginByApiKey(applicationServices, message, sendResponse);
       case "AUTH_AUTO_LOGIN":
         return handleAuthAutoLogin(applicationServices, message, sendResponse);
+      case "AUTH_LOGOUT":
+        return handleAuthLogout(applicationServices, message, sendResponse);
+      case "AUTH_RESTART":
+        return handleAuthRestart(applicationServices, message, sendResponse);
       case "AUTH_GET_STATE":
         return handleAuthGetState(applicationServices, message, sendResponse);
 
