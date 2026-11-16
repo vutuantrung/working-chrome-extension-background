@@ -1,5 +1,6 @@
 import { Message } from "../../types/types";
 import { handleExternalApiCall } from "./externalServiceHandler";
+import { handleAuthLogin, handleAuthLoginByApiKey, handleAuthGetState } from "./authHandlers";
 
 // Message handler imports
 import {
@@ -416,6 +417,14 @@ function runTimeOnMessageHandlerInternal(
       // DATA INTERCEPTED
       case "BODY_DATA_INTERCEPTED":
         return handleBodyDataIntercepted(applicationServices, message, sender, sendResponse);
+
+      // AUTHENTICATION / SESSION (R1.1)
+      case "AUTH_LOGIN":
+        return handleAuthLogin(applicationServices, message, sendResponse);
+      case "AUTH_LOGIN_BY_API_KEY":
+        return handleAuthLoginByApiKey(applicationServices, message, sendResponse);
+      case "AUTH_GET_STATE":
+        return handleAuthGetState(applicationServices, message, sendResponse);
 
       // EXTERNAL CALL
       case "CALL_EXTERNAL_SERVICE":
