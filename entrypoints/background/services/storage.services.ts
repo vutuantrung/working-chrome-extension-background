@@ -5,12 +5,10 @@ import * as helpers from "../utils/helpers";
 
 import { Archive, Settings, StorageData } from "../types/types";
 import { DefaultValues } from "../utils/constants";
-import { isValidArrayAct } from "../utils/tools";
 import { BrowserApplicationStorageApi } from "./storage.api";
 
 export class StorageService {
     private _cachedStorage: StorageData = {};
-    private _storageInFlight: Promise<StorageData> | null = null;
 
     constructor(private browserStorageApi: BrowserApplicationStorageApi) { }
 
@@ -31,54 +29,21 @@ export class StorageService {
     }
 
     async getStorageCachedByKeys(keys: string[]): Promise<Partial<StorageData>> {
-        if (this._cachedStorage) {
-            if (!keys) {
-                return this._cachedStorage;
+        if (!keys) return this._cachedStorage;
+        const cache = this._cachedStorage as Record<string, any>;
+        // Account resources must be read from durable storage, not stale snapshots.
+        const missing = keys.filter(key => ACCOUNT_CATALOG_KEYS.has(key) ||
+            !Object.prototype.hasOwnProperty.call(cache, key));
+        if (missing.length) {
+            const values = await this.browserStorageApi.get(missing);
+            // Do not repopulate a cache that was cleared while the read was pending.
+            if (this._cachedStorage === cache) {
+                for (const key of missing) cache[key] = values[key];
             }
-
-            const out: any = {};
-            let allPresent = true;
-            for (const k of keys) {
-                if (!Object.prototype.hasOwnProperty.call(this._cachedStorage, k)) {
-                    allPresent = false;
-                    break;
-                }
-                out[k] = (this._cachedStorage as any)[k];
-            }
-            if (allPresent) {
-                return out;
-            }
+            return Object.fromEntries(keys.map(key => [key,
+                missing.includes(key) ? values[key] : cache[key]]));
         }
-
-        if (this._cachedStorage) {
-            await this._storageInFlight;
-            return this.getStorageCachedByKeys(keys);
-        }
-
-        const fetchArg = isValidArrayAct(keys) ? keys : undefined;
-        if (!fetchArg) {
-            return {};
-        }
-
-        this._storageInFlight = this.browserStorageApi.get(fetchArg)
-            .then((vals) => {
-                if (this._cachedStorage) {
-                    Object.assign(this._cachedStorage, vals);
-                } else {
-                    this._cachedStorage = vals;
-                }
-                return this._cachedStorage;
-            })
-            .finally(() => {
-                this._storageInFlight = null;
-            });
-        await this._storageInFlight;
-
-        const out: any = {};
-        for (const k of keys) {
-            out[k] = (this._cachedStorage as any)[k];
-        }
-        return out;
+        return Object.fromEntries(keys.map(key => [key, cache[key]]));
     }
 
     async removeStorageByKeys(keys: string[]): Promise<void> {
@@ -88,7 +53,6 @@ export class StorageService {
 
     clearStorageCache() {
         this._cachedStorage = {};
-        this._storageInFlight = null;
     }
 
     async handleGetSettings(message: any, sendResponse: (resp: any) => void) {

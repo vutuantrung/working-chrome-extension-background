@@ -32,6 +32,7 @@ async function readSource(services: ApplicationServices) {
     const selection = values.personaSelection;
     if (!selection || selection.userId !== identity.userId || selection.sessionId !== sessionId ||
         !text(selection.persona?.id) || selection.persona.id !== values.selectedPersonaId ||
+        !Number.isSafeInteger(selection.revision) || selection.revision < 1 ||
         selection.activation !== "active") return fail("PERSONA_REQUIRED", "An acknowledged active persona is required");
     source = { ...identity, type: "persona", personaId: selection.persona.id };
   }
@@ -90,7 +91,7 @@ async function normalizeAccounts(services: ApplicationServices, rows: unknown[],
     if (!platforms.includes(platform) || String(raw.status ?? "active").toLowerCase() !== "active") continue;
     const id = raw.account_id ?? raw.id ?? raw.social_account_id;
     if (id == null || !String(id).trim()) fail("ACCOUNT_LOAD_FAILED", "Invalid account identity");
-    const account = normalizePersonaSocialAccount({ ...raw, platform });
+    const account = normalizePersonaSocialAccount({ ...raw, platform, status: "active" });
     if (!account) fail("ACCOUNT_LOAD_FAILED", "Invalid active account");
     const key = platform + ":" + account.account_id;
     if (!unique.has(key)) unique.set(key, account);
@@ -110,7 +111,9 @@ async function normalizeAccounts(services: ApplicationServices, rows: unknown[],
   return accounts;
 }
 function publicState(ctx: Context, catalog: SocialAccountCatalog | undefined, platform?: string) {
-  const valid = sameSource(catalog?.source, ctx.source) && Array.isArray(catalog?.accounts);
+  const valid = sameSource(catalog?.source, ctx.source) && Array.isArray(catalog?.accounts) &&
+    Number.isSafeInteger(catalog?.revision) && (catalog?.revision ?? 0) > 0 &&
+    Number.isFinite(catalog?.refreshedAt) && (catalog?.refreshedAt ?? -1) >= 0;
   const accounts = valid ? catalog!.accounts : [];
   return { source: ctx.source, revision: valid ? catalog!.revision : 0,
     refreshedAt: valid ? catalog!.refreshedAt : null, status: valid ? "cached" : "uninitialized",
@@ -125,7 +128,7 @@ export async function refreshSocialAccountCatalogInSession(services: Application
   const loaded = await loadAccounts(services, ctx.source, configurationFilter);
   const accounts = await normalizeAccounts(services, loaded.rows, ctx.source);
   await assertSource(services, ctx);
-  const catalog: SocialAccountCatalog = { source: ctx.source, revision: sameSource(ctx.catalog?.source, ctx.source) ? ctx.catalog!.revision + 1 : 1,
+  const catalog: SocialAccountCatalog = { source: ctx.source, revision: sameSource(ctx.catalog?.source, ctx.source) && Number.isSafeInteger(ctx.catalog?.revision) && (ctx.catalog?.revision ?? 0) > 0 ? ctx.catalog!.revision + 1 : 1,
     refreshedAt: Date.now(), accounts };
   const facebook = accounts.filter(a => a.platform === "facebook");
   const patch = { socialAccountCatalog: catalog, allSocialAccounts: accounts, facebookAccounts: facebook,
