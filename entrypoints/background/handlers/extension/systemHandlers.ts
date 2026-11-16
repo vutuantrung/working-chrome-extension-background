@@ -308,6 +308,7 @@ export async function handleClearDataAfterLogout(
       "personaProxy",
       "personaFacebookAccounts",
       "selectedPersonaId",
+      "personaSelection",
       "profileId",
       "profile",
       "activeProxy",

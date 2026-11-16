@@ -102,6 +102,13 @@ let authenticationGeneration = 0;
 let lastExtensionId: string | undefined;
 
 export function getAuthenticationGeneration(): number { return authenticationGeneration; }
+
+// Persona selection shares the auth mutation queue while it reads/commits identity.
+export function enqueueSessionOperation<T>(operation: () => Promise<T>): Promise<T> {
+  const next = authenticationTail.then(operation);
+  authenticationTail = next.then(() => undefined, () => undefined);
+  return next;
+}
 function enqueueAuthentication(services: ApplicationServices, input: AuthenticationInput, respond: Respond): Promise<void> {
   const next = authenticationTail.then(() => authenticate(services, input, respond));
   authenticationTail = next.catch(() => undefined);
