@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { handleAuthLogin, handleAuthLoginByApiKey, handleAuthGetState } from "../../entrypoints/background/handlers/extension/authHandlers";
+import { handleAuthLogin, handleAuthLoginByApiKey, handleAuthGetState, handleAuthAutoLogin } from "../../entrypoints/background/handlers/extension/authHandlers";
 import type { ApplicationServices } from "../../entrypoints/background/application-services";
 
 function setup() {
@@ -57,5 +57,78 @@ describe("R1 auth handlers", () => {
     const respond = vi.fn();
     await handleAuthGetState(services, { type: "AUTH_GET_STATE" }, respond);
     expect(respond).toHaveBeenCalledWith({ success: true, data: { user: { id: "user" }, isApikeySession: true } });
+  });
+});
+
+describe("R1.2 automatic authentication", () => {
+  const message = { type: "AUTH_AUTO_LOGIN", inputs: { extensionId: "ext" } };
+
+  it("returns anonymous without HTTP when no injected key exists", async () => {
+    const { services, post, getStorageByKeys } = setup();
+    const respond = vi.fn();
+    await handleAuthAutoLogin(services, message, respond);
+    expect(getStorageByKeys).toHaveBeenCalledWith(["user", "isApikeySession", "apikey"]);
+    expect(respond).toHaveBeenCalledExactlyOnceWith({ success: true, data: { status: "anonymous" } });
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("restores existing durable user before considering the injected key", async () => {
+    const { services, post, getStorageByKeys } = setup();
+    getStorageByKeys.mockResolvedValue({ user: { id: "existing" }, isApikeySession: false, apikey: "test" });
+    const respond = vi.fn();
+    await handleAuthAutoLogin(services, message, respond);
+    expect(respond).toHaveBeenCalledExactlyOnceWith({
+      success: true, data: { status: "restored", user: { id: "existing" }, isApikeySession: false },
+    });
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("coalesces simultaneous requests and persists once", async () => {
+    const { services, post, set, getStorageByKeys } = setup();
+    getStorageByKeys.mockResolvedValue({ apikey: "test-key" });
+    post.mockResolvedValue({ data: { id: "user", extension_sessions: [{ id: "session" }] } });
+    const first = vi.fn();
+    const second = vi.fn();
+    await Promise.all([
+      handleAuthAutoLogin(services, message, first),
+      handleAuthAutoLogin(services, message, second),
+    ]);
+    expect(post).toHaveBeenCalledExactlyOnceWith("/extension-sessions/signin", { api_key: "test-key", extension_id: "ext" });
+    expect(set).toHaveBeenCalledTimes(1);
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledExactlyOnceWith(first.mock.calls[0][0]);
+    expect(first.mock.calls[0][0].data.status).toBe("authenticated");
+  });
+
+  it("rechecks durable state after a queued password login", async () => {
+    const { services, post, set, getStorageByKeys } = setup();
+    let state: Record<string, unknown> = { apikey: "test-key" };
+    set.mockImplementation(async patch => { state = { ...state, ...patch }; });
+    getStorageByKeys.mockImplementation(async () => state);
+    post.mockResolvedValue({ data: { id: "manual-user" } });
+    const manual = handleAuthLogin(services, { type: "AUTH_LOGIN", inputs: { username: "demo", password: "test", extensionId: "ext" } }, vi.fn());
+    const respond = vi.fn();
+    await Promise.all([manual, handleAuthAutoLogin(services, message, respond)]);
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(respond.mock.calls[0][0].data.status).toBe("restored");
+    expect(respond.mock.calls[0][0].data.user.id).toBe("manual-user");
+  });
+
+  it("shares failure, redacts details and allows a later attempt", async () => {
+    const { services, post, set, getStorageByKeys } = setup();
+    getStorageByKeys.mockResolvedValue({ apikey: "test-key" });
+    post.mockRejectedValueOnce(new Error("private detail"));
+    const first = vi.fn();
+    const second = vi.fn();
+    await Promise.all([handleAuthAutoLogin(services, message, first), handleAuthAutoLogin(services, message, second)]);
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(set).not.toHaveBeenCalled();
+    expect(first).toHaveBeenCalledExactlyOnceWith({ success: false, error: "Authentication failed", code: "AUTH_FAILED" });
+    expect(second).toHaveBeenCalledExactlyOnceWith(first.mock.calls[0][0]);
+    post.mockResolvedValue({ data: { id: "user" } });
+    const retry = vi.fn();
+    await handleAuthAutoLogin(services, message, retry);
+    expect(post).toHaveBeenCalledTimes(2);
+    expect(retry.mock.calls[0][0].data.status).toBe("authenticated");
   });
 });

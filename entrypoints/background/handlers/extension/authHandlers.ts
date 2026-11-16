@@ -124,3 +124,72 @@ export async function handleAuthGetState(services: ApplicationServices, _message
     respond({ success: false, error: "Unable to restore authentication state", code: "AUTH_STATE_UNAVAILABLE" });
   }
 }
+
+type AutoLoginResponse =
+  | { success: true; data: { status: "anonymous" } }
+  | { success: true; data: { status: "restored"; user: User; isApikeySession: boolean } }
+  | { success: true; data: { status: "authenticated"; session: any } }
+  | { success: false; error: string; code: string };
+
+async function restoreOrAuthenticate(
+  services: ApplicationServices,
+  extensionId: string,
+): Promise<AutoLoginResponse> {
+  try {
+    if (!services.storage) throw new Error("Storage unavailable");
+    // Durable state is authoritative. Read inside the authentication queue so
+    // a completed manual login cannot be overwritten by a queued auto-login.
+    const state = await services.storage.getStorageByKeys(["user", "isApikeySession", "apikey"]);
+    if (state.user) {
+      return { success: true, data: { status: "restored", user: state.user, isApikeySession: state.isApikeySession === true } };
+    }
+    if (!isNonEmptyString(state.apikey)) {
+      return { success: true, data: { status: "anonymous" } };
+    }
+
+    let result: AutoLoginResponse | undefined;
+    await authenticate(services, { mode: "apiKey", apiKey: state.apikey, extensionId }, response => {
+      result = response.success === true
+        ? { success: true, data: { status: "authenticated", session: response.data } }
+        : response;
+    });
+    return result ?? { success: false, error: "Authentication failed", code: "AUTH_FAILED" };
+  } catch {
+    return { success: false, error: "Unable to restore authentication state", code: "AUTH_STATE_UNAVAILABLE" };
+  }
+}
+
+// Coalesce automatic requests for the same extension within one worker.
+// Explicit password/API-key commands keep their existing queue semantics.
+const autoLoginInFlight = new Map<string, Promise<AutoLoginResponse>>();
+
+function getOrStartAutoLogin(
+  services: ApplicationServices,
+  extensionId: string,
+): Promise<AutoLoginResponse> {
+  const existing = autoLoginInFlight.get(extensionId);
+  if (existing) return existing;
+
+  const next = authenticationTail.then(() => restoreOrAuthenticate(services, extensionId));
+  autoLoginInFlight.set(extensionId, next);
+  authenticationTail = next.then(() => undefined, () => undefined);
+  void next.then(
+    () => autoLoginInFlight.delete(extensionId),
+    () => autoLoginInFlight.delete(extensionId),
+  );
+  return next;
+}
+
+export async function handleAuthAutoLogin(
+  services: ApplicationServices,
+  message: Message,
+  respond: Respond,
+): Promise<void> {
+  const { extensionId } = message.inputs ?? {};
+  if (!isNonEmptyString(extensionId)) {
+    respond({ success: false, error: "Extension ID is required", code: "INVALID_AUTH_INPUT" });
+    return;
+  }
+  const result = await getOrStartAutoLogin(services, extensionId);
+  respond(result);
+}
