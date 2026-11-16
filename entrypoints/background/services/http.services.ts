@@ -21,7 +21,8 @@ export class HttpService {
         const generations = new WeakMap<object, number>();
         this.http.interceptors.request.use(config => {
             const url = (config.url || "").split("?")[0];
-            if (!/\\/extension-sessions\\/(signin|signout)\\/?$/.test(url)) {
+            if (!url.replace(/\/$/, "").endsWith("/extension-sessions/signin") &&
+                !url.replace(/\/$/, "").endsWith("/extension-sessions/signout")) {
                 const generation = this.observer?.captureGeneration();
                 if (generation !== undefined) generations.set(config, generation);
             }
