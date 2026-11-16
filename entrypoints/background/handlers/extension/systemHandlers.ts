@@ -3,6 +3,7 @@ import { bgState } from "../../state";
 import { Message, Settings, Archive } from "../../types/types";
 import { Constants, DefaultValues, State } from "../../utils/constants";
 import { ApplicationServices } from "../../application-services";
+import { readSocialAccountCatalogInSession } from "./socialAccountHandlers";
 
 
 // ========================================
@@ -27,7 +28,7 @@ export async function handleInitializeAfterLogin(
 ) {
   try {
     // const keys = ["settings", "taskList", "activities", "automationByUser", "personaProxy", "personaFacebookAccounts", "fbLoginMode"];
-    const cachedStorage = applicationServices.storage?.getCachedStorage();
+    const cachedStorage = await applicationServices.storage?.getStorageByKeys(["settings", "taskList", "activities", "automationByUser", "user", "personaProxy", "fbLoginMode", "extensionProxy"]);
     if (!cachedStorage) {
       throw new Error("Failed to retrieve cached storage");
     }
@@ -95,54 +96,22 @@ export async function handleInitializeAfterLogin(
       ? extensionProxy
       : undefined);
 
-    const extensionConfigId = extensionSession?.extension_config_id ?? extensionConfig?.id;
+    const extensionConfigId = cachedStorage.user?.extension_session?.extension_config_id;
     const useExtensionConfig = helpers.proxy.hasExtensionConfigId(extensionConfigId);
-    const { personaProxy, personaFacebookAccounts, fbLoginMode } = cachedStorage;
+    const { personaProxy, fbLoginMode } = cachedStorage;
 
     let extensionAccountProxy: Record<string, unknown> | null = null;
     let personaAccountProxy: Record<string, unknown> | null = null;
     if (fbLoginMode?.mode === "auto") {
+      const catalog = await readSocialAccountCatalogInSession(applicationServices);
+      if (!catalog) throw new Error("Account catalog is not initialized");
+      const platform = fbLoginMode.platform ?? "facebook";
+      const candidates = catalog.accounts.filter(a => a.platform === platform &&
+        (!fbLoginMode.account_id || a.account_id === fbLoginMode.account_id));
       if (useExtensionConfig) {
-        const { allSocialAccounts: storedSocialAccounts } = cachedStorage;
-        const savedPlatform = (fbLoginMode as any)?.platform ?? "facebook";
-        extensionAccountProxy = helpers.proxy.findExtensionAccountProxyByPlatform(
-          extensionConfig?.social_accounts ?? storedSocialAccounts ?? [],
-          savedPlatform,
-          fbLoginMode.account_id,
-        );
+        extensionAccountProxy = helpers.proxy.findExtensionAccountProxyByPlatform(candidates, platform, fbLoginMode.account_id);
       } else {
-        const accountsFromMessage: any[] = Array.isArray(message.inputs?.all_social_accounts)
-          ? message.inputs.all_social_accounts
-          : [];
-
-        const { allSocialAccounts } = cachedStorage;
-
-        const accountList = accountsFromMessage.length > 0
-          ? accountsFromMessage
-          : ((allSocialAccounts?.length
-            ? allSocialAccounts
-            : personaFacebookAccounts) ?? []);
-
-        // console.log(
-        //   "[handleInitializeAfterLogin] persona accountList:",
-        //   accountList.map((a: any) => ({
-        //     id: a.account_id,
-        //     platform: a.platform,
-        //     has_proxy: !!a.proxy && Object.keys(a.proxy || {}).length > 0,
-        //   })),
-        // );
-
-        personaAccountProxy = helpers.proxy.findPersonaSocialAccountProxy(
-          accountList,
-          fbLoginMode.account_id,
-        );
-
-        if (accountsFromMessage.length > 0) {
-          await applicationServices.storage?.setStorageCached({
-            allSocialAccounts: accountsFromMessage,
-            personaFacebookAccounts: accountsFromMessage.filter((a: any) => a.platform === "facebook"),
-          });
-        }
+        personaAccountProxy = helpers.proxy.findPersonaSocialAccountProxy(candidates, fbLoginMode.account_id);
       }
     }
 

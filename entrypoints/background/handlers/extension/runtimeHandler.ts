@@ -1,3 +1,4 @@
+import { enqueueSessionOperation } from "./authHandlers";
 import { Message } from "../../types/types";
 import { handleExternalApiCall } from "./externalServiceHandler";
 import { handleSocialAccountGetState, handleSocialAccountRefresh } from "./socialAccountHandlers";
@@ -472,7 +473,7 @@ function runTimeOnMessageHandlerInternal(
       case "UPDATE_ARCHIVE":
         return applicationServices.storage?.handleUpdateArchive(message, sendResponse);
       case "INITIALIZE_AFTER_LOGIN":
-        return handleInitializeAfterLogin(applicationServices, message, sendResponse);
+        return enqueueSessionOperation(() => handleInitializeAfterLogin(applicationServices, message, sendResponse));
       case "CLEAR_DATA_AFTER_LOGOUT":
         return handleClearDataAfterLogout(applicationServices, message, sendResponse);
       case "SET_PROXY":

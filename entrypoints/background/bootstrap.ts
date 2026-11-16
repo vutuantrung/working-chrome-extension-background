@@ -113,6 +113,7 @@ export async function createApplicationServices(currentBrowser: "chrome" | "fire
         applicationStorageService,
         applicationAlarmService
     );
+    applicationHttpService = new HttpService(applicationRuntimeService);
     applicationSyncService = new SyncService(
         applicationStorageService,
         applicationProxyService,
@@ -120,8 +121,8 @@ export async function createApplicationServices(currentBrowser: "chrome" | "fire
         applicationCookieService,
         applicationScheduleService,
         applicationTabService,
+        applicationHttpService,
     );
-    applicationHttpService = new HttpService(applicationRuntimeService);
 
     const services: ApplicationServices = {
         tab: applicationTabService,

@@ -1,7 +1,8 @@
 import * as helpers from "../utils/helpers";
 
-import { getExtensionConfigInfo } from "../infrastructure/api/source-member.api";
-import { getProxyInfo, getSocialAccountsByPersona } from "../infrastructure/api/user.api";
+import type { HttpService } from "./http.services";
+import { enqueueSessionOperation } from "../handlers/extension/authHandlers";
+import { refreshSocialAccountCatalogInSession } from "../handlers/extension/socialAccountHandlers";
 import { bgState } from "../state";
 import { Constants } from "../utils/constants";
 import { DefaultValues } from "../utils/constants";
@@ -22,7 +23,8 @@ export class SyncService {
     private alarmService: AlarmService,
     private cookieService: CookieService,
     private scheduleService: ScheduleService,
-    private tabService: TabService
+    private tabService: TabService,
+    private httpService: HttpService
   ) { }
 
   async ensureJoinedGroupsAlarmSchedule(targetScheduleTime?: number): Promise<void> {
@@ -48,8 +50,12 @@ export class SyncService {
   }
 
   async handleSyncExtensionInfo(hasSyncActivity?: boolean): Promise<void> {
+    await enqueueSessionOperation(() => this.syncExtensionInfoInSession(hasSyncActivity));
+  }
+
+  private async syncExtensionInfoInSession(hasSyncActivity?: boolean): Promise<void> {
     try {
-      const { settings, user, activities, fbLoginMode } = await this.storageService.getStorageCachedByKeys(["settings", "user", "activities", "fbLoginMode"]);
+      const { settings, user, activities, fbLoginMode } = await this.storageService.getStorageByKeys(["settings", "user", "activities", "fbLoginMode"]);
       const extensionConfigId = user?.extension_session?.extension_config_id;
       const useExtensionConfig = helpers.proxy.hasExtensionConfigId(extensionConfigId);
 
@@ -58,59 +64,16 @@ export class SyncService {
         return;
       }
 
-      const { personaProxy, personaFacebookAccounts } = await this.storageService.getStorageCachedByKeys(["personaProxy", "personaFacebookAccounts"]);
+      const { personaProxy } = await this.storageService.getStorageByKeys(["personaProxy"]);
 
       if (!useExtensionConfig) {
         let personaAccountProxy: Record<string, unknown> | null = null;
         if (fbLoginMode?.mode === "auto") {
-          let freshAccounts: any[] | null = null;
-          const getPersonaIdResult = await this.storageService.getStorageCachedByKeys(["selectedPersonaId"]);
-          const selectedPersonaId: string | undefined = getPersonaIdResult?.selectedPersonaId;
-
-          if (selectedPersonaId) {
-            try {
-              const response = await getSocialAccountsByPersona(selectedPersonaId);
-              const rawAccounts: any[] = Array.isArray(response?.data)
-                ? response.data
-                : Array.isArray(response) ? response : [];
-
-              if (rawAccounts.length) {
-                const normalized = rawAccounts.map((a) => ({ ...a, platform: a.platform === "twitter" ? "x" : a.platform }));
-
-                freshAccounts = await Promise.all(
-                  normalized
-                    .filter((a) => a.status === "active")
-                    .map(async (account) => {
-                      if (account.proxy_id) {
-                        try {
-                          const proxyData = await getProxyInfo(account.proxy_id);
-                          return { ...account, proxy: proxyData };
-                        } catch {
-                          return account;
-                        }
-                      }
-                      return account;
-                    }),
-                );
-
-                await this.storageService.setStorageCached({
-                  allSocialAccounts: freshAccounts,
-                  personaFacebookAccounts: freshAccounts.filter((a) => a.platform === "facebook"),
-                });
-              }
-            } catch (err) {
-              console.warn("[handleSyncExtensionInfo] Failed to refresh social accounts:", err);
-            }
-          }
-
-          const { allSocialAccounts } = await this.storageService.getStorageCachedByKeys(["allSocialAccounts"]);
-          const accountList = freshAccounts ?? allSocialAccounts ?? personaFacebookAccounts ?? [];
-
-          personaAccountProxy = helpers.proxy.findPersonaSocialAccountProxy(
-            accountList,
-            fbLoginMode.account_id,
-          );
-          console.log("[handleSyncExtensionInfo] personaAccountProxy:", personaAccountProxy);
+          const { catalog } = await refreshSocialAccountCatalogInSession({ storage: this.storageService, http: this.httpService });
+          const platform = fbLoginMode.platform ?? "facebook";
+          const candidates = catalog.accounts.filter(a => a.platform === platform);
+          const selected = fbLoginMode.account_id ? candidates.filter(a => a.account_id === fbLoginMode.account_id) : candidates;
+          personaAccountProxy = helpers.proxy.findPersonaSocialAccountProxy(selected, fbLoginMode.account_id);
         }
 
         const { effective: proxyInfo } = helpers.proxy.resolveEffectiveProxy({
@@ -141,8 +104,8 @@ export class SyncService {
       }
 
       if (!extensionConfigId) return;
-      const extensionConfigInfo = await getExtensionConfigInfo(
-        extensionConfigId,
+      const { catalog, configuration: extensionConfigInfo } = await refreshSocialAccountCatalogInSession(
+        { storage: this.storageService, http: this.httpService },
         {
           include: [
             {
@@ -175,7 +138,7 @@ export class SyncService {
       if (fbLoginMode?.mode === "auto") {
         const savedPlatform = (fbLoginMode as any)?.platform ?? "facebook";
         extensionAccountProxy = helpers.proxy.findExtensionAccountProxyByPlatform(
-          extensionConfigInfo?.social_accounts ?? [],
+          catalog.accounts.filter(a => a.platform === savedPlatform && (!fbLoginMode.account_id || a.account_id === fbLoginMode.account_id)),
           savedPlatform,
           fbLoginMode.account_id,
         );
@@ -301,7 +264,7 @@ export class SyncService {
     } catch (error: any) {
       console.warn(
         "[handleSyncExtensionInfo] Sync info skipped / failed:",
-        error?.response?.data || error?.message || error,
+        "Account or settings synchronization did not complete",
       );
     }
   }

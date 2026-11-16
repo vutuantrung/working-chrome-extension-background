@@ -1,4 +1,6 @@
 import _ from "lodash";
+
+const ACCOUNT_CATALOG_KEYS = new Set(["socialAccountCatalog", "allSocialAccounts", "facebookAccounts", "personaSocialAccounts", "personaFacebookAccounts"]);
 import * as helpers from "../utils/helpers";
 
 import { Archive, Settings, StorageData } from "../types/types";
@@ -168,11 +170,16 @@ export class StorageService {
     }
 
     async setStorageCached(patchObj: any): Promise<void> {
-        const allStorageValues = await this.browserStorageApi.get(null);
-        const updatedStorage = _.merge({}, allStorageValues, this._cachedStorage, patchObj);
-        // if (this._cachedStorage) Object.assign(this._cachedStorage, patchObj);
-        this._cachedStorage = updatedStorage;
-        await this.browserStorageApi.set(updatedStorage);
+        const keys = Object.keys(patchObj).filter(key => !ACCOUNT_CATALOG_KEYS.has(key));
+        if (!keys.length) return;
+        const current = await this.browserStorageApi.get(keys);
+        const patch: Record<string, any> = {};
+        for (const key of keys) {
+            // Merge only explicitly requested legacy keys; durable values win over stale cache.
+            patch[key] = _.merge({}, { value: current[key] }, { value: patchObj[key] }).value;
+        }
+        await this.browserStorageApi.set(patch);
+        Object.assign(this._cachedStorage, patch);
     }
 
     async handleUpdateArchive(message: any, sendResponse?: (resp: any) => void) {

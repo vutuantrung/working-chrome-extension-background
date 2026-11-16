@@ -8,7 +8,7 @@ type Source = { userId: string; sessionId: string } & (
   { type: "extension_config"; extensionConfigId: string } |
   { type: "persona"; personaId: string }
 );
-type Catalog = { source: Source; revision: number; refreshedAt: number; accounts: PersonaFacebookAccount[] };
+export type SocialAccountCatalog = { source: Source; revision: number; refreshedAt: number; accounts: PersonaFacebookAccount[] };
 type Respond = (response: unknown) => void;
 class AccountError extends Error {
   constructor(readonly code: string, message: string) { super(message); }
@@ -35,7 +35,7 @@ async function readSource(services: ApplicationServices) {
         selection.activation !== "active") return fail("PERSONA_REQUIRED", "An acknowledged active persona is required");
     source = { ...identity, type: "persona", personaId: selection.persona.id };
   }
-  return { storage, source, generation: getAuthenticationGeneration(), catalog: values.socialAccountCatalog as Catalog | undefined,
+  return { storage, source, generation: getAuthenticationGeneration(), catalog: values.socialAccountCatalog as SocialAccountCatalog | undefined,
     personaRevision: source.type === "persona" ? values.personaSelection.revision : undefined };
 }
 type Context = Awaited<ReturnType<typeof readSource>>;
@@ -55,7 +55,7 @@ function parseList(raw: any): unknown[] {
   if (!Array.isArray(rows)) return fail("ACCOUNT_LOAD_FAILED", "Invalid account list");
   return rows;
 }
-async function loadAccounts(services: ApplicationServices, source: Source): Promise<unknown[]> {
+async function loadAccounts(services: ApplicationServices, source: Source, configurationFilter?: object): Promise<{ rows: unknown[]; configuration?: any }> {
   const http = services.http.getHttpInstance();
   if (source.type === "persona") {
     const rows: unknown[] = [];
@@ -66,15 +66,16 @@ async function loadAccounts(services: ApplicationServices, source: Source): Prom
         offset, limit, where: { persona_id: source.personaId },
       }));
       rows.push(...page);
-      if (page.length < limit) return rows;
+      if (page.length < limit) return { rows };
     }
     return fail("ACCOUNT_LOAD_FAILED", "Account pagination limit exceeded");
   }
-  const raw = await api.extensionUser.getExtensionConfigInfo(http, source.extensionConfigId);
+  const raw = await api.extensionUser.getExtensionConfigInfo(http, source.extensionConfigId, configurationFilter);
   if (raw?.success === false) return fail("ACCOUNT_LOAD_FAILED", "Configuration request rejected");
   const config = raw?.data ?? raw;
   if (!Array.isArray(config?.social_accounts)) return fail("ACCOUNT_LOAD_FAILED", "Invalid configuration accounts");
-  return config.social_accounts;
+  if (config.id != null && String(config.id) !== source.extensionConfigId) return fail("ACCOUNT_LOAD_FAILED", "Configuration source mismatch");
+  return { rows: config.social_accounts, configuration: config };
 }
 async function normalizeAccounts(services: ApplicationServices, rows: unknown[], source: Source): Promise<PersonaFacebookAccount[]> {
   const unique = new Map<string, PersonaFacebookAccount>();
@@ -108,7 +109,7 @@ async function normalizeAccounts(services: ApplicationServices, rows: unknown[],
   }
   return accounts;
 }
-function publicState(ctx: Context, catalog: Catalog | undefined, platform?: string) {
+function publicState(ctx: Context, catalog: SocialAccountCatalog | undefined, platform?: string) {
   const valid = sameSource(catalog?.source, ctx.source) && Array.isArray(catalog?.accounts);
   const accounts = valid ? catalog!.accounts : [];
   return { source: ctx.source, revision: valid ? catalog!.revision : 0,
@@ -118,11 +119,13 @@ function publicState(ctx: Context, catalog: Catalog | undefined, platform?: stri
       hasCookies: Boolean(a.cookies), hasProxy: Boolean(a.proxy && Object.keys(a.proxy).length),
     })) };
 }
-async function refresh(services: ApplicationServices) {
+/** Internal operation: caller must already own the session queue. */
+export async function refreshSocialAccountCatalogInSession(services: ApplicationServices, configurationFilter?: object) {
   const ctx = await readSource(services);
-  const accounts = await normalizeAccounts(services, await loadAccounts(services, ctx.source), ctx.source);
+  const loaded = await loadAccounts(services, ctx.source, configurationFilter);
+  const accounts = await normalizeAccounts(services, loaded.rows, ctx.source);
   await assertSource(services, ctx);
-  const catalog: Catalog = { source: ctx.source, revision: sameSource(ctx.catalog?.source, ctx.source) ? ctx.catalog!.revision + 1 : 1,
+  const catalog: SocialAccountCatalog = { source: ctx.source, revision: sameSource(ctx.catalog?.source, ctx.source) ? ctx.catalog!.revision + 1 : 1,
     refreshedAt: Date.now(), accounts };
   const facebook = accounts.filter(a => a.platform === "facebook");
   const patch = { socialAccountCatalog: catalog, allSocialAccounts: accounts, facebookAccounts: facebook,
@@ -130,7 +133,7 @@ async function refresh(services: ApplicationServices) {
     personaFacebookAccounts: ctx.source.type === "persona" ? facebook : [] };
   await ctx.storage.getBrowserApi().set(patch);
   Object.assign(ctx.storage.getCachedStorage(), patch);
-  return publicState(ctx, catalog);
+  return { catalog, configuration: loaded.configuration, state: publicState(ctx, catalog) };
 }
 async function respondWith(operation: () => Promise<unknown>, respond: Respond) {
   try { respond({ success: true, data: await enqueueSessionOperation(operation) }); }
@@ -146,5 +149,14 @@ export function handleSocialAccountGetState(services: ApplicationServices, messa
   }, respond);
 }
 export function handleSocialAccountRefresh(services: ApplicationServices, _message: Message, respond: Respond) {
-  return respondWith(() => refresh(services), respond);
+  return respondWith(async () => (await refreshSocialAccountCatalogInSession(services)).state, respond);
+}
+
+/** Internal read for legacy browser resource setup, without trusting UI payload. */
+export async function readSocialAccountCatalogInSession(services: ApplicationServices): Promise<SocialAccountCatalog | null> {
+  const ctx = await readSource(services);
+  const catalog = ctx.catalog;
+  if (!catalog || !sameSource(catalog.source, ctx.source) || !Array.isArray(catalog.accounts)) return null;
+  await assertSource(services, ctx);
+  return catalog;
 }
