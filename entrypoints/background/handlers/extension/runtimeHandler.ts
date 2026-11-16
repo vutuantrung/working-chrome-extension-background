@@ -1,5 +1,6 @@
 import { Message } from "../../types/types";
 import { handleExternalApiCall } from "./externalServiceHandler";
+import { handleSocialAccountGetState, handleSocialAccountRefresh } from "./socialAccountHandlers";
 import { handlePersonaGetState, handlePersonaPrepareSelection, handlePersonaSelect, handlePersonaActivate, handlePersonaEnsureDefault, handlePersonaSwitch, handlePersonaCompleteSwitchResources } from "./personaHandlers";
 import { handleAuthLogin, handleAuthLoginByApiKey, handleAuthGetState, handleAuthAutoLogin, handleAuthLogout, handleAuthRestart, handleAuthRecoverSession } from "./authHandlers";
 
@@ -432,6 +433,10 @@ function runTimeOnMessageHandlerInternal(
         return handleAuthRestart(applicationServices, message, sendResponse);
       case "AUTH_RECOVER_SESSION":
         return handleAuthRecoverSession(applicationServices, message, sendResponse);
+      case "SOCIAL_ACCOUNT_GET_STATE":
+        return handleSocialAccountGetState(applicationServices, message, sendResponse);
+      case "SOCIAL_ACCOUNT_REFRESH":
+        return handleSocialAccountRefresh(applicationServices, message, sendResponse);
       case "PERSONA_GET_STATE":
         return handlePersonaGetState(applicationServices, message, sendResponse);
       case "PERSONA_PREPARE_SELECTION":

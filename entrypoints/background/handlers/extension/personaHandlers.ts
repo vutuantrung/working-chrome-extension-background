@@ -256,7 +256,7 @@ export function handlePersonaEnsureDefault(services: ApplicationServices, _messa
 // Switching is remote session orchestration, not a storage transaction. Persist
 // the old/target IDs before remote mutation; do not assume compensation is safe.
 const SWITCH_RESOURCE_KEYS = [
-  "profile", "profileId", "personaProxy", "personaSocialAccounts",
+  "profile", "profileId", "personaProxy", "personaSocialAccounts", "socialAccountCatalog",
   "personaFacebookAccounts", "allSocialAccounts", "facebookAccounts",
   "activeProxy", "fbAccountCache", "lastActiveFacebookTab",
 ];

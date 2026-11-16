@@ -318,6 +318,7 @@ export async function handleClearDataAfterLogout(
       "xLoginMode",
       "personaSocialAccounts",
       "allSocialAccounts",
+      "socialAccountCatalog",
       "facebook_posts_info",
       "lastActiveFacebookTab",
       "youtube_posts_info",
