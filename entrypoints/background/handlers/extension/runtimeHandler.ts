@@ -1,6 +1,6 @@
 import { Message } from "../../types/types";
 import { handleExternalApiCall } from "./externalServiceHandler";
-import { handlePersonaGetState, handlePersonaPrepareSelection, handlePersonaSelect, handlePersonaActivate, handlePersonaEnsureDefault } from "./personaHandlers";
+import { handlePersonaGetState, handlePersonaPrepareSelection, handlePersonaSelect, handlePersonaActivate, handlePersonaEnsureDefault, handlePersonaSwitch, handlePersonaCompleteSwitchResources } from "./personaHandlers";
 import { handleAuthLogin, handleAuthLoginByApiKey, handleAuthGetState, handleAuthAutoLogin, handleAuthLogout, handleAuthRestart, handleAuthRecoverSession } from "./authHandlers";
 
 // Message handler imports
@@ -440,6 +440,10 @@ function runTimeOnMessageHandlerInternal(
         return handlePersonaActivate(applicationServices, message, sendResponse);
       case "PERSONA_ENSURE_DEFAULT":
         return handlePersonaEnsureDefault(applicationServices, message, sendResponse);
+      case "PERSONA_SWITCH":
+        return handlePersonaSwitch(applicationServices, message, sendResponse);
+      case "PERSONA_COMPLETE_SWITCH_RESOURCES":
+        return handlePersonaCompleteSwitchResources(applicationServices, message, sendResponse);
       case "PERSONA_SELECT":
         return handlePersonaSelect(applicationServices, message, sendResponse);
       case "AUTH_GET_STATE":

@@ -7,13 +7,14 @@ import { enqueueSessionOperation, getAuthenticationGeneration } from "./authHand
 type Respond = (response: unknown) => void;
 type PersonaRecord = Record<string, unknown>;
 type PersonaSummary = { id: string; first_name: string; last_name: string; nickname: string; job: string; gender: string; country: string; status: string };
-type Selection = { userId: string; sessionId: string; revision: number; persona: PersonaSummary; activation?: "active" | "reconciliation_required" };
+type Selection = { userId: string; sessionId: string; revision: number; persona: PersonaSummary; activation?: "active" | "reconciliation_required"; switchFrom?: string; switchTarget?: string; resourceSetupPending?: boolean };
 type PersonaState = {
   selectedPersonaId: string | null;
   selectedPersona: PersonaSummary | null;
   mode: "config_bound" | "persona_bound";
   canSwitch: boolean;
   revision: number;
+  resourceSetupPending: boolean;
   status: "unselected" | "selected" | "active" | "reconciliation_required";
 };
 
@@ -82,7 +83,7 @@ function state(ctx: Context, selection: Selection | null): PersonaState {
   const configured = hasExtensionConfigId(ctx.user.extension_session?.extension_config_id);
   return { selectedPersonaId: selection?.persona.id ?? null, selectedPersona: selection ? summary(selection.persona) : null,
     mode: configured ? "config_bound" : "persona_bound", canSwitch: !configured,
-    revision: selection?.revision ?? 0, status: selection ? (selection.activation ?? "selected") : "unselected" };
+    revision: selection?.revision ?? 0, resourceSetupPending: selection?.resourceSetupPending === true, status: selection ? (selection.activation ?? "selected") : "unselected" };
 }
 async function persistSelection(ctx: Context, persona: PersonaRecord): Promise<PersonaState> {
   await assertSession(ctx);
@@ -151,6 +152,7 @@ async function selectPersona(services: ApplicationServices, message: Message): P
     return fail("PERSONA_SWITCH_NOT_ALLOWED", "Switching is not allowed with extension config");
   }
   if (previous.selectedPersonaId === personaId) return previous;
+  if (previous.status === "active" || previous.status === "reconciliation_required") return fail("PERSONA_SWITCH_NOT_ALLOWED", "Use persona switching for an active or uncertain session");
   const target = await validateTarget(services, ctx, personaId);
   // restoreSelection may have migrated a legacy ID; reread its revision.
   const refreshed = await readContext(services);
@@ -202,6 +204,7 @@ async function activatePersona(services: ApplicationServices, personaId: unknown
   const previous = await restoreSelection(services, ctx);
   // Exact same confirmed target is a no-op, even after concurrent activation.
   if (previous.selectedPersonaId === personaId && previous.status === "active") return previous;
+  if (storedSelection(await readContext(services))?.switchTarget) return fail("PERSONA_RECONCILIATION_REQUIRED", "Previous switch outcome is uncertain; reconcile before activation");
   if (expectedRevision !== undefined && expectedRevision !== previous.revision) return fail("PERSONA_CONFLICT", "Persona selection changed");
   if (previous.selectedPersonaId && previous.selectedPersonaId !== personaId &&
       (previous.mode === "config_bound" || previous.status !== "selected")) {
@@ -247,4 +250,99 @@ export function handlePersonaEnsureDefault(services: ApplicationServices, _messa
     const prepared = await prepareSelection(services);
     return activatePersona(services, prepared.recommendedPersonaId, prepared.state.revision);
   }), respond);
+}
+
+
+// Switching is remote session orchestration, not a storage transaction. Persist
+// the old/target IDs before remote mutation; do not assume compensation is safe.
+const SWITCH_RESOURCE_KEYS = [
+  "profile", "profileId", "personaProxy", "personaSocialAccounts",
+  "personaFacebookAccounts", "allSocialAccounts", "facebookAccounts",
+  "activeProxy", "fbAccountCache", "lastActiveFacebookTab",
+];
+
+async function persistSwitchState(ctx: Context, persona: PersonaRecord, options: {
+  activation: "active" | "reconciliation_required";
+  switchFrom?: string;
+  switchTarget?: string;
+  resourceSetupPending?: boolean;
+}): Promise<PersonaState> {
+  await assertSession(ctx);
+  const next: Selection = {
+    userId: ctx.user.id, sessionId: sessionId(ctx.user),
+    revision: (storedSelection(ctx)?.revision ?? 0) + 1,
+    persona: summary(persona), ...options,
+  };
+  const patch = { selectedPersonaId: next.persona.id, personaSelection: next };
+  await ctx.storage.getBrowserApi().set(patch);
+  Object.assign(ctx.storage.getCachedStorage(), patch);
+  return state(ctx, next);
+}
+
+function requireMutationAcknowledgment(result: any): void {
+  if (result?.success === false || result?.data?.success === false) {
+    throw new Error("Remote persona mutation rejected");
+  }
+}
+
+async function invalidateSwitchResources(ctx: Context): Promise<void> {
+  // Replacement values prevent legacy deep-merge from retaining old account
+  // entries in this snapshot. The remaining resource writers are R3/R4 work.
+  await ctx.storage.removeStorageByKeys(SWITCH_RESOURCE_KEYS);
+  const empty = { personaProxy: {}, activeProxy: {}, personaSocialAccounts: [],
+    personaFacebookAccounts: [], allSocialAccounts: [], facebookAccounts: [] };
+  await ctx.storage.getBrowserApi().set(empty);
+  Object.assign(ctx.storage.getCachedStorage(), empty);
+}
+
+async function switchPersonaSession(services: ApplicationServices, message: Message): Promise<PersonaState> {
+  const { personaId, expectedRevision } = message.inputs ?? {};
+  if (!nonEmpty(personaId)) return fail("PERSONA_INVALID_ID", "Invalid persona ID");
+  const ctx = await readContext(services);
+  const previous = await restoreSelection(services, ctx);
+  if (!previous.canSwitch) return fail("PERSONA_SWITCH_NOT_ALLOWED", "Switching is not allowed with extension config");
+  if (previous.status === "reconciliation_required") return fail("PERSONA_RECONCILIATION_REQUIRED", "Previous persona operation requires reconciliation");
+  if (previous.selectedPersonaId === personaId && previous.status === "active") return previous;
+  if (expectedRevision !== undefined && expectedRevision !== previous.revision) return fail("PERSONA_CONFLICT", "Persona selection changed");
+  if (!previous.selectedPersonaId || !previous.selectedPersona) return fail("PERSONA_CONFLICT", "No current persona selection");
+
+  // Validate before deactivating the previous session.
+  const target = await validateTarget(services, ctx, personaId);
+  await assertSession(ctx);
+  await persistSwitchState(await readContext(services), previous.selectedPersona, {
+    activation: "reconciliation_required", switchFrom: previous.selectedPersonaId, switchTarget: personaId,
+  });
+  try {
+    const http = services.http.getHttpInstance();
+    if (previous.selectedPersonaId !== personaId) {
+      requireMutationAcknowledgment(await api.extensionUser.deactivatePersona(http, previous.selectedPersonaId));
+    }
+    await assertSession(ctx);
+    requireMutationAcknowledgment(await api.extensionUser.activatePersonaSession(http, personaId));
+    await assertSession(ctx);
+    await invalidateSwitchResources(ctx);
+    return await persistSwitchState(await readContext(services), target, {
+      activation: "active", resourceSetupPending: true,
+    });
+  } catch {
+    return fail("PERSONA_RECONCILIATION_REQUIRED", "Persona switch outcome is uncertain; reconcile before retrying");
+  }
+}
+
+async function completeSwitchResources(services: ApplicationServices, message: Message): Promise<PersonaState> {
+  const { personaId, expectedRevision } = message.inputs ?? {};
+  const ctx = await readContext(services);
+  const selection = storedSelection(ctx);
+  if (!selection || selection.activation !== "active" || selection.persona.id !== personaId ||
+      selection.revision !== expectedRevision) return fail("PERSONA_CONFLICT", "Persona session changed during resource setup");
+  if (!selection.resourceSetupPending) return state(ctx, selection);
+  return persistSwitchState(ctx, selection.persona, { activation: "active", resourceSetupPending: false });
+}
+
+export function handlePersonaSwitch(services: ApplicationServices, message: Message, respond: Respond): Promise<void> {
+  return respondWith(() => enqueueSessionOperation(() => switchPersonaSession(services, message)), respond);
+}
+
+export function handlePersonaCompleteSwitchResources(services: ApplicationServices, message: Message, respond: Respond): Promise<void> {
+  return respondWith(() => enqueueSessionOperation(() => completeSwitchResources(services, message)), respond);
 }
